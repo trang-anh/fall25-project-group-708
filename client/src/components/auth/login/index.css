@@ -80,6 +80,62 @@ form {
   background-color: #003f7f;
 }
 
+/* Divider Style */
+.divider {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.divider::before
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+  padding: 0 10px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500
+}
+
+/* GitHUub button style */
+.github-button {
+  width: auto;
+  max-width: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #24292e;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer; 
+  transition: background-color 0.3s;
+  font-weight: 600;
+}
+
+.github-button:hover {
+  background-color: #1b1b1b;
+}
+
+.github-button:active {
+  background-color: #0d1117;
+}
+
+.github-icon {
+  width: 20px;
+  height: 20px;
+}
+
 /* Signup link styles */
 .signup-link {
   margin-top: 30px; /* Increased spacing */

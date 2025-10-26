@@ -3,6 +3,7 @@ import { UserCredentials, SafeDatabaseUser } from '../types/types';
 import api from './config';
 
 const USER_API_URL = `/api/user`;
+const AUTH_API_URL = `/api/auth`;
 
 /**
  * Function to get users
@@ -123,6 +124,56 @@ const updateBiography = async (
   return res.data;
 };
 
+/**
+ * initiates GitHub OAuth authentication by redirecting to GitHub
+ */
+const loginWithGithub = (): void => {
+  window.location.href = `${window.location.protocol}//${window.location.hostname}:8000${AUTH_API_URL}/github`;
+};
+
+/**
+ * checks the current authentication status and retrieves the logged-in user
+ * 
+ * @returns {Promise<SafeDatabaseUser>} the currently authenticated user object
+ * @throws {Error} If the user is not authenticated or if an error occurs 
+ */
+const getCurrentUser = async (): Promise<SafeDatabaseUser> => {
+  try {
+    const res = await api.get(`${AUTH_API_URL}/user`);
+    if (res.status !== 200) {
+      throw new Error('Not authenticated')
+    }
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error fetching the current user: ${error.response.data.error || 'Not authenticated'}`);
+    } else {
+      throw new Error('Error fetching new user');
+    }
+  }
+};
+
+/**
+ * logs out of the current user
+ * 
+ * @returns {Promise<void>}
+ * @throws {Error} if an error occurs during logs out
+ */
+const logoutUser = async (): Promise<void> => {
+  try {
+    const res = await api.post(`${AUTH_API_URL}/logout`);
+    if(res.status !== 200) {
+      throw new Error('Error during logout');
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error while logging out: ${error.response.data.error || 'Logout failed'}`);
+    } else {
+      throw new Error('Error while logging out');
+    }
+  }
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -131,4 +182,7 @@ export {
   deleteUser,
   resetPassword,
   updateBiography,
+  loginWithGithub,
+  getCurrentUser,
+  logoutUser,
 };
