@@ -281,3 +281,55 @@ export const getCommunityQuestions = async (communityId: string): Promise<Databa
     return [];
   }
 };
+
+/**
+ * Check for any pre-existing questions.
+ *
+ * @param title - The title of the question to be filtered for duplication.
+ * @param text - The text body of the question to be filtered for duplication.
+ *
+ * @returns {Promise<PopulatedDatabaseQuestion[]>} - Possible duplicates.
+ */
+export const existingQuestions = async (
+  title: string,
+  text: string,
+): Promise<PopulatedDatabaseQuestion[]> => {
+  try {
+    //clean up title
+    const cleanTitle = title?.trim() || '';
+    const cleanText = text?.trim() || '';
+
+    if (!cleanText && !cleanTitle) return [];
+
+    //regrex title and text to help with the search
+    const titleRegrex = new RegExp(cleanTitle.split(/\s+/).join('|'), 'i');
+    const textRegrex = new RegExp(cleanText.split(/\s+/).join('|'), 'i');
+
+    const similarQuestions: PopulatedDatabaseQuestion[] = await QuestionModel.find({
+      $or: [{ title: { $regex: titleRegrex } }, { text: { $regex: textRegrex } }],
+    })
+      .populate<{
+        tags: DatabaseTag[];
+        answers: PopulatedDatabaseAnswer[];
+        comments: DatabaseComment[];
+        community: DatabaseCommunity;
+      }>([
+        { path: 'tags', model: TagModel },
+        {
+          path: 'answers',
+          model: AnswerModel,
+          populate: { path: 'comments', model: CommentModel },
+        },
+        { path: 'comments', model: CommentModel },
+      ])
+      //only show first 5
+      .limit(5)
+      .exec();
+
+    return similarQuestions;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log(`The error is` + error);
+    return [];
+  }
+};
