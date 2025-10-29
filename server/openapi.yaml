@@ -1005,6 +1005,11 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+
+  # --------------------
+  # NOT DUPLICATE QUESTION CONTROLLER
+  # --------------------
+
 components:
   schemas:
     # --------------------
