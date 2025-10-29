@@ -174,6 +174,43 @@ paths:
                   $ref: '#/components/schemas/PopulatedQuestion'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+  
+  /question/getQuestionsByTextAndTitle:
+    get:
+      tags:
+        - Questions
+      summary: Retrieve up to 5 possible duplicate questions by comparing title and text.
+      description: >
+        Performs a partial regex-based search on the question title and text to find
+        potentially similar or duplicate questions.
+      parameters:
+        - in: query
+          name: title
+          schema:
+            type: string
+            minLength: 1
+          required: false
+          description: The title of the new question (used for similarity matching).
+        - in: query
+          name: text
+          schema:
+            type: string
+            minLength: 1
+          required: false
+          description: The text/body of the new question (used for similarity matching).
+      responses:
+        '200':
+          description: Successfully retrieved a list of up to 5 similar questions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PopulatedQuestion'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
 
   # --------------------
   # ANSWER CONTROLLER
@@ -1009,6 +1046,29 @@ paths:
   # --------------------
   # NOT DUPLICATE QUESTION CONTROLLER
   # --------------------
+  /notDuplicateQuestion/saveNotDuplicateQuestion:
+    post:
+      tags:
+        - Not Duplicate Questions
+      summary: Save a new "Not Duplicate" justification for a question.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveNotDuplicateQuestionBody'
+      responses:
+        '200':
+          description: Justification successfully saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseNotDuplicateQuestion'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
 
 components:
   schemas:
@@ -1470,6 +1530,59 @@ components:
         error:
           type: string
           description: A detailed error message.
+      
+    # --------------------
+    # NOT DUPLICATE QUESTION SCHEMAS
+    # --------------------
+    SaveNotDuplicateQuestionBody:
+      type: object
+      required:
+        - username
+        - question
+        - duplicateOf
+        - justification
+        - createdAt
+      properties:
+        username:
+          type: string
+          minLength: 1
+        question:
+          type: string
+          format: object-id
+        duplicateOf:
+          type: array
+          items:
+            type: string
+            format: object-id
+        justification:
+          type: string
+          minLength: 0
+        createdAt:
+          type: string
+          format: date-time
+
+    DatabaseNotDuplicateQuestion:
+      type: object
+      description: Not-duplicate justification record as stored in MongoDB.
+      properties:
+        _id:
+          type: string
+          format: object-id
+        username:
+          type: string
+        question:
+          type: string
+          format: object-id
+        duplicateOf:
+          type: array
+          items:
+            type: string
+            format: object-id
+        justification:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
 
   responses:
     # --------------------
@@ -1498,5 +1611,3 @@ components:
               errors:
                 type: array
                 description: Detailed list of validation errors.
-
-    
