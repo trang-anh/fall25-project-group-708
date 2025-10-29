@@ -1020,6 +1020,66 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
 
+  # --------------------
+  # AUTH CONTROLLER
+  # --------------------
+  /auth/github:
+    get:
+      tags:
+        - Auth
+      summary: Initiate the GitHub OAuth login flow.
+      responses:
+        '302':
+          description: Redirect to GitHub's OAuth consent screen.
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /auth/github/callback:
+    get:
+      tags:
+        - Auth
+      summary: Handle the callback from GitHub OAuth.
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code returned by GitHub.
+        - in: query
+          name: state
+          schema:
+            type: string
+          required: false
+          allowEmptyValue: true
+          description: Optional state returned by GitHub
+      responses:
+        '302':
+          description: Redirects back to the client with the authentication result.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /auth/user:
+    get:
+      tags:
+        - Auth
+      summary: Retrieve the currently authenticated user from the active session.
+      responses:
+        '200':
+          description: Authenticated user information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: No authenticated session exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+
   /user/updateBiography:
     patch:
       tags:
@@ -1492,6 +1552,10 @@ components:
           type: string
           default: ''
           description: Optional user biography.
+        githubId: 
+          type: string
+          nullable: true
+          description: Github ID for OAuth users 
 
     UserLoginBody:
       type: object

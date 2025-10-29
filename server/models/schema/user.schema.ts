@@ -26,6 +26,11 @@ const userSchema: Schema = new Schema(
       type: String,
       default: '',
     },
+    githubId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   { collection: 'User' },
 );
