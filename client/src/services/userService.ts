@@ -174,6 +174,28 @@ const logoutUser = async (): Promise<void> => {
   }
 };
 
+/**
+ * find users with matching skills
+ * @params skills - names of languages to be matched
+ * @returns a promise resolving to users with matching skills
+ * @throws error if the request fails
+ */
+const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> => {
+  try {
+    const res = await api.post(`${USER_API_URL}/findBySkills`, {skills});
+    if (res.status !== 200) {
+      throw new Error('Error when finding users by skills');
+    }
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Error finding users: ${error.response.data}`);
+    } else {
+      throw new Error('Error finding users by skills')
+    }
+  }
+}
+
 export {
   getUsers,
   getUserByUsername,
@@ -185,4 +207,5 @@ export {
   loginWithGithub,
   getCurrentUser,
   logoutUser,
+  findUsersBySkills
 };
