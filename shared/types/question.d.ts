@@ -118,6 +118,18 @@ export interface FindQuestionByIdRequest extends Request {
 }
 
 /**
+ * Interface for the request query to find questions using a search string (title and text).
+ * - `title`: The title string used to find the questions.
+ * - `text`: The text string used to find questions.
+ */
+export interface FindQuestionByTitleAndText extends Request {
+  query: {
+    title: string;
+    text: string;
+  };
+}
+
+/**
  * Interface for the request body when adding a new question.
  * - `body`: The question being added.
  */

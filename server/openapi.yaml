@@ -1005,7 +1005,6 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-
 components:
   schemas:
     # --------------------
@@ -1494,3 +1493,5 @@ components:
               errors:
                 type: array
                 description: Detailed list of validation errors.
+
+    

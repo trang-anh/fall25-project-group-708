@@ -2,25 +2,20 @@ import { Schema } from 'mongoose';
 /**
  * Mongoose schema for the Not Duplicate Questions collection.
  *
- * This schema defines the structure for storing questions in the database.
+ * This schema defines the structure for storing not duplicate questions in the database.
  * Each question includes the following fields:
- * - `title`: The title of the question.
- * - `text`: The detailed content of the question.
- * - `tags`: An array of references to `Tag` documents associated with the question.
- * - `answers`: An array of references to `Answer` documents associated with the question.
- * - `askedBy`: The username of the user who asked the question.
- * - `askDateTime`: The date and time when the question was asked.
- * - `views`: An array of usernames that have viewed the question.
- * - `upVotes`: An array of usernames that have upvoted the question.
- * - `downVotes`: An array of usernames that have downvoted the question.
- * - `comments`: Comments that have been added to the question by users.
+ * - `username`: The name of the user submitted the question.
+ * - `question`: The question that is posted.
+ * - `duplicateOf`: The list of questions that is pinged as similar to the question posted.
+ * - `justification`: The detailed content of why it is not a dupe.
+ * - `createdAt`: The date and time when the justification was posted/sent.
  */
 const notDuplicateQuestionSchema: Schema = new Schema(
   {
     username: {
       type: String,
     },
-    questionId: { type: Schema.Types.ObjectId, ref: 'Question' },
+    question: { type: Schema.Types.ObjectId, ref: 'Question' },
     duplicateOf: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
     justification: {
       type: String,
@@ -29,7 +24,7 @@ const notDuplicateQuestionSchema: Schema = new Schema(
       type: Date,
     },
   },
-  { collection: 'Not Duplicate Question' },
+  { collection: 'NotDuplicateQuestion' },
 );
 
 export default notDuplicateQuestionSchema;

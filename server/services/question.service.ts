@@ -285,12 +285,12 @@ export const getCommunityQuestions = async (communityId: string): Promise<Databa
 /**
  * Check for any pre-existing questions.
  *
- * @param title - The title of the question to be filtered for duplication.
- * @param text - The text body of the question to be filtered for duplication.
+ * @param {string} title - The title of the question to be filtered for duplication.
+ * @param {string} text - The text body of the question to be filtered for duplication.
  *
  * @returns {Promise<PopulatedDatabaseQuestion[]>} - Possible duplicates.
  */
-export const existingQuestions = async (
+export const fetchFiveQuestionsByTextAndTitle = async (
   title: string,
   text: string,
 ): Promise<PopulatedDatabaseQuestion[]> => {
