@@ -9,3 +9,6 @@ export * from './tag';
 export * from './user';
 export * from './collection';
 export * from './community';
+export * from './matchProfile';
+export * from './programmingLanguage';
+export * from './match';
