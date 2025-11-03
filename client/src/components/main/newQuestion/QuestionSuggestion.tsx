@@ -1,19 +1,9 @@
 import React, { useState } from 'react';
-import './QuestionSuggestion.css';
-
-
-interface Question {
-  _id: string;
-  title: string;
-  text: string;
-  tags: { name: string }[];
-  asked_by: string;
-  ask_date_time: Date;
-  views: number;
-}
+import { PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
+import './index.css';
 
 interface QuestionSuggestionsProps {
-  suggestions: Question[];
+  suggestions: PopulatedDatabaseQuestion[];
   loading: boolean;
   onClose: () => void;
   onAcknowledge: (justification: string) => void;
@@ -61,7 +51,8 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   };
 
   const handleQuestionClick = (questionId: string) => {
-    window.open(`http://localhost:4530/question/${questionId}`, '_blank');
+    // Use relative path instead of hardcoded URL
+    window.open(`/question/${questionId}`, '_blank');
   };
 
   const handleAcknowledge = () => {
@@ -74,6 +65,11 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
     }
   };
 
+  const handleCancel = () => {
+    setShowJustification(false);
+    setJustification('');
+  };
+
   return (
     <div className="similar_posts_section">
       <div className="similar_posts_header">
@@ -83,21 +79,21 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
       
       <div className="similar_posts_list">
         {suggestions.map((question) => (
-          <div key={question._id} className="similar_post_item">
+          <div key={question._id.toString()} className="similar_post_item">
             <a 
-              href={`http://localhost:4530/question/${question._id}`}
+              href={`/question/${question._id.toString()}`}
               target="_blank"
               rel="noopener noreferrer"
               className="similar_post_link"
               onClick={(e) => {
                 e.preventDefault();
-                handleQuestionClick(question._id);
+                handleQuestionClick(question._id.toString());
               }}
             >
               {question.title}
             </a>
             <div className="similar_post_preview">
-              {question.asked_by}: {stripHtml(question.text).substring(0, 200)}
+              {question.askedBy}: {stripHtml(question.text).substring(0, 200)}
               {stripHtml(question.text).length > 200 ? '...' : ''}
             </div>
           </div>
@@ -127,7 +123,7 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
           />
           <div className="justification_actions">
             <button
-              onClick={() => setShowJustification(false)}
+              onClick={handleCancel}
               className="cancel_btn"
             >
               Cancel
