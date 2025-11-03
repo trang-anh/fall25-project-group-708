@@ -1,5 +1,5 @@
 import React from 'react';
-import './SimilarQuestionsModal.css';
+import './SimilarQuestionModal.css';
 
 interface SimilarQuestionsModalProps {
   show: boolean;
