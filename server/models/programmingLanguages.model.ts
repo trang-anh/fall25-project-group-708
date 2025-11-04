@@ -1,6 +1,6 @@
 import mongoose, { Model } from 'mongoose';
 import programmingLanguageSchema from './schema/programmingLanguage.schema';
-import { DabataseProgrammingLanguage } from '../types/types';
+import { DatabaseProgrammingLanguage } from '../types/types';
 
 /**
  * Mongoose model for the `ProgrammingLanguage` collection.
@@ -11,9 +11,7 @@ import { DabataseProgrammingLanguage } from '../types/types';
  *
  * @type {Model<DabataseProgrammingLanguage>}
  */
-const MessageModel: Model<DabataseProgrammingLanguage> = mongoose.model<DabataseProgrammingLanguage>(
-  'Message',
-  programmingLanguageSchema,
-);
+const MessageModel: Model<DatabaseProgrammingLanguage> =
+  mongoose.model<DatabaseProgrammingLanguage>('Message', programmingLanguageSchema);
 
 export default MessageModel;
