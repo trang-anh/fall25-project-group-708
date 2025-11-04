@@ -22,6 +22,7 @@ export interface User extends UserCredentials {
   dateJoined: Date;
   biography?: string;
   githubId?: string;
+  totalPoints: number;
 }
 
 /**

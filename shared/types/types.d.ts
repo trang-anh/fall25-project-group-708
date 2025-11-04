@@ -13,3 +13,5 @@ export * from './matchProfile';
 export * from './programmingLanguage';
 export * from './match';
 export * from './notDuplicateQuestion';
+export * from './dailyPoints';
+export * from './registerPoints';

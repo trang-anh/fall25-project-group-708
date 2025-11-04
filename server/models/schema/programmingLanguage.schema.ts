@@ -10,15 +10,15 @@ import { Schema } from 'mongoose';
  * - `dateJoined`: The date the user joined the platform.
  */
 const programmingLanguageSchema: Schema = new Schema(
-    {
-        name: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-        },
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
-    { collection: 'ProgrammingLanguage' },
+  },
+  { collection: 'ProgrammingLanguage' },
 );
 
 export default programmingLanguageSchema;
