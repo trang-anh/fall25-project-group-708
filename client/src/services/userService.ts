@@ -133,20 +133,22 @@ const loginWithGithub = (): void => {
 
 /**
  * checks the current authentication status and retrieves the logged-in user
- * 
+ *
  * @returns {Promise<SafeDatabaseUser>} the currently authenticated user object
- * @throws {Error} If the user is not authenticated or if an error occurs 
+ * @throws {Error} If the user is not authenticated or if an error occurs
  */
 const getCurrentUser = async (): Promise<SafeDatabaseUser> => {
   try {
     const res = await api.get(`${AUTH_API_URL}/user`);
     if (res.status !== 200) {
-      throw new Error('Not authenticated')
+      throw new Error('Not authenticated');
     }
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Error fetching the current user: ${error.response.data.error || 'Not authenticated'}`);
+      throw new Error(
+        `Error fetching the current user: ${error.response.data.error || 'Not authenticated'}`,
+      );
     } else {
       throw new Error('Error fetching new user');
     }
@@ -155,14 +157,14 @@ const getCurrentUser = async (): Promise<SafeDatabaseUser> => {
 
 /**
  * logs out of the current user
- * 
+ *
  * @returns {Promise<void>}
  * @throws {Error} if an error occurs during logs out
  */
 const logoutUser = async (): Promise<void> => {
   try {
     const res = await api.post(`${AUTH_API_URL}/logout`);
-    if(res.status !== 200) {
+    if (res.status !== 200) {
       throw new Error('Error during logout');
     }
   } catch (error) {
@@ -182,7 +184,7 @@ const logoutUser = async (): Promise<void> => {
  */
 const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> => {
   try {
-    const res = await api.post(`${USER_API_URL}/findBySkills`, {skills});
+    const res = await api.post(`${USER_API_URL}/findBySkills`, { skills });
     if (res.status !== 200) {
       throw new Error('Error when finding users by skills');
     }
@@ -191,10 +193,10 @@ const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> 
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(`Error finding users: ${error.response.data}`);
     } else {
-      throw new Error('Error finding users by skills')
+      throw new Error('Error finding users by skills');
     }
   }
-}
+};
 
 export {
   getUsers,
@@ -207,5 +209,5 @@ export {
   loginWithGithub,
   getCurrentUser,
   logoutUser,
-  findUsersBySkills
+  findUsersBySkills,
 };

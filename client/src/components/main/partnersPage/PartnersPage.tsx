@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import './index.css';
+import { useState, useEffect, useCallback } from 'react';
+import './PartnersPage.css';
 import useUserContext from '../../../hooks/useUserContext';
 import { sendConnectionRequest, getPartnerMatches } from '../../../services/partnerService';
-
 
 interface Partner {
   username: string;
@@ -23,13 +22,9 @@ const PartnersPage = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [processingRequest, setProcessingRequest] = useState<string>(''); 
+  const [processingRequest, setProcessingRequest] = useState<string>('');
 
-  useEffect(() => {
-    fetchPartners();
-  }, [user.username]);
-
-  const fetchPartners = async () => {
+  const fetchPartners = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -37,33 +32,36 @@ const PartnersPage = () => {
       setPartners(data.partners || []);
     } catch (err) {
       setError('Failed to load potential partners. Please try again later.');
-      console.error('Error fetching partners:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.username]);
+
+  useEffect(() => {
+    fetchPartners();
+  }, [fetchPartners]);
 
   const handleConnect = async (partnerUsername: string) => {
     try {
       setProcessingRequest(partnerUsername);
       const result = await sendConnectionRequest(user.username, partnerUsername);
-      
+
       // Update the partner's connection status
       setPartners(prevPartners =>
         prevPartners.map(p =>
           p.username === partnerUsername
             ? { ...p, connectionStatus: result.mutualConnection ? 'connected' : 'pending' }
-            : p
-        )
+            : p,
+        ),
       );
 
       // Show success message if mutual connection
       if (result.mutualConnection) {
         alert(`You are now connected with ${partnerUsername}! You can start chatting.`);
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to send connection request');
-      console.error('Error sending connection request:', err);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send connection request';
+      alert(errorMessage);
     } finally {
       setProcessingRequest('');
     }
@@ -157,18 +155,14 @@ const PartnersPage = () => {
           {partners.map(partner => (
             <div key={partner.username} className='partner-card'>
               <div className='partner-header'>
-                <div className='partner-avatar'>
-                  {partner.username.charAt(0).toUpperCase()}
-                </div>
+                <div className='partner-avatar'>{partner.username.charAt(0).toUpperCase()}</div>
                 <div className='partner-info'>
                   <h3 className='partner-username'>{partner.username}</h3>
                   <p className='partner-email'>{partner.email}</p>
                 </div>
               </div>
 
-              {partner.biography && (
-                <p className='partner-bio'>{partner.biography}</p>
-              )}
+              {partner.biography && <p className='partner-bio'>{partner.biography}</p>}
 
               <div className='skills-section'>
                 <h4>Matching Skills</h4>
@@ -196,9 +190,7 @@ const PartnersPage = () => {
                 </div>
               )}
 
-              <div className='partner-actions'>
-                {renderConnectionButton(partner)}
-              </div>
+              <div className='partner-actions'>{renderConnectionButton(partner)}</div>
             </div>
           ))}
         </div>
