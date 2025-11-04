@@ -90,7 +90,7 @@ form {
   margin: 20px 0;
 }
 
-.divider::before
+.divider::before, 
 .divider::after {
   content: '';
   flex: 1;

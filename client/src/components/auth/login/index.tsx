@@ -2,9 +2,12 @@ import './index.css';
 import { Link } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 
+// use environment variable or fallback to localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 /**
  * Renders a login form with username and password inputs, password visibility toggle,
- * error handling, and a link to the signup page.
+ * error handling, GitHub OAuth, and a link to the signup page.
  */
 const Login = () => {
   const {
@@ -18,10 +21,11 @@ const Login = () => {
   } = useAuth('login');
   
   /**
-   * redirects to the GitHub authentication page
+   * Redirects to the GitHub OAuth authentication page
    */
   const handleGitHubLogin = () => {
-    window.location.href = 'http://localhost:8000/api/auth/github';
+    // Redirect to backend GitHub OAuth endpoint
+    window.location.href = `${API_BASE_URL}/api/auth/github`;
   };
 
   return (
@@ -71,6 +75,7 @@ const Login = () => {
         type='button'
         onClick={handleGitHubLogin}
         className='github-button'
+        aria-label='Sign in with GitHub'
       >
         <svg
           className='github-icon'

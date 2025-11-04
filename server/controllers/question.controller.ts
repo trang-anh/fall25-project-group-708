@@ -9,10 +9,12 @@ import {
   FakeSOSocket,
   PopulatedDatabaseQuestion,
   CommunityQuestionsRequest,
+  FindQuestionByTitleAndText,
 } from '../types/types';
 import {
   addVoteToQuestion,
   fetchAndIncrementQuestionViewsById,
+  fetchFiveQuestionsByTextAndTitle,
   filterQuestionsByAskedBy,
   filterQuestionsBySearch,
   getCommunityQuestions,
@@ -238,6 +240,37 @@ const questionController = (socket: FakeSOSocket) => {
     }
   };
 
+  /**
+   * Retrieves a list of questions by the title and text,
+   * If there is an error, the HTTP response's status is updated.
+   *
+   * @param req The FindQuestionByIdRequest object containing the question ID as a parameter.
+   * @param res The HTTP response object used to send back the question details.
+   *
+   * @returns A Promise that resolves to void.
+   */
+  const getQuestionsByTextAndTitle = async (
+    req: FindQuestionByTitleAndText,
+    res: Response,
+  ): Promise<void> => {
+    const { title, text } = req.query;
+    try {
+      const q = await fetchFiveQuestionsByTextAndTitle(title, text);
+
+      if ('error' in q) {
+        throw new Error('Error while fetching question by id');
+      }
+
+      res.json(q);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        res.status(500).send(`Error when fetching questions by title and text: ${err.message}`);
+      } else {
+        res.status(500).send(`Error when fetching questions by title and text`);
+      }
+    }
+  };
+
   // add appropriate HTTP verbs and their endpoints to the router
   router.get('/getQuestion', getQuestionsByFilter);
   router.get('/getQuestionById/:qid', getQuestionById);
@@ -245,6 +278,7 @@ const questionController = (socket: FakeSOSocket) => {
   router.post('/upvoteQuestion', upvoteQuestion);
   router.post('/downvoteQuestion', downvoteQuestion);
   router.get('/getCommunityQuestions/:communityId', getCommunityQuestionsRoute);
+  router.get('/getQuestionsByTextAndTitle', getQuestionsByTextAndTitle);
 
   return router;
 };

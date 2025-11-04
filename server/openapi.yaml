@@ -174,6 +174,43 @@ paths:
                   $ref: '#/components/schemas/PopulatedQuestion'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+  
+  /question/getQuestionsByTextAndTitle:
+    get:
+      tags:
+        - Questions
+      summary: Retrieve up to 5 possible duplicate questions by comparing title and text.
+      description: >
+        Performs a partial regex-based search on the question title and text to find
+        potentially similar or duplicate questions.
+      parameters:
+        - in: query
+          name: title
+          schema:
+            type: string
+            minLength: 1
+          required: false
+          description: The title of the new question (used for similarity matching).
+        - in: query
+          name: text
+          schema:
+            type: string
+            minLength: 1
+          required: false
+          description: The text/body of the new question (used for similarity matching).
+      responses:
+        '200':
+          description: Successfully retrieved a list of up to 5 similar questions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PopulatedQuestion'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
 
   # --------------------
   # ANSWER CONTROLLER
@@ -983,6 +1020,66 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
 
+  # --------------------
+  # AUTH CONTROLLER
+  # --------------------
+  /auth/github:
+    get:
+      tags:
+        - Auth
+      summary: Initiate the GitHub OAuth login flow.
+      responses:
+        '302':
+          description: Redirect to GitHub's OAuth consent screen.
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /auth/github/callback:
+    get:
+      tags:
+        - Auth
+      summary: Handle the callback from GitHub OAuth.
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code returned by GitHub.
+        - in: query
+          name: state
+          schema:
+            type: string
+          required: false
+          allowEmptyValue: true
+          description: Optional state returned by GitHub
+      responses:
+        '302':
+          description: Redirects back to the client with the authentication result.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /auth/user:
+    get:
+      tags:
+        - Auth
+      summary: Retrieve the currently authenticated user from the active session.
+      responses:
+        '200':
+          description: Authenticated user information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: No authenticated session exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+
   /user/updateBiography:
     patch:
       tags:
@@ -1005,6 +1102,33 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+
+  # --------------------
+  # NOT DUPLICATE QUESTION CONTROLLER
+  # --------------------
+  /notDuplicateQuestion/saveNotDuplicateQuestion:
+    post:
+      tags:
+        - Not Duplicate Questions
+      summary: Save a new "Not Duplicate" justification for a question.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveNotDuplicateQuestionBody'
+      responses:
+        '200':
+          description: Justification successfully saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseNotDuplicateQuestion'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
 
 components:
   schemas:
@@ -1428,6 +1552,10 @@ components:
           type: string
           default: ''
           description: Optional user biography.
+        githubId: 
+          type: string
+          nullable: true
+          description: Github ID for OAuth users 
 
     UserLoginBody:
       type: object
@@ -1466,6 +1594,59 @@ components:
         error:
           type: string
           description: A detailed error message.
+      
+    # --------------------
+    # NOT DUPLICATE QUESTION SCHEMAS
+    # --------------------
+    SaveNotDuplicateQuestionBody:
+      type: object
+      required:
+        - username
+        - question
+        - duplicateOf
+        - justification
+        - createdAt
+      properties:
+        username:
+          type: string
+          minLength: 1
+        question:
+          type: string
+          format: object-id
+        duplicateOf:
+          type: array
+          items:
+            type: string
+            format: object-id
+        justification:
+          type: string
+          minLength: 0
+        createdAt:
+          type: string
+          format: date-time
+
+    DatabaseNotDuplicateQuestion:
+      type: object
+      description: Not-duplicate justification record as stored in MongoDB.
+      properties:
+        _id:
+          type: string
+          format: object-id
+        username:
+          type: string
+        question:
+          type: string
+          format: object-id
+        duplicateOf:
+          type: array
+          items:
+            type: string
+            format: object-id
+        justification:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
 
   responses:
     # --------------------

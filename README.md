@@ -45,12 +45,13 @@ A class diagram for the schema definition is shown below:
 ### `/question`
 
 | Endpoint          | Method | Description                     |
-| ----------------- | ------ | ------------------------------- |
-| `/getQuestion`      | GET    | Fetch questions by filter       |
-| `/getQuestionById/` | GET    | Fetch a specific question by ID |
-| `/addQuestion`      | POST   | Add a new question              |
-| `/upvoteQuestion`   | POST   | Upvote a question               |
-| `/downvoteQuestion` | POST   | Downvote a question             |
+| -------------------------------| ------ | --------------------------------- |
+| `/getQuestion`                 | GET    | Fetch questions by filter         |
+| `/getQuestionById/`            | GET    | Fetch a specific question by ID   |
+| `/addQuestion`                 | POST   | Add a new question                |
+| `/upvoteQuestion`              | POST   | Upvote a question                 |
+| `/downvoteQuestion`            | POST   | Downvote a question               |
+| `/getQuestionsByTextAndTitle`  | GET    | Fetch questions by title and text |
 
 ### `/tag`
 
@@ -102,13 +103,19 @@ A class diagram for the schema definition is shown below:
 
 ### `/api/community`
 
-| Endpoint                    | Method | Description                      |
-| --------------------------- | ------ | -------------------------------- |
-| `/getCommunity/:communityId`  | GET    | Get a specific community         |
-| `/getAllCommunities`          | GET    | Get all communities              |
-| `/toggleMembership`           | POST   | Join/leave a community           |
-| `/create`                     | POST   | Create a new community           |
-| `/delete/:communityId`        | DELETE | Delete a community          |
+| Endpoint                       | Method | Description                        |
+| ------------------------------ | ------ | ---------------------------------- |
+| `/getCommunity/:communityId`   | GET    | Get a specific community           |
+| `/getAllCommunities`           | GET    | Get all communities                |
+| `/toggleMembership`            | POST   | Join/leave a community             |
+| `/create`                      | POST   | Create a new community             |
+| `/delete/:communityId`         | DELETE | Delete a community                 |
+
+### `/api/notDuplicateQuestion`
+| Endpoint                       | Method | Description                        |
+| ------------------------------ | ------ | ---------------------------------- |
+| `/saveNotDuplicateQuestion`    | POST   | Add a new not duplicate question   |
+
 
 ## OpenAPI specification
 
