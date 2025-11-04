@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Question } from '../types/types';
+import { PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
 
 /**
  * Custom hook to fetch question suggestions based on title and text input
  * Debounces the API calls to avoid excessive requests
  */
 const useQuestionSuggestions = (title: string, text: string = '') => {
-  const [suggestions, setSuggestions] = useState<Question[]>([]);
+  const [suggestions, setSuggestions] = useState<PopulatedDatabaseQuestion[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (title.trim().length < 2) {
+    // Only search if title is at least 3 characters
+    if (title.trim().length < 3) {
       setSuggestions([]);
       setLoading(false);
       return;
@@ -19,22 +20,31 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
     // Set loading immediately to show we're about to search
     setLoading(true);
 
-    // Debounce the API call
+    // Debounce the API call - wait 500ms after user stops typing
     const timeoutId = setTimeout(async () => {
       try {
+        // Build query parameters matching backend expectations
+        // Only include 'text' parameter if it has a value (backend validation rejects empty text)
         const params = new URLSearchParams();
-        if (title.trim()) params.append('title', title.trim());
-        if (text.trim()) params.append('text', text.trim());
-
-        const response = await fetch(
-          `http://localhost:8000/question/getQuestionsByTextAndTitle?${params.toString()}`,
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch suggestions');
+        params.append('title', title.trim());
+        if (text.trim()) {
+          params.append('text', text.trim());
         }
 
-        const data: Question[] = await response.json();
+        // Backend route: GET /api/question/getQuestionsByTextAndTitle
+        const url = `/api/question/getQuestionsByTextAndTitle?${params.toString()}`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
         setSuggestions(data);
       } catch (error) {
         setSuggestions([]);
@@ -43,6 +53,7 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
       }
     }, 500);
 
+    // Cleanup function to cancel the timeout if user keeps typing
     return () => clearTimeout(timeoutId);
   }, [title, text]);
 

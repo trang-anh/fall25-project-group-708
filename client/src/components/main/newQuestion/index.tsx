@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import useNewQuestion from '../../../hooks/useNewQuestion';
 import useQuestionSuggestions from '../../../hooks/useQuestionSuggestions';
-import { saveNotDuplicateQuestion } from '../../../services/notDuplicateQuestionService';
 import Form from '../baseComponents/form';
 import Input from '../baseComponents/input';
 import TextArea from '../baseComponents/textarea';
-import QuestionSuggestions from './QuestionSuggestion';
-import SimilarQuestionsModal from './SimilarQuestionModal';
+import QuestionSuggestion from './QuestionSuggestion';
+import SimilarQuestionModal from './SimilarQuestionModal';
 import './index.css';
 
 /**
@@ -33,100 +32,45 @@ const NewQuestionPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [manuallyClosedSuggestions, setManuallyClosedSuggestions] = useState(false);
   const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
-  const [similarQuestions, setSimilarQuestions] = useState<string[]>([]);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  // Fetch suggestions based on title and text input
+  // Fetch suggestions based on title and text input - this calls the backend
   const { suggestions, loading } = useQuestionSuggestions(title, text);
 
-  // eslint-disable-next-line no-console
-  console.log('NewQuestionPage - Current state:', {
-    title,
-    titleLength: title.length,
-    showSuggestions,
-    loading,
-    suggestionsCount: suggestions.length,
-    suggestions: suggestions.map(s => s.title),
-  });
-
-  // Show suggestions when they're available
+  // Control when to show suggestions based on backend results
   useEffect(() => {
-    // Reset everything when title is too short
     if (title.trim().length < 3) {
       setShowSuggestions(false);
       setManuallyClosedSuggestions(false);
       setAcknowledgedSuggestions(false);
-      setSimilarQuestions([]);
       return;
     }
 
-    // Show suggestions if we're loading or have suggestions, and not manually closed
     const shouldShow = !manuallyClosedSuggestions && (loading || suggestions.length > 0);
-
     setShowSuggestions(shouldShow);
 
-    // Reset acknowledgement when new suggestions appear
-    if (suggestions.length > 0) {
-      const newQuestionIds = suggestions.map(q => q._id);
-      const hasNewSuggestions = JSON.stringify(newQuestionIds) !== JSON.stringify(similarQuestions);
-
-      if (hasNewSuggestions) {
-        console.log('New suggestions detected, resetting acknowledgement');
-        setAcknowledgedSuggestions(false);
-        setSimilarQuestions(newQuestionIds);
-      }
+    // Reset acknowledgement when suggestions change
+    if (suggestions.length > 0 && !manuallyClosedSuggestions) {
+      setAcknowledgedSuggestions(false);
     }
-  }, [suggestions, loading, title, manuallyClosedSuggestions, similarQuestions]);
+  }, [suggestions, loading, title, manuallyClosedSuggestions]);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
-    // Reset manual close flag when user starts typing again
     setManuallyClosedSuggestions(false);
   };
 
   const handleCloseSuggestions = () => {
-    // Only allow closing if acknowledged or no suggestions
     if (acknowledgedSuggestions || suggestions.length === 0) {
       setShowSuggestions(false);
       setManuallyClosedSuggestions(true);
     }
   };
 
-  const handleAcknowledgeSuggestions = async (justification: string) => {
-    try {
-      // Save the not duplicate question justification to backend
-      if (similarQuestions.length > 0 && justification.trim()) {
-        // Get username from localStorage or session
-        const username = localStorage.getItem('username') || 'anonymous';
-
-        const result = await saveNotDuplicateQuestion({
-          questionTitle: title,
-          questionText: text,
-          similarQuestionIds: similarQuestions,
-          justification: justification,
-          username: username,
-        });
-
-        if (!result.success) {
-          // eslint-disable-next-line no-console
-          console.warn('Failed to save not duplicate question justification:', result.error);
-        } else {
-          // eslint-disable-next-line no-console
-          console.log('Successfully saved not duplicate question justification');
-        }
-      }
-
-      setAcknowledgedSuggestions(true);
-      setShowSuggestions(false);
-      setManuallyClosedSuggestions(true);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error saving not duplicate question:', error);
-      // Still allow user to proceed even if saving fails
-      setAcknowledgedSuggestions(true);
-      setShowSuggestions(false);
-      setManuallyClosedSuggestions(true);
-    }
+  const handleAcknowledgeSuggestions = (justification: string) => {
+    setAcknowledgedSuggestions(true);
+    setShowSuggestions(false);
+    setManuallyClosedSuggestions(true);
   };
 
   const handlePostQuestion = () => {
@@ -147,14 +91,12 @@ const NewQuestionPage = () => {
     setShowWarningModal(false);
     setShowSuggestions(true);
     setManuallyClosedSuggestions(false);
-
-    // Scroll to suggestions section
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <>
-      <SimilarQuestionsModal
+      <SimilarQuestionModal
         show={showWarningModal}
         onClose={handleCloseModal}
         onReview={handleReviewSuggestions}
@@ -171,7 +113,7 @@ const NewQuestionPage = () => {
           err={titleErr}
         />
 
-        <QuestionSuggestions
+        <QuestionSuggestion
           suggestions={suggestions}
           loading={loading}
           onClose={handleCloseSuggestions}

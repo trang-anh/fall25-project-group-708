@@ -6,7 +6,7 @@ import { getCurrentUser } from '../services/userService';
 /**
  * custom hook to check authentication status on app mount.
  * this hook is used to detect if a user is already authenticated
- * 
+ *
  * should be called once at the app level, not in individual components.
  */
 const useCheckAuth = () => {
@@ -17,7 +17,7 @@ const useCheckAuth = () => {
     const checkAuth = async () => {
       try {
         const user = await getCurrentUser();
-        
+
         if (user) {
           setUser(user);
           // If user is on login/signup page and already authenticated, redirect to home
@@ -28,7 +28,6 @@ const useCheckAuth = () => {
         }
       } catch (error) {
         // User is not authenticated - this is normal, don't set error
-        console.log('No authenticated session found');
         setUser(null);
       }
     };
