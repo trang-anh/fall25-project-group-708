@@ -1,14 +1,5 @@
 import { useState, useEffect } from 'react';
-
-interface Question {
-  _id: string;
-  title: string;
-  text: string;
-  tags: { name: string }[];
-  asked_by: string;
-  ask_date_time: Date;
-  views: number;
-}
+import { Question } from '../types/types';
 
 /**
  * Custom hook to fetch question suggestions based on title and text input
@@ -36,7 +27,7 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
         if (text.trim()) params.append('text', text.trim());
 
         const response = await fetch(
-          `http://localhost:8000/question/getQuestionsByTextAndTitle?${params.toString()}`
+          `http://localhost:8000/question/getQuestionsByTextAndTitle?${params.toString()}`,
         );
 
         if (!response.ok) {
@@ -46,12 +37,11 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
         const data: Question[] = await response.json();
         setSuggestions(data);
       } catch (error) {
-        console.error('Error fetching question suggestions:', error);
         setSuggestions([]);
       } finally {
         setLoading(false);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [title, text]);

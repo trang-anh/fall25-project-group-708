@@ -35,17 +35,18 @@ const NewQuestionPage = () => {
   const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
   const [similarQuestions, setSimilarQuestions] = useState<string[]>([]);
   const [showWarningModal, setShowWarningModal] = useState(false);
-  
+
   // Fetch suggestions based on title and text input
   const { suggestions, loading } = useQuestionSuggestions(title, text);
 
+  // eslint-disable-next-line no-console
   console.log('NewQuestionPage - Current state:', {
     title,
     titleLength: title.length,
     showSuggestions,
     loading,
     suggestionsCount: suggestions.length,
-    suggestions: suggestions.map(s => s.title)
+    suggestions: suggestions.map(s => s.title),
   });
 
   // Show suggestions when they're available
@@ -61,14 +62,14 @@ const NewQuestionPage = () => {
 
     // Show suggestions if we're loading or have suggestions, and not manually closed
     const shouldShow = !manuallyClosedSuggestions && (loading || suggestions.length > 0);
-    
+
     setShowSuggestions(shouldShow);
-    
+
     // Reset acknowledgement when new suggestions appear
     if (suggestions.length > 0) {
       const newQuestionIds = suggestions.map(q => q._id);
       const hasNewSuggestions = JSON.stringify(newQuestionIds) !== JSON.stringify(similarQuestions);
-      
+
       if (hasNewSuggestions) {
         console.log('New suggestions detected, resetting acknowledgement');
         setAcknowledgedSuggestions(false);
@@ -97,7 +98,7 @@ const NewQuestionPage = () => {
       if (similarQuestions.length > 0 && justification.trim()) {
         // Get username from localStorage or session
         const username = localStorage.getItem('username') || 'anonymous';
-        
+
         const result = await saveNotDuplicateQuestion({
           questionTitle: title,
           questionText: text,
@@ -107,16 +108,19 @@ const NewQuestionPage = () => {
         });
 
         if (!result.success) {
+          // eslint-disable-next-line no-console
           console.warn('Failed to save not duplicate question justification:', result.error);
         } else {
+          // eslint-disable-next-line no-console
           console.log('Successfully saved not duplicate question justification');
         }
       }
-      
+
       setAcknowledgedSuggestions(true);
       setShowSuggestions(false);
       setManuallyClosedSuggestions(true);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error saving not duplicate question:', error);
       // Still allow user to proceed even if saving fails
       setAcknowledgedSuggestions(true);
@@ -131,7 +135,7 @@ const NewQuestionPage = () => {
       setShowWarningModal(true);
       return;
     }
-    
+
     postQuestion();
   };
 
@@ -143,7 +147,7 @@ const NewQuestionPage = () => {
     setShowWarningModal(false);
     setShowSuggestions(true);
     setManuallyClosedSuggestions(false);
-    
+
     // Scroll to suggestions section
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -156,7 +160,7 @@ const NewQuestionPage = () => {
         onReview={handleReviewSuggestions}
         suggestionCount={suggestions.length}
       />
-      
+
       <Form>
         <Input
           title={'Question Title'}
@@ -166,7 +170,7 @@ const NewQuestionPage = () => {
           setState={handleTitleChange}
           err={titleErr}
         />
-        
+
         <QuestionSuggestions
           suggestions={suggestions}
           loading={loading}
@@ -174,7 +178,7 @@ const NewQuestionPage = () => {
           onAcknowledge={handleAcknowledgeSuggestions}
           show={showSuggestions}
         />
-        
+
         <TextArea
           title={'Question Text'}
           hint={'Add details'}
@@ -204,9 +208,7 @@ const NewQuestionPage = () => {
           ))}
         </select>
         <div className='btn_indicator_container'>
-          <button
-            className='form_postBtn'
-            onClick={handlePostQuestion}>
+          <button className='form_postBtn' onClick={handlePostQuestion}>
             Post Question
           </button>
           <div className='mandatory_indicator'>* indicates mandatory fields</div>
