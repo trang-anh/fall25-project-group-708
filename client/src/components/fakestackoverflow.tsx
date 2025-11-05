@@ -1,4 +1,4 @@
-import { JSX, useState } from 'react';
+import { JSX, useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './layout';
 import Login from './auth/login';
@@ -23,16 +23,23 @@ import CommunityPage from './main/communities/communityPage';
 import AllCollectionsPage from './main/collections/allCollectionsPage';
 import CollectionPage from './main/collections/collectionPage';
 import NewCollectionPage from './main/collections/newCollectionPage';
+import { getUserByUsername } from '../services/userService';
 
 const ProtectedRoute = ({
   user,
   socket,
+  isProcessingOAuth,
   children,
 }: {
   user: SafeDatabaseUser | null;
   socket: FakeSOSocket | null;
+  isProcessingOAuth: boolean;
   children: JSX.Element;
 }) => {
+  if (isProcessingOAuth) {
+    return <div>Processing login...</div>;
+  }
+
   if (!user || !socket) {
     return <Navigate to='/' />;
   }
@@ -45,7 +52,43 @@ const ProtectedRoute = ({
  * It manages the state for search terms and the main title.
  */
 const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
+  // Check for OAuth callback params during initialization
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasOAuthParams = !!(urlParams.get('username') || urlParams.get('githubId'));
+
   const [user, setUser] = useState<SafeDatabaseUser | null>(null);
+  const [isProcessingOAuth, setIsProcessingOAuth] = useState(hasOAuthParams);
+
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const currentUrlParams = new URLSearchParams(window.location.search);
+      const username = currentUrlParams.get('username');
+      const githubId = currentUrlParams.get('githubId');
+
+      if (isProcessingOAuth && !username && !githubId) {
+        setIsProcessingOAuth(false);
+        return;
+      }
+
+      if ((username || githubId) && !user && isProcessingOAuth) {
+        try {
+          if (username) {
+            const userData = await getUserByUsername(username);
+            setUser(userData);
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        } catch (error) {
+          window.history.replaceState({}, '', window.location.pathname);
+        } finally {
+          setIsProcessingOAuth(false);
+        }
+      }
+    };
+
+    if (isProcessingOAuth) {
+      handleOAuthCallback();
+    }
+  }, [user, isProcessingOAuth]);
 
   return (
     <LoginContext.Provider value={{ setUser }}>
@@ -57,7 +100,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
         {
           <Route
             element={
-              <ProtectedRoute user={user} socket={socket}>
+              <ProtectedRoute user={user} socket={socket} isProcessingOAuth={isProcessingOAuth}>
                 <Layout />
               </ProtectedRoute>
             }>
