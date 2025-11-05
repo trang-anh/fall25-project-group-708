@@ -32,7 +32,6 @@ const userController = (socket: FakeSOSocket) => {
       ...requestUser,
       dateJoined: new Date(),
       biography: requestUser.biography ?? '',
-      totalPoints: 0,
     };
 
     try {
