@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- CRITICAL: Add this script BEFORE any stylesheets to prevent flash -->
+  <script>
+    (function() {
+      // Get saved theme from localStorage
+      const savedTheme = localStorage.getItem('theme');
+      
+      // Determine if dark mode should be enabled
+      const isDark = savedTheme === 'dark' || 
+                     (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      // Apply theme immediately (before page renders)
+      if (isDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  
+  <!-- Your CSS files go here -->
+  <link rel="stylesheet" href="/src/styles/theme.css" />
+  <link rel="stylesheet" href="/src/index.css" />
+  
+  <title>Fake Stack Overflow</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
+
+<!-- 
+  HOW THIS WORKS:
+  
+  1. Script runs IMMEDIATELY (before page renders)
+  2. Checks localStorage for saved theme preference
+  3. Falls back to system preference if no saved theme
+  4. Sets data-theme attribute on <html> element
+  5. CSS uses [data-theme="dark"] selector to apply dark styles
+  6. Page renders with correct theme (no flash!)
+  
+  IMPORTANT: This script must be:
+  - In the <head>
+  - Before any <link> stylesheets
+  - Not async or defer
+  - Pure JavaScript (no React)
+-->

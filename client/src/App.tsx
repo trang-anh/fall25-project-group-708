@@ -3,6 +3,7 @@ import { FakeSOSocket } from './types/types';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import FakeStackOverflow from './components/fakestackoverflow';
+import './styles/theme.css';
 
 // ensures that the socket connections work properly in production as well.
 const SERVER_URL: string | undefined = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
