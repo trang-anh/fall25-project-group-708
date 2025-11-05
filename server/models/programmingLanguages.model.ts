@@ -11,9 +11,7 @@ import { DabataseProgrammingLanguage } from '../types/types';
  *
  * @type {Model<DabataseProgrammingLanguage>}
  */
-const MessageModel: Model<DabataseProgrammingLanguage> = mongoose.model<DabataseProgrammingLanguage>(
-  'Message',
-  programmingLanguageSchema,
-);
+const MessageModel: Model<DabataseProgrammingLanguage> =
+  mongoose.model<DabataseProgrammingLanguage>('Message', programmingLanguageSchema);
 
 export default MessageModel;
