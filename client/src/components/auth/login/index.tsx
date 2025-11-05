@@ -2,12 +2,13 @@ import './index.css';
 import FakeStackOverflowLogo from './FakeStackOverflowLogo';
 import { Link } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import DarkModeToggle from '../../darkModeToggle/DarkModeToggle';
 
 // use environment variable or fallback to localhost
 const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
- * Renders a modern login page Github login option
+ * Renders a login page Github login option
  */
 const Login = () => {
   const {
@@ -43,6 +44,7 @@ const Login = () => {
         <Link to='/signup' className='create-account-link'>
           Create an account
         </Link>
+        <DarkModeToggle />
       </div>
 
       {/* Main Content */}

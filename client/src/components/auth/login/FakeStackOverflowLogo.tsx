@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export type FakeStackOverflowLogoProps = {
   color?: string; // CSS color (defaults to 'currentColor')
@@ -13,18 +13,45 @@ export type FakeStackOverflowLogoProps = {
 /**
  * FakeStackOverflowLogo
  * - Pure SVG, no external assets
- * - Icon uses 'currentColor' by default (you can override via `color` prop)
+ * - Automatically adapts to dark mode
+ * - Icon color changes based on theme
  * - Optional wordmark rendered to the right
  */
 const FakeStackOverflowLogo: React.FC<FakeStackOverflowLogoProps> = ({
-  color = 'currentColor',
+  color,
   size = 64,
   withWordmark = true,
   wordmarkColor,
-  wordmarkFontFamily = 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji',
+  wordmarkFontFamily = '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif',
   className,
   title = 'Fake Stack Overflow Logo',
 }) => {
+  const [isDark, setIsDark] = useState(false);
+
+  // Detect theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      setIsDark(theme === 'dark');
+    };
+
+    // Check initial theme
+    checkTheme();
+
+    // Watch for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Determine color based on theme if not explicitly set
+  const logoColor = color || (isDark ? '#f5f5f7' : '#1d1d1f');
+  const wmColor = wordmarkColor || logoColor;
+
   const icon = (
     <svg
       xmlns='http://www.w3.org/2000/svg'
@@ -34,7 +61,7 @@ const FakeStackOverflowLogo: React.FC<FakeStackOverflowLogoProps> = ({
       aria-label={title}
       role='img'
       className={className}
-      style={{ color }}>
+      style={{ color: logoColor, transition: 'color 0.3s ease' }}>
       <g fill='currentColor'>
         <path d='M124 80c-22 0-40 18-40 40v28c0 7-6 12-12 16l-22 13c-10 6-7 21 5 23l29 4c27 4 54 4 81 0l190-28c18-2 32-18 32-36v-20c0-22-18-40-40-40H124z' />
         <path d='M108 210c-22 0-40 18-40 40v30c0 7-6 12-12 16l-22 13c-10 6-7 21 5 23l29 4c27 4 54 4 81 0l210-30c18-2 32-18 32-36v-20c0-22-18-40-40-40H108z' />
@@ -44,8 +71,6 @@ const FakeStackOverflowLogo: React.FC<FakeStackOverflowLogoProps> = ({
   );
 
   if (!withWordmark) return icon;
-
-  const wmColor = wordmarkColor || color;
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
@@ -57,6 +82,7 @@ const FakeStackOverflowLogo: React.FC<FakeStackOverflowLogoProps> = ({
           lineHeight: 1.05,
           color: wmColor,
           fontFamily: wordmarkFontFamily,
+          transition: 'color 0.3s ease',
         }}
         aria-hidden='true'>
         <span style={{ fontSize: size * 0.42, fontWeight: 700 }}>Fake</span>

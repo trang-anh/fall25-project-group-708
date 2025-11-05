@@ -1,9 +1,43 @@
+/* Login Page CSS - Complete with Dark Mode Support */
+
+/* Define local variables for the login page */
+:root {
+  --login-bg: #ffffff;
+  --login-text: #1d1d1f;
+  --login-text-secondary: #86868b;
+  --login-input-bg: #ffffff;
+  --login-input-border: #d2d2d7;
+  --login-card-bg: #ffffff;
+  --login-hover-bg: #f5f5f7;
+  --login-button-bg: #d1d1d1;
+  --login-button-hover: #c1c1c1;
+  --login-border: #e5e5e5;
+}
+
+[data-theme="dark"] {
+  --login-bg: #1d1d1f;
+  --login-text: #f5f5f7;
+  --login-text-secondary: #98989d;
+  --login-input-bg: #2c2c2e;
+  --login-input-border: #3a3a3c;
+  --login-card-bg: #2c2c2e;
+  --login-hover-bg: #3a3a3c;
+  --login-button-bg: #3a3a3c;
+  --login-button-hover: #48484a;
+  --login-border: #38383a;
+}
+
 /* Page container */
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: var(--login-bg) !important;
+  color: var(--login-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Header */
@@ -12,7 +46,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 40px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--login-border);
+  transition: border-color 0.3s ease;
+}
+
+.login-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .back-button {
@@ -21,27 +62,30 @@
   gap: 8px;
   background: none;
   border: none;
-  color: #333;
+  color: var(--login-text);
   font-size: 14px;
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  text-decoration: none;
 }
 
 .back-button:hover {
-  background-color: #f5f5f5;
+  background-color: var(--login-hover-bg);
 }
 
 .create-account-link {
-  color: #333;
+  color: var(--login-text);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  transition: color 0.2s;
 }
 
 .create-account-link:hover {
   text-decoration: underline;
+  color: #007bff;
 }
 
 /* Main content */
@@ -54,19 +98,12 @@
   padding: 40px 20px;
 }
 
-.avatar-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #c4c4c4;
-  margin-bottom: 20px;
-}
-
 .main-heading {
   font-size: 28px;
-  color: #333;
+  color: var(--login-text);
   margin-bottom: 40px;
   font-weight: 400;
+  transition: color 0.3s ease;
 }
 
 /* Two column layout */
@@ -76,6 +113,7 @@
   align-items: center;
   max-width: 900px;
   width: 100%;
+  margin-top: 40px;
 }
 
 /* Left column - Traditional login */
@@ -87,9 +125,10 @@
 
 .section-heading {
   font-size: 20px;
-  color: #333;
+  color: var(--login-text);
   margin-bottom: 30px;
   font-weight: 400;
+  transition: color 0.3s ease;
 }
 
 .form-group {
@@ -99,26 +138,31 @@
 .form-label {
   display: block;
   font-size: 14px;
-  color: #333;
+  color: var(--login-text);
   margin-bottom: 8px;
   font-weight: 400;
+  transition: color 0.3s ease;
 }
 
 .input-text {
   width: 100%;
   padding: 12px 16px;
   font-size: 14px;
-  border: 1px solid #d1d1d1;
+  border: 1px solid var(--login-input-border);
   border-radius: 6px;
-  background-color: #fff;
-  color: #333;
+  background-color: var(--login-input-bg);
+  color: var(--login-text);
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .input-text:focus {
   outline: none;
-  border-color: #666;
+  border-color: #007bff;
+}
+
+.input-text::placeholder {
+  color: var(--login-text-secondary);
 }
 
 .password-wrapper {
@@ -132,32 +176,38 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #666;
+  color: var(--login-text-secondary);
   cursor: pointer;
   font-size: 14px;
   padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: var(--login-text);
 }
 
 .login-button {
   width: 100%;
   padding: 12px;
   font-size: 14px;
-  background-color: #d1d1d1;
-  color: #666;
+  background-color: var(--login-button-bg);
+  color: var(--login-text);
   border: none;
   border-radius: 24px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
   font-weight: 500;
   margin-top: 10px;
 }
 
 .login-button:hover {
-  background-color: #c1c1c1;
+  background-color: var(--login-button-hover);
 }
 
 .login-button:active {
-  background-color: #b1b1b1;
+  background-color: var(--login-button-hover);
+  filter: brightness(0.9);
 }
 
 /* Divider */
@@ -165,9 +215,10 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  color: #666;
+  color: var(--login-text-secondary);
   font-size: 14px;
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 /* Right column - Social login */
@@ -184,9 +235,9 @@
   gap: 12px;
   padding: 12px 24px;
   font-size: 14px;
-  background-color: #fff;
-  color: #333;
-  border: 1px solid #d1d1d1;
+  background-color: var(--login-card-bg);
+  color: var(--login-text);
+  border: 1px solid var(--login-input-border);
   border-radius: 24px;
   cursor: pointer;
   transition: all 0.2s;
@@ -194,12 +245,13 @@
 }
 
 .social-button:hover {
-  background-color: #f9f9f9;
-  border-color: #999;
+  background-color: var(--login-hover-bg);
+  border-color: var(--login-input-border);
 }
 
 .social-button:active {
-  background-color: #f0f0f0;
+  background-color: var(--login-hover-bg);
+  filter: brightness(0.95);
 }
 
 .social-icon {
@@ -211,16 +263,22 @@
 .login-footer {
   text-align: center;
   padding: 20px;
-  color: #666;
+  color: var(--login-text-secondary);
   font-size: 13px;
+  transition: color 0.3s ease;
 }
 
 .footer-link {
-  color: #333;
+  color: var(--login-text);
   text-decoration: underline;
   cursor: pointer;
   margin-bottom: 10px;
   display: inline-block;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #007bff;
 }
 
 .footer-text {
@@ -228,8 +286,13 @@
 }
 
 .footer-text a {
-  color: #333;
+  color: var(--login-text);
   text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.footer-text a:hover {
+  color: #007bff;
 }
 
 .error-message {
@@ -249,4 +312,25 @@
   .login-header {
     padding: 15px 20px;
   }
+
+  .login-header-right {
+    flex-wrap: wrap;
+  }
+}
+
+/* Ensure dark mode works */
+[data-theme="dark"] .container {
+  background-color: #1d1d1f !important;
+}
+
+[data-theme="dark"] .login-content,
+[data-theme="dark"] .login-header,
+[data-theme="dark"] .login-footer {
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .section-heading,
+[data-theme="dark"] .form-label,
+[data-theme="dark"] .main-heading {
+  color: #f5f5f7;
 }
