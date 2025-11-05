@@ -29,6 +29,7 @@ export const saveUser = async (user: User): Promise<UserResponse> => {
       dateJoined: result.dateJoined,
       biography: result.biography,
       githubId: result.githubId,
+      totalPoints: result.totalPoints,
     };
 
     return safeUser;
