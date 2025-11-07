@@ -1,4 +1,7 @@
 import express, { Request, Response, Router } from 'express';
+import { uploadAvatar, deleteAvatar } from './avatar.controller';
+import avatarUpload from '../utils/multer.config';
+
 import {
   UserRequest,
   User,
@@ -201,6 +204,8 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/getUsers', getUsers);
   router.delete('/deleteUser/:username', deleteUser);
   router.patch('/updateBiography', updateBiography);
+  router.post('/avatar', avatarUpload.single('avatar'), uploadAvatar);
+  router.delete('/avatar', deleteAvatar);
   return router;
 };
 

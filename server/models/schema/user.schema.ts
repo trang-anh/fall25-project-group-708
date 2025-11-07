@@ -8,9 +8,10 @@ import { Schema } from 'mongoose';
  * - `username`: The username of the user.
  * - `password`: The encrypted password securing the user's account.
  * - `dateJoined`: The date the user joined the platform.
- * - `biography`: The biography/description of the user
- * - `githubId`: The user's Github ID
- * - `total_points`: The user point(s) for the
+ * - `biography`: The biography/description of the user.
+ * - `githubId`: The user's Github ID.
+ * - `total_points`: The user point(s) for the user.
+ * - `avatarUrl`: URL for the users' avatar.
  */
 const userSchema: Schema = new Schema(
   {
@@ -37,6 +38,10 @@ const userSchema: Schema = new Schema(
     totalPoints: {
       type: Number,
       default: 0,
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
     },
   },
   { collection: 'User' },

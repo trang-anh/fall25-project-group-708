@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './index.css';
 import { NavLink, useLocation } from 'react-router-dom';
 import useUserContext from '../../../hooks/useUserContext';
+import Avatar from '../../avatar';
 
 /**
  * Sidebar navigation with user profile, hierarchical menu,
@@ -27,7 +28,9 @@ const SideBarNav = () => {
     <div id='sideBarNav' className='sideBarNav'>
       {/* User Profile Section */}
       <div className='user-profile'>
-        <div className='user-avatar'>{user.username.charAt(0).toUpperCase()}</div>
+        <div className='user-avatar'>
+          <Avatar username={user.username} avatarUrl={user.avatarUrl} size='medium' />
+        </div>
         <div className='user-info'>
           <div className='user-role'>User</div>
           <div className='user-name'>{user.username}</div>
