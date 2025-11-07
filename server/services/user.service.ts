@@ -158,6 +158,23 @@ export const updateUser = async (
  * @param username - The username to be rewarded/punished.
  * @param points - The number of points to be changed.
  */
-export const updateUserTotalPoints = async (username: string, points: number) => {
-  await UserModel.updateOne({ username }, { $inc: { totalPoints: points } });
+export const updateUserTotalPoints = async (
+  username: string,
+  points: number,
+): Promise<UserResponse> => {
+  try {
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { username },
+      { $inc: { totalPoints: points } },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      throw Error('Error updating points for user');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    return { error: `Error occurred when updating user points: ${error}` };
+  }
 };

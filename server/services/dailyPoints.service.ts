@@ -32,7 +32,7 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
     const blocked = pointsChange - applied;
 
     await DailyPointsModel.updateOne(
-      { username, datw: today },
+      { username, date: today },
       {
         $inc: {
           total_gained: applied,
