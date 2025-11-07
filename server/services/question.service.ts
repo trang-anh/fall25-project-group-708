@@ -24,6 +24,7 @@ import {
   sortQuestionsByNewest,
   sortQuestionsByUnanswered,
 } from '../utils/sort.util';
+import addRegisterPoints from './registerPoints.service';
 
 /**
  * Checks if keywords exist in a question's title or text.
@@ -164,6 +165,9 @@ export const saveQuestion = async (question: Question): Promise<QuestionResponse
   try {
     const result: DatabaseQuestion = await QuestionModel.create(question);
 
+    // Adding points
+    await addRegisterPoints(question.askedBy, 5, 'POST_QUESTION');
+
     return result;
   } catch (error) {
     return { error: 'Error when saving a question' };
@@ -240,15 +244,27 @@ export const addVoteToQuestion = async (
     }
 
     let msg = '';
+    //determine if vote has been added or removed, do nothing if removed
+    let wasAdded = false;
 
     if (voteType === 'upvote') {
-      msg = result.upVotes.includes(username)
-        ? 'Question upvoted successfully'
-        : 'Upvote cancelled successfully';
+      wasAdded = result.upVotes.includes(username);
+      msg = wasAdded ? 'Question upvoted successfully' : 'Upvote cancelled successfully';
     } else {
-      msg = result.downVotes.includes(username)
-        ? 'Question downvoted successfully'
-        : 'Downvote cancelled successfully';
+      wasAdded = result.downVotes.includes(username);
+      msg = wasAdded ? 'Question downvoted successfully' : 'Downvote cancelled successfully';
+    }
+
+    // POINT LOGIC
+    if (wasAdded) {
+      if (voteType === 'upvote') {
+        //upvoter earns points
+        await addRegisterPoints(username, 2, 'UPVOTE_OTHERS');
+      } else {
+        if (result.askedBy !== username) {
+          await addRegisterPoints(username, -1, 'RECEIVE_DOWNVOTES');
+        }
+      }
     }
 
     return {
