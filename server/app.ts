@@ -12,6 +12,7 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'yaml';
 import * as fs from 'fs';
+import path from 'path';
 
 import answerController from './controllers/answer.controller';
 import questionController from './controllers/question.controller';
@@ -71,6 +72,20 @@ process.on('SIGINT', async () => {
 });
 
 app.use(express.json());
+
+// construct the path for uploads
+const uploadsPath = path.join(process.cwd(), 'uploads');
+const avatarsPath = path.join(uploadsPath, 'avatars');
+
+// Create directories if they don't exist
+if (!fs.existsSync(avatarsPath)) {
+  fs.mkdirSync(avatarsPath, { recursive: true });
+}
+
+// Serve static files
+app.use('/uploads', express.static(uploadsPath));
+
+
 
 try {
   app.use(

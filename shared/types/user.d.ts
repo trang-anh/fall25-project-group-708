@@ -24,6 +24,7 @@ export interface User extends UserCredentials {
   biography?: string;
   githubId?: string;
   totalPoints?: number;
+  avatarUrl?: string;
 }
 
 /**
@@ -91,4 +92,48 @@ export interface UpdateBiographyRequest extends Request {
     username: string;
     biography: string;
   };
+}
+
+/**
+ * Express request for avatar upload operations
+ * - `username`: the username whose avatar is being updated
+ * - `file`: the uploaded file (handled by multer)
+ */
+export interface AvatarUploadRequest extends Request {
+  body: {
+    username: string;
+  };
+  file?: Express.Multer.File;
+}
+
+/**
+ * Express request for avatar removal
+ */
+export interface AvatarDeleteRequest extends Request {
+  body: {
+    username: string;
+  };
+}
+
+/**
+ * Represents the response for avatar upload operations.
+ * - `avatarUrl`: The URL/path to the uploaded avatar.
+ * - `message`: Success message.
+ * - `user`: Optional user information with updated avatar.
+ */
+export interface AvatarUploadResponse {
+  message: string;
+  avatarUrl: string;
+  user?: {
+    username: string;
+    avatarUrl: string;
+  };
+}
+
+/**
+ * Represents the response for avatar deletion operations.
+ * - `message`: Success message.
+ */
+export interface AvatarDeleteResponse {
+  message: string;
 }

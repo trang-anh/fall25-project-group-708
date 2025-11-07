@@ -1,5 +1,6 @@
 import './index.css';
 import { SafeDatabaseUser } from '../../../../types/types';
+import Avatar from '../../../avatar';
 
 /**
  * Interface representing the props for the User component.
@@ -13,22 +14,41 @@ interface UserProps {
 }
 
 /**
- * User component renders the details of a user including its username and dateJoined.
- * Clicking on the component triggers the handleUserPage function,
- * and clicking on a tag triggers the clickTag function.
+ * User component renders the details of a user including its username, points, and dateJoined.
+ * Clicking on the component triggers the handleUserPage function.
  *
  * @param user - The user object containing user details.
  */
 const UserCardView = (props: UserProps) => {
   const { user, handleUserCardViewClickHandler } = props;
 
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const points = user.totalPoints || 0;
+
   return (
-    <div className='user right_padding' onClick={() => handleUserCardViewClickHandler(user)}>
-      <div className='user_mid'>
-        <div className='userUsername'>{user.username}</div>
+    <div className='user-card-grid' onClick={() => handleUserCardViewClickHandler(user)}>
+      <div className='user-avatar-large'>
+        <Avatar username={user.username} avatarUrl={user.avatarUrl} size='xlarge' showBorder />
       </div>
-      <div className='userStats'>
-        <div>joined {new Date(user.dateJoined).toUTCString()}</div>
+
+      <h3 className='user-name-large'>{user.username}</h3>
+      <p className='user-join-date'>{formatDate(user.dateJoined)}</p>
+
+      <div className='user-stats-grid'>
+        <div className='stat-box'>
+          <span className='stat-label-small'>Total Points</span>
+          <span className='stat-value-large'>{points}</span>
+        </div>
       </div>
     </div>
   );
