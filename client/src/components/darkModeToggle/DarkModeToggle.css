@@ -1,0 +1,92 @@
+/* Dark Mode Toggle Button */
+.dark-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--button-gray);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+}
+
+.dark-mode-toggle:hover {
+  background: var(--button-gray-hover);
+  transform: translateY(-1px);
+}
+
+.dark-mode-toggle:active {
+  transform: translateY(0);
+  background: var(--button-gray-active);
+}
+
+.dark-mode-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.dark-mode-toggle:hover svg {
+  transform: rotate(15deg);
+}
+
+/* Alternative: Circular toggle with animation */
+.dark-mode-toggle.circular {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+/* Toggle switch style (optional alternative design) */
+.theme-toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  background: var(--button-gray);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: none;
+  padding: 0;
+}
+
+.theme-toggle-switch:hover {
+  background: var(--button-gray-hover);
+}
+
+.theme-toggle-switch-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-switch-slider svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-secondary);
+}
+
+.theme-toggle-switch.active .theme-toggle-switch-slider {
+  transform: translateX(24px);
+}
+
+[data-theme="dark"] .theme-toggle-switch-slider {
+  background: #2c2c2e;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dark-mode-toggle {
+    width: 36px;
+    height: 36px;
+  }
+}

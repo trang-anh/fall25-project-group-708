@@ -22,6 +22,7 @@ const notDuplicateQuestionSchema: Schema = new Schema(
     },
     createdAt: {
       type: Date,
+      default: Date.now,
     },
   },
   { collection: 'NotDuplicateQuestion' },

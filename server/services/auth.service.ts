@@ -122,6 +122,7 @@ export const findOrCreateGithubUser = async (profile: GithubUserProfile): Promis
       dateJoined: user.dateJoined,
       biography: user.biography,
       githubId: user.githubId,
+      totalPoints: user.totalPoints,
     };
 
     return safeUser;

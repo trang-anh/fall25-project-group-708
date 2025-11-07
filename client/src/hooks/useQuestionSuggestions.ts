@@ -30,10 +30,9 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
         if (text.trim()) {
           params.append('text', text.trim());
         }
-        
+
         // Backend route: GET /api/question/getQuestionsByTextAndTitle
         const url = `/api/question/getQuestionsByTextAndTitle?${params.toString()}`;
-        console.log('🔍 Fetching suggestions from:', url);
 
         const response = await fetch(url, {
           method: 'GET',
@@ -42,21 +41,17 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Response not OK:', response.status, errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('✅ Suggestions received:', data.length, 'questions');
         setSuggestions(data);
-        
-      } catch (error: any) {
-        console.error('❌ Error fetching question suggestions:', error);
+      } catch (error) {
         setSuggestions([]);
       } finally {
         setLoading(false);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     // Cleanup function to cancel the timeout if user keeps typing
     return () => clearTimeout(timeoutId);

@@ -1,160 +1,336 @@
-/* Container styles */
+/* Login Page CSS - Complete with Dark Mode Support */
+
+/* Define local variables for the login page */
+:root {
+  --login-bg: #ffffff;
+  --login-text: #1d1d1f;
+  --login-text-secondary: #86868b;
+  --login-input-bg: #ffffff;
+  --login-input-border: #d2d2d7;
+  --login-card-bg: #ffffff;
+  --login-hover-bg: #f5f5f7;
+  --login-button-bg: #d1d1d1;
+  --login-button-hover: #c1c1c1;
+  --login-border: #e5e5e5;
+}
+
+[data-theme="dark"] {
+  --login-bg: #1d1d1f;
+  --login-text: #f5f5f7;
+  --login-text-secondary: #98989d;
+  --login-input-bg: #2c2c2e;
+  --login-input-border: #3a3a3c;
+  --login-card-bg: #2c2c2e;
+  --login-hover-bg: #3a3a3c;
+  --login-button-bg: #3a3a3c;
+  --login-button-hover: #48484a;
+  --login-border: #38383a;
+}
+
+/* Page container */
 .container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background-color: #f7f7f7;
-  padding: 20px;
+  background-color: var(--login-bg) !important;
+  color: var(--login-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Heading styles */
-.container h2 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 10px;
+/* Header */
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--login-border);
+  transition: border-color 0.3s ease;
 }
 
-.container h3 {
-  font-size: 1.5rem;
-  color: #555;
+.login-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--login-text);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background-color: var(--login-hover-bg);
+}
+
+.create-account-link {
+  color: var(--login-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.create-account-link:hover {
+  text-decoration: underline;
+  color: #007bff;
+}
+
+/* Main content */
+.login-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.main-heading {
+  font-size: 28px;
+  color: var(--login-text);
+  margin-bottom: 40px;
+  font-weight: 400;
+  transition: color 0.3s ease;
+}
+
+/* Two column layout */
+.login-wrapper {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  max-width: 900px;
+  width: 100%;
+  margin-top: 40px;
+}
+
+/* Left column - Traditional login */
+.login-form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-heading {
+  font-size: 20px;
+  color: var(--login-text);
+  margin-bottom: 30px;
+  font-weight: 400;
+  transition: color 0.3s ease;
+}
+
+.form-group {
   margin-bottom: 20px;
 }
 
-.container h4 {
-  font-size: 1rem;
-  color: #666;
-  margin: 15px 0 5px; /* Adjusted for better spacing */
-  text-align: left; /* Align text to the left */
-  width: 100%; /* Ensure alignment respects the form's width */
-  max-width: 400px; /* Match the form's max width */
+.form-label {
+  display: block;
+  font-size: 14px;
+  color: var(--login-text);
+  margin-bottom: 8px;
+  font-weight: 400;
+  transition: color 0.3s ease;
 }
 
-/* Form styles */
-form {
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* Input styles */
 .input-text {
-  padding: 12px;
-  font-size: 16px;
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #fff;
-  color: #333;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid var(--login-input-border);
+  border-radius: 6px;
+  background-color: var(--login-input-bg);
+  color: var(--login-text);
   box-sizing: border-box;
-  transition:
-    border-color 0.3s,
-    box-shadow 0.3s;
+  transition: all 0.2s;
 }
 
 .input-text:focus {
+  outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
-/* Button styles */
-.login-button {
-  padding: 12px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #fff;
+.input-text::placeholder {
+  color: var(--login-text-secondary);
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  border-radius: 5px;
+  color: var(--login-text-secondary);
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 14px;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: var(--login-text);
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  background-color: var(--login-button-bg);
+  color: var(--login-text);
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  margin-top: 10px;
 }
 
 .login-button:hover {
-  background-color: #0056b3;
+  background-color: var(--login-button-hover);
 }
 
 .login-button:active {
-  background-color: #003f7f;
+  background-color: var(--login-button-hover);
+  filter: brightness(0.9);
 }
 
-/* Divider Style */
-.divider {
-  width: 100%;
-  max-width: 400px;
+/* Divider */
+.vertical-divider {
   display: flex;
   align-items: center;
-  text-align: center;
-  margin: 20px 0;
-}
-
-.divider::before, 
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #ddd;
-}
-
-.divider span {
-  padding: 0 10px;
-  color: #666;
+  gap: 20px;
+  color: var(--login-text-secondary);
   font-size: 14px;
-  font-weight: 500
+  font-weight: 500;
+  transition: color 0.3s ease;
 }
 
-/* GitHUub button style */
-.github-button {
-  width: auto;
-  max-width: 250px;
+/* Right column - Social login */
+.social-login-section {
+  display: flex;
+  align-items: center;
+}
+
+.social-button {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 10px 20px;
+  gap: 12px;
+  padding: 12px 24px;
   font-size: 14px;
-  background-color: #24292e;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer; 
-  transition: background-color 0.3s;
-  font-weight: 600;
+  background-color: var(--login-card-bg);
+  color: var(--login-text);
+  border: 1px solid var(--login-input-border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 
-.github-button:hover {
-  background-color: #1b1b1b;
+.social-button:hover {
+  background-color: var(--login-hover-bg);
+  border-color: var(--login-input-border);
 }
 
-.github-button:active {
-  background-color: #0d1117;
+.social-button:active {
+  background-color: var(--login-hover-bg);
+  filter: brightness(0.95);
 }
 
-.github-icon {
+.social-icon {
   width: 20px;
   height: 20px;
 }
 
-/* Signup link styles */
-.signup-link {
-  margin-top: 30px; /* Increased spacing */
-  font-size: 14px;
-  color: #007bff;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.3s;
-  text-align: center; /* Center the link */
+/* Footer */
+.login-footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--login-text-secondary);
+  font-size: 13px;
+  transition: color 0.3s ease;
 }
 
-.signup-link:hover {
-  color: #0056b3;
+.footer-link {
+  color: var(--login-text);
   text-decoration: underline;
+  cursor: pointer;
+  margin-bottom: 10px;
+  display: inline-block;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #007bff;
+}
+
+.footer-text {
+  margin-top: 10px;
+}
+
+.footer-text a {
+  color: var(--login-text);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.footer-text a:hover {
+  color: #007bff;
 }
 
 .error-message {
-  color: red;
-  font-size: 14px;
-  margin-top: 20px;
+  color: #d93025;
+  font-size: 13px;
+  margin-top: 10px;
   text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .login-header {
+    padding: 15px 20px;
+  }
+
+  .login-header-right {
+    flex-wrap: wrap;
+  }
+}
+
+/* Ensure dark mode works */
+[data-theme="dark"] .container {
+  background-color: #1d1d1f !important;
+}
+
+[data-theme="dark"] .login-content,
+[data-theme="dark"] .login-header,
+[data-theme="dark"] .login-footer {
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .section-heading,
+[data-theme="dark"] .form-label,
+[data-theme="dark"] .main-heading {
+  color: #f5f5f7;
 }

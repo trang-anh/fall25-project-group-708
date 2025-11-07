@@ -6,13 +6,16 @@ const REACT_APP_SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localho
  * @returns Promise with partners data
  */
 export const getPartnerMatches = async (username: string) => {
-  const response = await fetch(`${REACT_APP_SERVER_URL}/api/partner/getPotentialPartners/${username}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    `${REACT_APP_SERVER_URL}/api/partner/getPotentialPartners/${username}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     },
-    credentials: 'include',
-  });
+  );
 
   if (!response.ok) {
     const error = await response.json();
@@ -52,13 +55,16 @@ export const sendConnectionRequest = async (fromUsername: string, toUsername: st
  * @returns Promise with connection requests data
  */
 export const getConnectionRequests = async (username: string) => {
-  const response = await fetch(`${REACT_APP_SERVER_URL}/api/partner/getConnectionRequests/${username}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    `${REACT_APP_SERVER_URL}/api/partner/getConnectionRequests/${username}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     },
-    credentials: 'include',
-  });
+  );
 
   if (!response.ok) {
     const error = await response.json();

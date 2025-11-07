@@ -33,7 +33,7 @@ const NewQuestionPage = () => {
   const [manuallyClosedSuggestions, setManuallyClosedSuggestions] = useState(false);
   const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
-  
+
   // Fetch suggestions based on title and text input - this calls the backend
   const { suggestions, loading } = useQuestionSuggestions(title, text);
 
@@ -48,7 +48,7 @@ const NewQuestionPage = () => {
 
     const shouldShow = !manuallyClosedSuggestions && (loading || suggestions.length > 0);
     setShowSuggestions(shouldShow);
-    
+
     // Reset acknowledgement when suggestions change
     if (suggestions.length > 0 && !manuallyClosedSuggestions) {
       setAcknowledgedSuggestions(false);
@@ -79,7 +79,7 @@ const NewQuestionPage = () => {
       setShowWarningModal(true);
       return;
     }
-    
+
     postQuestion();
   };
 
@@ -102,7 +102,7 @@ const NewQuestionPage = () => {
         onReview={handleReviewSuggestions}
         suggestionCount={suggestions.length}
       />
-      
+
       <Form>
         <Input
           title={'Question Title'}
@@ -112,7 +112,7 @@ const NewQuestionPage = () => {
           setState={handleTitleChange}
           err={titleErr}
         />
-        
+
         <QuestionSuggestion
           suggestions={suggestions}
           loading={loading}
@@ -120,7 +120,7 @@ const NewQuestionPage = () => {
           onAcknowledge={handleAcknowledgeSuggestions}
           show={showSuggestions}
         />
-        
+
         <TextArea
           title={'Question Text'}
           hint={'Add details'}
@@ -150,9 +150,7 @@ const NewQuestionPage = () => {
           ))}
         </select>
         <div className='btn_indicator_container'>
-          <button
-            className='form_postBtn'
-            onClick={handlePostQuestion}>
+          <button className='form_postBtn' onClick={handlePostQuestion}>
             Post Question
           </button>
           <div className='mandatory_indicator'>* indicates mandatory fields</div>
