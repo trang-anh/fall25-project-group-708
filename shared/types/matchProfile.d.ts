@@ -43,6 +43,7 @@ export interface DatabaseMatchProfile
   extends Omit<MatchProfile, 'programmingLanguages', 'preferences'> {
   _id: ObjectId;
   userId: ObjectId;
+  isActive: boolean;
   programmingLanguage: ObjectId[];
   preferences: {
     preferredLanguages: ObjectId[];
