@@ -124,10 +124,7 @@ export interface AvatarDeleteRequest extends Request {
 export interface AvatarUploadResponse {
   message: string;
   avatarUrl: string;
-  user?: {
-    username: string;
-    avatarUrl: string;
-  };
+  user: SafeDatabaseUser;
 }
 
 /**

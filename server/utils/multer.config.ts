@@ -5,13 +5,12 @@ import fs from 'fs';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Use absolute path from project root
-    const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
-    
+    const uploadDir = path.join(__dirname, '..', 'uploads', 'avatar');
+
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
-    console.log('Upload directory:', uploadDir); // Debug log
+
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -19,8 +18,7 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     const filename = `${username}-${uniqueSuffix}${ext}`;
-    
-    console.log('Saving file as:', filename); // Debug log
+
     cb(null, filename);
   },
 });

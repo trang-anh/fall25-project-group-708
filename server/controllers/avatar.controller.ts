@@ -13,7 +13,7 @@ import { uploadAvatarService, deleteAvatarService } from '../services/avatar.ser
  */
 export const uploadAvatar = async (
   req: AvatarUploadRequest,
-  res: Response<AvatarUploadResponse | { error: string }>
+  res: Response<AvatarUploadResponse | { error: string }>,
 ) => {
   try {
     if (!req.file) {
@@ -34,7 +34,6 @@ export const uploadAvatar = async (
       user,
     });
   } catch (error) {
-    console.error('Avatar upload error:', error);
     res.status(500).json({ error: 'Failed to upload avatar' });
   }
 };
@@ -45,7 +44,7 @@ export const uploadAvatar = async (
  */
 export const deleteAvatar = async (
   req: AvatarDeleteRequest,
-  res: Response<AvatarDeleteResponse | { error: string }>
+  res: Response<AvatarDeleteResponse | { error: string }>,
 ) => {
   try {
     const { username } = req.body;
@@ -60,7 +59,6 @@ export const deleteAvatar = async (
       message: 'Avatar deleted successfully',
     });
   } catch (error) {
-    console.error('Avatar deletion error:', error);
     res.status(500).json({ error: 'Failed to delete avatar' });
   }
 };

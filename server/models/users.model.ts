@@ -1,7 +1,6 @@
 import mongoose, { Model, Document } from 'mongoose';
 import userSchema from './schema/user.schema';
-import { DatabaseUser } from '../types/types';
-import { User } from '../types/types';
+import { DatabaseUser, User } from '../types/types';
 
 /**
  * Interface for User Document with Mongoose methods

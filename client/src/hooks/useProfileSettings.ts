@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getUserByUsername,
@@ -8,6 +8,7 @@ import {
 } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
 import useUserContext from './useUserContext';
+import LoginContext from '../contexts/LoginContext';
 
 /**
  * A custom hook to encapsulate all logic/state for the ProfileSettings component.
@@ -16,6 +17,7 @@ const useProfileSettings = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useUserContext();
+  const loginContextValue = useContext(LoginContext);
 
   // Local state
   const [userData, setUserData] = useState<SafeDatabaseUser | null>(null);
@@ -26,11 +28,9 @@ const useProfileSettings = () => {
   const [newBio, setNewBio] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   // For delete-user confirmation modal
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
   const [showPassword, setShowPassword] = useState(false);
 
   const canEditProfile =
@@ -54,6 +54,28 @@ const useProfileSettings = () => {
 
     fetchUserData();
   }, [username]);
+
+  /**
+   * Update user data properly for avatar and other profile changes
+   * This keeps all user fields intact and updates both local and global state
+   */
+  const updateUserData = (updatedUser: SafeDatabaseUser) => {
+    // Update local userData state (for this profile page)
+    setUserData(updatedUser);
+
+    // If viewing own profile, also update the global currentUser in LoginContext
+    if (loginContextValue && currentUser.username === updatedUser.username) {
+      loginContextValue.setUser(updatedUser);
+
+      // Optional: Persist to localStorage if you use it
+      try {
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      } catch (error) {
+        // Silently fail if localStorage is unavailable
+        // Could log to error tracking service in production
+      }
+    }
+  };
 
   /**
    * Toggles the visibility of the password fields.
@@ -85,6 +107,7 @@ const useProfileSettings = () => {
     if (!validatePasswords()) {
       return;
     }
+
     try {
       await resetPassword(username, newPassword);
       setSuccessMessage('Password reset successful!');
@@ -99,17 +122,15 @@ const useProfileSettings = () => {
 
   const handleUpdateBiography = async () => {
     if (!username) return;
+
     try {
       // Await the async call to update the biography
       const updatedUser = await updateBiography(username, newBio);
 
-      // Ensure state updates occur sequentially after the API call completes
-      await new Promise(resolve => {
-        setUserData(updatedUser); // Update the user data
-        setEditBioMode(false); // Exit edit mode
-        resolve(null); // Resolve the promise
-      });
+      // Use updateUserData to properly update state
+      updateUserData(updatedUser);
 
+      setEditBioMode(false);
       setSuccessMessage('Biography updated!');
       setErrorMessage(null);
     } catch (error) {
@@ -123,6 +144,7 @@ const useProfileSettings = () => {
    */
   const handleDeleteUser = () => {
     if (!username) return;
+
     setShowConfirmation(true);
     setPendingAction(() => async () => {
       try {
@@ -168,6 +190,7 @@ const useProfileSettings = () => {
     handleUpdateBiography,
     handleDeleteUser,
     handleViewCollectionsPage,
+    updateUserData,
   };
 };
 

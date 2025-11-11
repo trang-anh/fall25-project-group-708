@@ -1,15 +1,32 @@
 import UserModel, { UserDocument } from '../models/users.model';
+import { SafeDatabaseUser } from '../types/types';
 import path from 'path';
 import fs from 'fs';
 
+/**
+ * Helper function to convert UserDocument to SafeDatabaseUser
+ */
+const toSafeDatabaseUser = (user: UserDocument): SafeDatabaseUser => {
+  return {
+    _id: user._id,
+    username: user.username,
+    dateJoined: user.dateJoined,
+    biography: user.biography,
+    githubId: user.githubId,
+    totalPoints: user.totalPoints,
+    avatarUrl: user.avatarUrl,
+  };
+};
+
 export const uploadAvatarService = async (
   username: string,
-  file: Express.Multer.File
-): Promise<{ avatarUrl: string; user: { username: string; avatarUrl: string } }> => {
-  const avatarUrl = `/uploads/avatars/${file.filename}`;
+  file: Express.Multer.File,
+): Promise<{ avatarUrl: string; user: SafeDatabaseUser }> => {
+  // Store only the URL path, not the filesystem path
+  const avatarUrl = `/uploads/avatar/${file.filename}`;
 
   const existingUser: UserDocument | null = await UserModel.findOne({ username });
-  
+
   if (!existingUser) {
     const uploadedFilePath = file.path;
     if (fs.existsSync(uploadedFilePath)) {
@@ -23,27 +40,26 @@ export const uploadAvatarService = async (
   existingUser.avatarUrl = avatarUrl;
   await existingUser.save();
 
+  // Delete old avatar file if it exists
   if (oldAvatarUrl && oldAvatarUrl !== avatarUrl) {
-    const oldPath = path.join(__dirname, '../..', oldAvatarUrl);
+    const oldPath = path.join(process.cwd(), oldAvatarUrl);
     if (fs.existsSync(oldPath)) {
       try {
         fs.unlinkSync(oldPath);
       } catch (error) {
-        console.error('Failed to delete old avatar:', error);
+        // Failed to delete old avatar - not critical, continue anyway
+        // The new avatar is already saved successfully
       }
     }
   }
 
   return {
     avatarUrl,
-    user: {
-      username: existingUser.username,
-      avatarUrl: existingUser.avatarUrl || '',
-    },
+    user: toSafeDatabaseUser(existingUser),
   };
 };
 
-export const deleteAvatarService = async (username: string): Promise<void> => {
+export const deleteAvatarService = async (username: string): Promise<SafeDatabaseUser> => {
   const user: UserDocument | null = await UserModel.findOne({ username });
 
   if (!user) {
@@ -52,16 +68,19 @@ export const deleteAvatarService = async (username: string): Promise<void> => {
 
   const avatarUrl = user.avatarUrl;
   if (avatarUrl) {
-    const avatarPath = path.join(__dirname, '../..', avatarUrl);
+    const avatarPath = path.join(process.cwd(), avatarUrl);
     if (fs.existsSync(avatarPath)) {
       try {
         fs.unlinkSync(avatarPath);
       } catch (error) {
-        console.error('Failed to delete avatar file:', error);
+        // Failed to delete avatar file - not critical
+        // Continue to clear the avatarUrl from database anyway
       }
     }
   }
 
   user.avatarUrl = '';
   await user.save();
+
+  return toSafeDatabaseUser(user);
 };

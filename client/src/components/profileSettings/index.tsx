@@ -3,7 +3,12 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './index.css';
 import useProfileSettings from '../../hooks/useProfileSettings';
-import { deleteAvatar, validateImageFile, getAvatarUrl } from '../../services/avatarService';
+import {
+  uploadAvatar,
+  deleteAvatar,
+  validateImageFile,
+  getAvatarUrl,
+} from '../../services/avatarService';
 
 const ProfileSettings: React.FC = () => {
   const {
@@ -29,6 +34,7 @@ const ProfileSettings: React.FC = () => {
     handleUpdateBiography,
     handleDeleteUser,
     handleViewCollectionsPage,
+    updateUserData,
   } = useProfileSettings();
 
   const [selectedAvatar, setSelectedAvatar] = React.useState<string | null>(null);
@@ -65,7 +71,7 @@ const ProfileSettings: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  // Handle avatar upload
+  // Handle avatar upload - FIXED VERSION
   const handleAvatarUpload = async () => {
     if (!avatarFile || !userData?.username) return;
 
@@ -73,12 +79,22 @@ const ProfileSettings: React.FC = () => {
     setAvatarError('');
 
     try {
+      const result = await uploadAvatar(userData.username, avatarFile);
+
+      // Update user data properly - keep all fields, only change avatarUrl
+      updateUserData({
+        ...userData,
+        avatarUrl: result.avatarUrl,
+      });
+
       // Reset upload state
       setAvatarFile(null);
       setSelectedAvatar(null);
 
-      // Trigger a refresh or update of user data
-      window.location.reload(); // Simple approach - better to update state
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       setAvatarError(error instanceof Error ? error.message : 'Failed to upload avatar');
     } finally {
@@ -86,7 +102,7 @@ const ProfileSettings: React.FC = () => {
     }
   };
 
-  // Handle avatar deletion
+  // Handle avatar deletion - FIXED VERSION
   const handleAvatarDelete = async () => {
     if (!userData?.username) return;
 
@@ -98,10 +114,11 @@ const ProfileSettings: React.FC = () => {
     try {
       await deleteAvatar(userData.username);
 
-      // Update local user data
-      // updateUserData({ ...userData, avatarUrl: '' });
-
-      window.location.reload(); // Simple approach - better to update state
+      // Update user data properly - keep all fields, only clear avatarUrl
+      updateUserData({
+        ...userData,
+        avatarUrl: '',
+      });
     } catch (error) {
       setAvatarError(error instanceof Error ? error.message : 'Failed to delete avatar');
     } finally {
