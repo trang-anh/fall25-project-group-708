@@ -75,7 +75,7 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
       );
     }
 
-    return { applied, blocked };
+    return { applied: -applied, blocked };
   }
 
   return { applied: 0, blocked: 0 };
