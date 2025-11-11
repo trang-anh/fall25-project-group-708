@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import express, { Response } from 'express';
 import { ObjectId } from 'mongodb';
 import {
@@ -23,6 +24,7 @@ import {
 } from '../services/question.service';
 import { processTags } from '../services/tag.service';
 import { populateDocument } from '../utils/database.util';
+import UserModel from '../models/users.model';
 
 const questionController = (socket: FakeSOSocket) => {
   const router = express.Router();
@@ -160,13 +162,7 @@ const questionController = (socket: FakeSOSocket) => {
     const { qid, username } = req.body;
 
     try {
-      let status;
-
-      if (type === 'upvote') {
-        status = await addVoteToQuestion(qid, username, type);
-      } else {
-        status = await addVoteToQuestion(qid, username, type);
-      }
+      const status = await addVoteToQuestion(qid, username, type);
 
       if (status && 'error' in status) {
         throw new Error(status.error);
@@ -174,8 +170,19 @@ const questionController = (socket: FakeSOSocket) => {
 
       // Emit the updated vote counts to all connected clients
       socket.emit('voteUpdate', { qid, upVotes: status.upVotes, downVotes: status.downVotes });
+
+      // ✅ ADD THIS: Fetch and emit updated user points
+      const updatedUser = await UserModel.findOne({ username }).select('-password');
+      if (updatedUser) {
+        socket.emit('userUpdate', {
+          user: updatedUser,
+          type: 'updated',
+        });
+      }
+
       res.json(status);
     } catch (err) {
+      console.error('ERROR in voteQuestion:', err);
       res.status(500).send(`Error when ${type}ing: ${(err as Error).message}`);
     }
   };

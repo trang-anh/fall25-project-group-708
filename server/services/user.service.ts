@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import UserModel from '../models/users.model';
 import {
   DatabaseUser,
@@ -160,21 +161,11 @@ export const updateUser = async (
  */
 export const updateUserTotalPoints = async (
   username: string,
-  points: number,
-): Promise<UserResponse> => {
-  try {
-    const updatedUser = await UserModel.findOneAndUpdate(
-      { username },
-      { $inc: { totalPoints: points } },
-      { new: true },
-    );
-
-    if (!updatedUser) {
-      throw Error('Error updating points for user');
-    }
-
-    return updatedUser;
-  } catch (error) {
-    return { error: `Error occurred when updating user points: ${error}` };
-  }
+  pointsChange: number,
+): Promise<void> => {
+  await UserModel.findOneAndUpdate(
+    { username },
+    { $inc: { totalPoints: pointsChange } },
+    { new: true }, // Return the updated document
+  );
 };

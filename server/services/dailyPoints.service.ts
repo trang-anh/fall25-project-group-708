@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import DailyPointsModel from '../models/dailyPoints.model';
 
 /**
@@ -14,7 +15,15 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let daily = await DailyPointsModel.findOne({ username, date: today });
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Get current daily record
+  let daily = await DailyPointsModel.findOne({
+    username,
+    date: { $gte: today, $lt: tomorrow },
+  });
+
   if (!daily) {
     daily = await DailyPointsModel.create({
       username,
@@ -31,15 +40,19 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
     const applied = Math.max(0, Math.min(pointsChange, remaining));
     const blocked = pointsChange - applied;
 
-    await DailyPointsModel.updateOne(
-      { username, date: today },
-      {
-        $inc: {
-          total_gained: applied,
-          net_change: applied,
+    if (applied > 0) {
+      await DailyPointsModel.findByIdAndUpdate(
+        daily._id,
+        {
+          $inc: {
+            total_gained: applied,
+            net_change: applied,
+          },
         },
-      },
-    );
+        { new: true }, // Return updated document
+      );
+    }
+
     return { applied, blocked };
   }
 
@@ -49,15 +62,19 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
     const applied = Math.max(0, Math.min(loss, remaining));
     const blocked = loss - applied;
 
-    await DailyPointsModel.updateOne(
-      { username, date: today },
-      {
-        $inc: {
-          total_lost: applied,
-          net_change: -applied,
+    if (applied > 0) {
+      await DailyPointsModel.findByIdAndUpdate(
+        daily._id,
+        {
+          $inc: {
+            total_lost: applied,
+            net_change: -applied,
+          },
         },
-      },
-    );
+        { new: true },
+      );
+    }
+
     return { applied, blocked };
   }
 

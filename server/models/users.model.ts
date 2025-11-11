@@ -5,7 +5,7 @@ import { User } from '../types/types';
 
 /**
  * Interface for User Document with Mongoose methods
- * Extends the User interface 
+ * Extends the User interface
  */
 export interface UserDocument extends User, Document {
   _id: mongoose.Types.ObjectId;
@@ -16,7 +16,6 @@ export interface UserDocument extends User, Document {
   githubId?: string;
   totalPoints?: number;
   avatarUrl?: string;
-    
 }
 
 /**

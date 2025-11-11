@@ -74,18 +74,16 @@ process.on('SIGINT', async () => {
 app.use(express.json());
 
 // construct the path for uploads
-const uploadsPath = path.join(process.cwd(), 'uploads');
-const avatarsPath = path.join(uploadsPath, 'avatars');
+const UPLOAD_PATHS = path.join(process.cwd(), 'uploads');
+const AVATARS_PATH = path.join(UPLOAD_PATHS, 'avatars');
 
 // Create directories if they don't exist
-if (!fs.existsSync(avatarsPath)) {
-  fs.mkdirSync(avatarsPath, { recursive: true });
+if (!fs.existsSync(AVATARS_PATH)) {
+  fs.mkdirSync(AVATARS_PATH, { recursive: true });
 }
 
 // Serve static files
-app.use('/uploads', express.static(uploadsPath));
-
-
+app.use('/uploads', express.static(UPLOAD_PATHS));
 
 try {
   app.use(

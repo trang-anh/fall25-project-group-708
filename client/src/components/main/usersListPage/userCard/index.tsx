@@ -33,8 +33,6 @@ const UserCardView = (props: UserProps) => {
     });
   };
 
-  const points = user.totalPoints || 0;
-
   return (
     <div className='user-card-grid' onClick={() => handleUserCardViewClickHandler(user)}>
       <div className='user-avatar-large'>
@@ -47,7 +45,7 @@ const UserCardView = (props: UserProps) => {
       <div className='user-stats-grid'>
         <div className='stat-box'>
           <span className='stat-label-small'>Total Points</span>
-          <span className='stat-value-large'>{points}</span>
+          <span className='stat-value-large'>{user.totalPoints}</span>
         </div>
       </div>
     </div>

@@ -116,6 +116,16 @@ export interface CollectionUpdatePayload {
 }
 
 /**
+ * Payload for a user points update event.
+ * - `username`: The username of the user whose points were updated.
+ * - `totalPoints`: The updated total points.
+ */
+export interface UserPointsUpdatePayload {
+  username: string;
+  totalPoints: number;
+}
+
+/**
  * Interface representing the events the client can emit to the server.
  * - `makeMove`: Client can emit a move in the game.
  * - `joinGame`: Client can join a game.
@@ -152,6 +162,7 @@ export interface ServerToClientEvents {
   viewsUpdate: (question: PopulatedDatabaseQuestion) => void;
   voteUpdate: (vote: VoteUpdatePayload) => void;
   commentUpdate: (comment: CommentUpdatePayload) => void;
+  userPointsUpdate: (data: UserPointsUpdatePayload) => void;
   messageUpdate: (message: MessageUpdatePayload) => void;
   userUpdate: (user: UserUpdatePayload) => void;
   gameUpdate: (game: GameUpdatePayload) => void;

@@ -10,6 +10,7 @@ import { FakeSOSocket, SafeDatabaseUser } from '../types/types';
 export interface UserContextType {
   user: SafeDatabaseUser;
   socket: FakeSOSocket;
+  updateUser: (updates: Partial<SafeDatabaseUser>) => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);

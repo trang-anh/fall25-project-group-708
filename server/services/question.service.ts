@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ObjectId } from 'mongodb';
 import { QueryOptions } from 'mongoose';
 import {
@@ -257,14 +258,19 @@ export const addVoteToQuestion = async (
 
     // POINT LOGIC
     if (wasAdded) {
-      if (voteType === 'upvote') {
-        //upvoter earns points
-        await addRegisterPoints(username, 2, 'UPVOTE_OTHERS');
-      } else {
-        if (result.askedBy !== username) {
-          await addRegisterPoints(username, -1, 'RECEIVE_DOWNVOTES');
+      try {
+        if (voteType === 'upvote') {
+          await addRegisterPoints(username, 2, 'UPVOTE_OTHERS');
+        } else {
+          if (result.askedBy !== username) {
+            await addRegisterPoints(result.askedBy, -1, 'RECEIVE_DOWNVOTES');
+          }
         }
+      } catch (error) {
+        console.error('CRITICAL ERROR in points logic:', error);
       }
+    } else {
+      console.log('Vote was removed, no points awarded');
     }
 
     return {
