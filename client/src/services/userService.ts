@@ -55,20 +55,87 @@ const createUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
  * Sends a POST request to authenticate a user.
  *
  * @param user - The user credentials (username and password) for login.
+ * @param twoFactorCode - Optional 2FA code to include when provided.
  * @returns {Promise<User>} The authenticated user object.
  * @throws {Error} If an error occurs during the login process.
  */
-const loginUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
+const loginUser = async (
+  user: UserCredentials,
+  twoFactorCode?: string,
+): Promise<SafeDatabaseUser> => {
   try {
-    const res = await api.post(`${USER_API_URL}/login`, user);
+    const payload = twoFactorCode ? { ...user, twoFactorCode } : user;
+    const res = await api.post(`${USER_API_URL}/login`, payload);
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Error while logging in: ${error.response.data}`);
+      const serverMessage =
+        typeof error.response.data === 'string'
+          ? error.response.data
+          : error.response.data?.error || error.response.data?.message || 'Login failed';
+      throw new Error(`Error while logging in: ${serverMessage}`);
     } else {
       throw new Error('Error while logging in');
     }
   }
+};
+
+/**
+ * Requests that the server generate a new 2FA code for the given username.
+ * The server responds with the code only for testing purposes.
+ */
+const requestTwoFactorCode = async (username: string): Promise<{ code?: string }> => {
+  if (!username) {
+    throw new Error('Username is required to request a verification code');
+  }
+
+  try {
+    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`);
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const serverMessage =
+        typeof error.response.data === 'string'
+          ? error.response.data
+          : error.response.data?.error || 'Failed to send verification code';
+      throw new Error(serverMessage);
+    } else {
+      throw new Error('Failed to send verification code');
+    }
+  }
+};
+
+/**
+ * Checks whether 2FA is enabled for the given username.
+ */
+const getTwoFactorStatus = async (username: string): Promise<{ twoFactorEnabled: boolean }> => {
+  const res = await api.get(`${USER_API_URL}/2fa/status/${encodeURIComponent(username)}`);
+  if (res.status !== 200) {
+    throw new Error('Failed to fetch 2FA status');
+  }
+  return res.data;
+};
+
+/**
+ * Enables 2FA for the given username once the verification code is confirmed.
+ */
+const enableTwoFactor = async (username: string, code: string): Promise<SafeDatabaseUser> => {
+  const res = await api.post(`${USER_API_URL}/2fa/enable`, { username, code });
+  if (res.status !== 200) {
+    throw new Error('Failed to enable 2FA');
+  }
+  return res.data;
+};
+
+/**
+ * Disables 2FA for the given username.
+ */
+const disableTwoFactor = async (username: string): Promise<SafeDatabaseUser> => {
+  const res = await api.post(`${USER_API_URL}/2fa/disable`, { username });
+  if (res.status !== 200) {
+    throw new Error('Failed to disable 2FA');
+  }
+  return res.data;
 };
 
 /**
@@ -210,4 +277,8 @@ export {
   getCurrentUser,
   logoutUser,
   findUsersBySkills,
+  requestTwoFactorCode,
+  getTwoFactorStatus,
+  enableTwoFactor,
+  disableTwoFactor,
 };

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import UserModel from '../models/users.model';
 import {
   DatabaseUser,

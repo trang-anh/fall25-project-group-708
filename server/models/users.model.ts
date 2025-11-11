@@ -15,6 +15,8 @@ export interface UserDocument extends User, Document {
   githubId?: string;
   totalPoints?: number;
   avatarUrl?: string;
+  twoFactorEnabled?: boolean;
+  twoFactorCode?: string | null;
 }
 
 /**

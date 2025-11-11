@@ -515,6 +515,72 @@ profile-settings .profile-picture-section {
   margin-top: 0.5rem;
 }
 
+.profile-settings .twofactor-section {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-card, #f9f9f9);
+}
+
+.profile-settings .twofactor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-settings .twofactor-title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.profile-settings .twofactor-description {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.profile-settings .twofactor-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.profile-settings .twofactor-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-settings .twofactor-status.enabled {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.profile-settings .twofactor-status.disabled {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.profile-settings .twofactor-setup {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-settings .twofactor-helper {
+  font-size: 0.85rem;
+  color: #007bff;
+}
+
+.profile-settings .twofactor-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .profile-settings .danger-zone {
   background-color: #fef2f2;
 }
