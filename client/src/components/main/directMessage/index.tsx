@@ -27,18 +27,19 @@ const DirectMessage = () => {
   } = useDirectMessage();
 
   // Get the other participant's name for the selected chat
-  const otherParticipant = selectedChat?.participants.find(p => p !== currentUsername) || selectedChat?.participants[0];
-  
+  const otherParticipant =
+    selectedChat?.participants.find(p => p !== currentUsername) || selectedChat?.participants[0];
+
   // Get avatar from participantData first (most reliable)
   let otherParticipantAvatar: string | undefined;
-  
+
   if (selectedChat && otherParticipant) {
     // Try participantData first
     const otherParticipantData = selectedChat.participantsData?.find(
-      p => p.username === otherParticipant
+      p => p.username === otherParticipant,
     );
     otherParticipantAvatar = otherParticipantData?.avatarUrl;
-    
+
     // Fallback: search through messages if participantData is not available
     if (!otherParticipantAvatar) {
       for (const message of selectedChat.messages) {
@@ -64,7 +65,7 @@ const DirectMessage = () => {
         <div className='chats-list-header'>
           <div className='chats-list-search'>
             <svg className='search-icon' fill='currentColor' viewBox='0 0 16 16'>
-              <path d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/>
+              <path d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z' />
             </svg>
             <input type='text' placeholder='Persons, Groups, Chats' />
             <button className='start-chat-btn' onClick={() => setShowCreatePanel(!showCreatePanel)}>
@@ -88,9 +89,9 @@ const DirectMessage = () => {
         {/* Chat List Items */}
         <div className='chats-list-items'>
           {chats.map(chat => (
-            <ChatsListCard 
-              key={String(chat._id)} 
-              chat={chat} 
+            <ChatsListCard
+              key={String(chat._id)}
+              chat={chat}
               handleChatSelect={handleChatSelect}
               currentUsername={currentUsername}
               isSelected={selectedChat?._id === chat._id}
@@ -105,7 +106,11 @@ const DirectMessage = () => {
             <div className='chat-header-bar'>
               <div className='chat-header-content'>
                 <div className='chat-header-left'>
-                  <Avatar username={otherParticipant} avatarUrl={otherParticipantAvatar} size='small' />
+                  <Avatar
+                    username={otherParticipant}
+                    avatarUrl={otherParticipantAvatar}
+                    size='small'
+                  />
                   <h2>
                     <span className='status-dot'></span>
                     {otherParticipant}
@@ -113,35 +118,39 @@ const DirectMessage = () => {
                 </div>
               </div>
             </div>
-              <div className='chat-messages'>
-                {selectedChat.messages.map((message, index) => {
-                  const prevMessage = index > 0 ? selectedChat.messages[index - 1] : null;
-                  const nextMessage = index < selectedChat.messages.length - 1 ? selectedChat.messages[index + 1] : null;
-                  
-                  // Check if this message is grouped with previous message
-                  const isGrouped = prevMessage?.msgFrom === message.msgFrom;
-                  
-                  // Check if this is the last message in a group
-                  const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
-                  
-                  // Debug log
-                  console.log('DirectMessage rendering message:', {
-                    msgFrom: message.msgFrom,
-                    currentUsername: currentUsername,
-                    index
-                  });
-                  
-                  return (
-                    <MessageCard 
-                      key={String(message._id)} 
-                      message={message}
-                      currentUsername={currentUsername}
-                      isGrouped={isGrouped}
-                      isLastInGroup={isLastInGroup}
-                    />
-                  );
-                })}
-              </div>
+            <div className='chat-messages'>
+              {selectedChat.messages.map((message, index) => {
+                const prevMessage = index > 0 ? selectedChat.messages[index - 1] : null;
+                const nextMessage =
+                  index < selectedChat.messages.length - 1
+                    ? selectedChat.messages[index + 1]
+                    : null;
+
+                // Check if this message is grouped with previous message
+                const isGrouped = prevMessage?.msgFrom === message.msgFrom;
+
+                // Check if this is the last message in a group
+                const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
+
+                // Debug log
+                // eslint-disable-next-line no-console
+                console.log('DirectMessage rendering message:', {
+                  msgFrom: message.msgFrom,
+                  currentUsername: currentUsername,
+                  index,
+                });
+
+                return (
+                  <MessageCard
+                    key={String(message._id)}
+                    message={message}
+                    currentUsername={currentUsername}
+                    isGrouped={isGrouped}
+                    isLastInGroup={isLastInGroup}
+                  />
+                );
+              })}
+            </div>
             <div className='message-input'>
               <input
                 className='custom-input'
