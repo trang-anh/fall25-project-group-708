@@ -6,8 +6,5 @@
     "client",
     "server",
     "shared"
-  ],
-  "dependencies": {
-    "bad-words": "^4.0.0"
-  }
+  ]
 }

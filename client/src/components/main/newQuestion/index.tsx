@@ -7,6 +7,7 @@ import TextArea from '../baseComponents/textarea';
 import QuestionSuggestion from './QuestionSuggestion';
 import SimilarQuestionModal from './SimilarQuestionModal';
 import './index.css';
+import BadWordWarningModal from '../badWordsWarningModal';
 
 /**
  * NewQuestionPage component allows users to submit a new question with a title,
@@ -27,6 +28,9 @@ const NewQuestionPage = () => {
     textErr,
     tagErr,
     postQuestion,
+    showBadWordWarning,
+    setShowBadWordWarning,
+    badWordDetails,
   } = useNewQuestion();
 
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -80,6 +84,7 @@ const NewQuestionPage = () => {
       return;
     }
 
+    //Check for badwords and show modal if needed
     postQuestion();
   };
 
@@ -94,6 +99,15 @@ const NewQuestionPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCloseBadWordWarning = () => {
+    setShowBadWordWarning(false);
+  };
+
+  const handlePostAnyway = () => {
+    setShowBadWordWarning(false);
+    postQuestion(true);
+  };
+
   return (
     <>
       <SimilarQuestionModal
@@ -101,6 +115,13 @@ const NewQuestionPage = () => {
         onClose={handleCloseModal}
         onReview={handleReviewSuggestions}
         suggestionCount={suggestions.length}
+      />
+
+      <BadWordWarningModal
+        show={showBadWordWarning}
+        onClose={handleCloseBadWordWarning}
+        onPostAnyway={handlePostAnyway}
+        detectedIn={badWordDetails}
       />
 
       <Form>

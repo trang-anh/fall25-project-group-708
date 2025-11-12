@@ -160,15 +160,14 @@ export const fetchAndIncrementQuestionViewsById = async (
 /**
  * Saves a new question to the database.
  * @param {Question} question - The question to save
- * @returns {Promise<QuestionResponse>} - The saved question or error message
+ * @returns {Promise<DatabaseQuestion | {error: string}>} - The saved question or error message
  */
-export const saveQuestion = async (question: Question): Promise<QuestionResponse> => {
+export const saveQuestion = async (
+  question: Omit<Question, 'tags'> & { tags: ObjectId[] },
+): Promise<QuestionResponse> => {
   try {
+    //Creating posts with cleaned content
     const result: DatabaseQuestion = await QuestionModel.create(question);
-
-    // Adding points
-    await addRegisterPoints(question.askedBy, 5, 'POST_QUESTION');
-
     return result;
   } catch (error) {
     return { error: 'Error when saving a question' };
@@ -350,7 +349,6 @@ export const fetchFiveQuestionsByTextAndTitle = async (
 
     return similarQuestions;
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.log(`The error is` + error);
     return [];
   }

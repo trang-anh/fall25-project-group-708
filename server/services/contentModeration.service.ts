@@ -1,28 +1,53 @@
-interface BadWordsFilter {
-  isProfane(text: string): boolean;
-  clean(text: string): string;
-}
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
 
-import BadWords from 'bad-words';
-
-const filter = BadWords as unknown as { new (): BadWordsFilter };
-
-const filterWords = new filter();
+// Create matcher with English dataset
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 /**
  * Checks if text contains hateful/profane language
+ * @param text - The text to check
+ * @returns true if hateful content is detected
  */
 export const containsHatefulLanguage = (text: string): boolean => {
   if (!text) return false;
-  return filterWords.isProfane(text);
+  return matcher.hasMatch(text);
 };
 
 /**
- * Extract all bad words from text (based on default bad-words list)
+ * Extract all bad words found in text
  */
 const extractBadWords = (text: string): string[] => {
-  const words = text.split(/\s+/);
-  return words.filter(word => filterWords.isProfane(word));
+  if (!text) return [];
+
+  const matches = matcher.getAllMatches(text);
+  return matches.map(match => text.substring(match.startIndex, match.endIndex));
+};
+
+/**
+ * Clean text by censoring bad words
+ * @param text - The text to clean
+ * @returns cleaned text with bad words censored
+ */
+export const cleanText = (text: string): string => {
+  if (!text) return text;
+
+  const matches = matcher.getAllMatches(text);
+
+  if (matches.length === 0) return text;
+
+  let cleaned = text;
+  // Replace matches in reverse order to maintain indices
+  for (let i = matches.length - 1; i >= 0; i -= 1) {
+    const match = matches[i];
+    const length = match.endIndex - match.startIndex;
+    const censored = '*'.repeat(length);
+    cleaned = cleaned.substring(0, match.startIndex) + censored + cleaned.substring(match.endIndex);
+  }
+
+  return cleaned;
 };
 
 /**
@@ -44,7 +69,7 @@ export const moderateContent = (content: {
     const found = extractBadWords(content.title);
     if (found.length > 0) {
       detectedIn.push('title');
-      badWords['title'] = found;
+      badWords.title = found;
     }
   }
 
@@ -52,7 +77,7 @@ export const moderateContent = (content: {
     const found = extractBadWords(content.text);
     if (found.length > 0) {
       detectedIn.push('text');
-      badWords['text'] = found;
+      badWords.text = found;
     }
   }
 
@@ -61,7 +86,7 @@ export const moderateContent = (content: {
     const found = extractBadWords(tagsText);
     if (found.length > 0) {
       detectedIn.push('tags');
-      badWords['tags'] = found;
+      badWords.tags = found;
     }
   }
 
@@ -70,11 +95,4 @@ export const moderateContent = (content: {
     detectedIn,
     badWords,
   };
-};
-
-/**
- * Optional: Get cleaned version of text
- */
-export const cleanText = (text: string): string => {
-  return filterWords.clean(text);
 };
