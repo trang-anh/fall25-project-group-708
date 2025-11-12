@@ -5,6 +5,10 @@ import {
   deleteUser,
   resetPassword,
   updateBiography,
+  getTwoFactorStatus,
+  requestTwoFactorCode,
+  enableTwoFactor,
+  disableTwoFactor,
 } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
 import useUserContext from './useUserContext';
@@ -28,6 +32,12 @@ const useProfileSettings = () => {
   const [newBio, setNewBio] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorCodeInput, setTwoFactorCodeInput] = useState('');
+  const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
+  const [isTwoFactorLoading, setIsTwoFactorLoading] = useState(false);
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+
   // For delete-user confirmation modal
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -53,6 +63,21 @@ const useProfileSettings = () => {
     };
 
     fetchUserData();
+  }, [username]);
+
+  useEffect(() => {
+    if (!username) return;
+
+    const fetchTwoFactorStatus = async () => {
+      try {
+        const status = await getTwoFactorStatus(username);
+        setTwoFactorEnabled(status.twoFactorEnabled);
+      } catch {
+        setTwoFactorEnabled(false);
+      }
+    };
+
+    fetchTwoFactorStatus();
   }, [username]);
 
   /**
@@ -82,6 +107,80 @@ const useProfileSettings = () => {
    */
   const togglePasswordVisibility = () => {
     setShowPassword(prevState => !prevState);
+  };
+
+  const beginTwoFactorSetup = async () => {
+    if (!username) return;
+    setIsTwoFactorLoading(true);
+    try {
+      const response = await requestTwoFactorCode(username);
+      setShowTwoFactorSetup(true);
+      setTwoFactorCodeInput('');
+      setTwoFactorDevCode(response.code ?? null);
+      setErrorMessage(null);
+      setSuccessMessage('Enter the 6-digit verification code to enable 2FA.');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to start 2FA setup.');
+      setSuccessMessage(null);
+    } finally {
+      setIsTwoFactorLoading(false);
+    }
+  };
+
+  const confirmTwoFactorSetup = async () => {
+    if (!username) return;
+    if (twoFactorCodeInput.length !== 6) {
+      setErrorMessage('Enter the 6-digit verification code.');
+      return;
+    }
+
+    setIsTwoFactorLoading(true);
+    try {
+      const updatedUser = await enableTwoFactor(username, twoFactorCodeInput);
+      updateUserData(updatedUser);
+      setTwoFactorEnabled(true);
+      setShowTwoFactorSetup(false);
+      setTwoFactorDevCode(null);
+      setSuccessMessage('Two-factor authentication enabled.');
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to enable 2FA.');
+      setSuccessMessage(null);
+    } finally {
+      setIsTwoFactorLoading(false);
+    }
+  };
+
+  const cancelTwoFactorSetup = () => {
+    setShowTwoFactorSetup(false);
+    setTwoFactorCodeInput('');
+    setTwoFactorDevCode(null);
+  };
+
+  const handleDisableTwoFactor = async () => {
+    if (!username) return;
+    setIsTwoFactorLoading(true);
+    try {
+      const updatedUser = await disableTwoFactor(username);
+      updateUserData(updatedUser);
+      setTwoFactorEnabled(false);
+      cancelTwoFactorSetup();
+      setSuccessMessage('Two-factor authentication disabled.');
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to disable 2FA.');
+      setSuccessMessage(null);
+    } finally {
+      setIsTwoFactorLoading(false);
+    }
+  };
+
+  const handleTwoFactorToggle = async (enabled: boolean) => {
+    if (enabled) {
+      await beginTwoFactorSetup();
+    } else {
+      await handleDisableTwoFactor();
+    }
   };
 
   /**
@@ -190,6 +289,16 @@ const useProfileSettings = () => {
     handleUpdateBiography,
     handleDeleteUser,
     handleViewCollectionsPage,
+    twoFactorEnabled,
+    twoFactorCodeInput,
+    setTwoFactorCodeInput,
+    twoFactorDevCode,
+    isTwoFactorLoading,
+    showTwoFactorSetup,
+    handleTwoFactorToggle,
+    confirmTwoFactorSetup,
+    cancelTwoFactorSetup,
+    beginTwoFactorSetup,
     updateUserData,
   };
 };

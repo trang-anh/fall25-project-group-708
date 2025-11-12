@@ -53,6 +53,15 @@ export interface CreateMatchRequest extends Request {
 }
 
 /**
+ * Type definition for creating a new match request.
+ */
+export interface DeleteMatchRequest extends Request {
+  body: {
+    userId: string;
+  };
+}
+
+/**
  * Represents a response for match operations.
  * Either returns a `DatabaseMatch` object or an error message.
  */

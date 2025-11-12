@@ -25,6 +25,8 @@ export interface User extends UserCredentials {
   githubId?: string;
   totalPoints?: number;
   avatarUrl?: string;
+  twoFactorCode?: string | null;
+  twoFactorEnabled?: boolean;
 }
 
 /**

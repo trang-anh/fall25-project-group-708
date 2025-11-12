@@ -16,9 +16,17 @@ const Login = () => {
     password,
     showPassword,
     err,
+    requires2FA,
+    twoFactorCode,
+    twoFactorDevCode,
+    isSendingTwoFactorCode,
     handleSubmit,
     handleInputChange,
     togglePasswordVisibility,
+    handleRequestTwoFactorCode,
+    cancelTwoFactorFlow,
+    twoFactorOptIn,
+    handleTwoFactorOptInChange,
   } = useAuth('login');
 
   /**
@@ -67,6 +75,7 @@ const Login = () => {
                   required
                   className='input-text'
                   id='username-input'
+                  disabled={requires2FA}
                 />
               </div>
 
@@ -83,6 +92,7 @@ const Login = () => {
                     required
                     className='input-text'
                     id='password-input'
+                    disabled={requires2FA}
                   />
                   <button
                     type='button'
@@ -94,8 +104,58 @@ const Login = () => {
                 </div>
               </div>
 
+              <div className='twofactor-optin'>
+                <input
+                  type='checkbox'
+                  id='twofactor-optin-checkbox'
+                  checked={twoFactorOptIn}
+                  onChange={event => handleTwoFactorOptInChange(event.target.checked)}
+                  disabled={requires2FA}
+                />
+                <label htmlFor='twofactor-optin-checkbox'>Enable two-factor authentication</label>
+              </div>
+
+              {requires2FA && (
+                <>
+                  <div className='form-group'>
+                    <label className='form-label' htmlFor='twofactor-input'>
+                      Verification code
+                    </label>
+                    <input
+                      type='text'
+                      inputMode='numeric'
+                      pattern='[0-9]*'
+                      value={twoFactorCode}
+                      onChange={event => handleInputChange(event, 'twoFactor')}
+                      placeholder='Enter 6-digit code'
+                      className='input-text'
+                      id='twofactor-input'
+                      maxLength={6}
+                    />
+                    <p className='form-helper'>
+                      Enter the 6-digit code we sent to your email.
+                      {twoFactorDevCode && (
+                        <span className='code-preview'>Test code: {twoFactorDevCode}</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className='twofactor-actions'>
+                    <button
+                      type='button'
+                      className='secondary-button'
+                      onClick={handleRequestTwoFactorCode}
+                      disabled={isSendingTwoFactorCode}>
+                      {isSendingTwoFactorCode ? 'Sending…' : 'Resend code'}
+                    </button>
+                    <button type='button' className='link-button' onClick={cancelTwoFactorFlow}>
+                      Use different credentials
+                    </button>
+                  </div>
+                </>
+              )}
+
               <button type='submit' className='login-button'>
-                Log in
+                {requires2FA ? 'Verify & Log in' : 'Log in'}
               </button>
             </form>
           </div>

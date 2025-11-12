@@ -39,7 +39,7 @@ const matchProfileSchema: Schema = new Schema(
         'ASIA',
         'AFRICA',
         'AUSTRALIA',
-        'ANTARTICA',
+        'ANTARCTICA',
       ],
     },
     programmingLanguage: [

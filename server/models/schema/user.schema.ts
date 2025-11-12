@@ -43,6 +43,14 @@ const userSchema: Schema = new Schema(
       type: String,
       default: '',
     },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorCode: {
+      type: String,
+      default: null,
+    },
   },
   { collection: 'User' },
 );

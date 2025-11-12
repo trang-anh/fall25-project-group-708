@@ -18,6 +18,12 @@ import {
   saveUser,
   updateUser,
 } from '../services/user.service';
+import {
+  disable2FA,
+  generate2FACode,
+  is2FAEnabled,
+  verifyAndEnable2FA,
+} from '../services/twoFactor.service';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -196,6 +202,93 @@ const userController = (socket: FakeSOSocket) => {
     }
   };
 
+  /**
+   * Generates a new 2FA code for the specified user.
+   * @param req The request containing username as a route parameter.
+   * @param res The response, either returning the code or an error.
+   */
+  const generate2FA = async (req: UserByUsernameRequest, res: Response): Promise<void> => {
+    try {
+      const { username } = req.params;
+      const result = await generate2FACode(username);
+
+      if ('error' in result) {
+        res.status(400).json(result);
+        return;
+      }
+
+      // for testing displays code in response
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: `Error generating 2FA code: ${error}` });
+    }
+  };
+
+  /**
+   * Enables 2FA after verifying the code.
+   * @param req The request body containing username and code.
+   * @param res The response, returning updated user data or an error.
+   */
+  const enable2FA = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, code } = req.body;
+      if (!username || !code) {
+        res.status(400).json({ error: 'Username and code are required' });
+        return;
+      }
+
+      const result = await verifyAndEnable2FA(username, code);
+      if ('error' in result) {
+        res.status(400).json(result);
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: `Error enabling 2FA: ${error}` });
+    }
+  };
+
+  /**
+   * Disables 2FA for a user.
+   * @param req The request body containing username.
+   * @param res The response, returning updated user data or an error.
+   */
+  const disable2FAHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username } = req.body;
+      if (!username) {
+        res.status(400).json({ error: 'Username is required' });
+        return;
+      }
+
+      const result = await disable2FA(username);
+      if ('error' in result) {
+        res.status(400).json(result);
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: `Error disabling 2FA: ${error}` });
+    }
+  };
+
+  /**
+   * Checks if 2FA is enabled for a given user.
+   * @param req The request containing username as a route parameter.
+   * @param res The response with boolean flag twoFactorEnabled.
+   */
+  const check2FAStatus = async (req: UserByUsernameRequest, res: Response): Promise<void> => {
+    try {
+      const { username } = req.params;
+      const enabled = await is2FAEnabled(username);
+      res.status(200).json({ twoFactorEnabled: enabled });
+    } catch (error) {
+      res.status(500).json({ error: `Error checking 2FA status: ${error}` });
+    }
+  };
+
   // Define routes for the user-related operations.
   router.post('/signup', createUser);
   router.post('/login', userLogin);
@@ -206,6 +299,10 @@ const userController = (socket: FakeSOSocket) => {
   router.patch('/updateBiography', updateBiography);
   router.post('/avatar', avatarUpload.single('avatar'), uploadAvatar);
   router.delete('/avatar', deleteAvatar);
+  router.post('/2fa/generate/:username', generate2FA);
+  router.post('/2fa/enable', enable2FA);
+  router.post('/2fa/disable', disable2FAHandler);
+  router.get('/2fa/status/:username', check2FAStatus);
   return router;
 };
 

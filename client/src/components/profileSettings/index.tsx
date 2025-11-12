@@ -35,6 +35,16 @@ const ProfileSettings: React.FC = () => {
     handleDeleteUser,
     handleViewCollectionsPage,
     updateUserData,
+    twoFactorEnabled,
+    twoFactorCodeInput,
+    setTwoFactorCodeInput,
+    twoFactorDevCode,
+    isTwoFactorLoading,
+    showTwoFactorSetup,
+    handleTwoFactorToggle,
+    confirmTwoFactorSetup,
+    cancelTwoFactorSetup,
+    beginTwoFactorSetup,
   } = useProfileSettings();
 
   const [selectedAvatar, setSelectedAvatar] = React.useState<string | null>(null);
@@ -42,6 +52,33 @@ const ProfileSettings: React.FC = () => {
   const [avatarLoading, setAvatarLoading] = React.useState(false);
   const [avatarError, setAvatarError] = React.useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const twoFactorSwitchChecked = twoFactorEnabled || showTwoFactorSetup;
+
+  const handleTwoFactorCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = event.target.checked;
+    if (checked) {
+      if (!twoFactorEnabled) {
+        handleTwoFactorToggle(true);
+      }
+    } else {
+      if (twoFactorEnabled) {
+        handleTwoFactorToggle(false);
+      } else if (showTwoFactorSetup) {
+        cancelTwoFactorSetup();
+      }
+    }
+  };
+
+  const handleTwoFactorInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 6);
+    setTwoFactorCodeInput(digitsOnly);
+  };
+
+  const handleResendTwoFactorCode = () => {
+    if (!isTwoFactorLoading) {
+      beginTwoFactorSetup();
+    }
+  };
 
   // Handle avatar file selection
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -295,6 +332,70 @@ const ProfileSettings: React.FC = () => {
             {canEditProfile && (
               <div className='section-divider'>
                 <h3 className='section-title'>Security</h3>
+                <div className='twofactor-section'>
+                  <div className='twofactor-header'>
+                    <div>
+                      <p className='twofactor-title'>Two-factor authentication</p>
+                      <p className='twofactor-description'>
+                        Add an extra verification step when logging in.
+                      </p>
+                    </div>
+                    {canEditProfile && (
+                      <label className='twofactor-toggle'>
+                        <input
+                          type='checkbox'
+                          checked={twoFactorSwitchChecked}
+                          onChange={handleTwoFactorCheckboxChange}
+                          disabled={isTwoFactorLoading}
+                        />
+                        <span>{twoFactorSwitchChecked ? 'Enabled' : 'Disabled'}</span>
+                      </label>
+                    )}
+                  </div>
+                  {!canEditProfile && (
+                    <span
+                      className={`twofactor-status ${twoFactorEnabled ? 'enabled' : 'disabled'}`}>
+                      {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  )}
+
+                  {showTwoFactorSetup && (
+                    <div className='twofactor-setup'>
+                      <label htmlFor='twofactor-code'>Verification code</label>
+                      <input
+                        id='twofactor-code'
+                        className='input-text'
+                        type='text'
+                        inputMode='numeric'
+                        pattern='[0-9]*'
+                        maxLength={6}
+                        value={twoFactorCodeInput}
+                        onChange={handleTwoFactorInputChange}
+                        placeholder='Enter 6-digit code'
+                      />
+                      {twoFactorDevCode && (
+                        <p className='twofactor-helper'>Test code: {twoFactorDevCode}</p>
+                      )}
+                      <div className='twofactor-actions'>
+                        <button
+                          className='button button-primary'
+                          onClick={confirmTwoFactorSetup}
+                          disabled={isTwoFactorLoading}>
+                          Verify & Enable
+                        </button>
+                        <button
+                          className='button button-secondary'
+                          onClick={handleResendTwoFactorCode}
+                          disabled={isTwoFactorLoading}>
+                          Resend Code
+                        </button>
+                        <button className='button button-secondary' onClick={cancelTwoFactorSetup}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className='password-section'>
                   <input
                     className='input-text'
