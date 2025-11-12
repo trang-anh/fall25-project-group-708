@@ -1,47 +1,165 @@
 .message {
   display: flex;
-  flex-direction: column;
-  padding: 10px;
-  margin: auto;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  width: 98%;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  width: 100%;
 }
 
 .message.sender {
-  align-self: flex-end;
-  background-color: #d1e7ff;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 
 .message.receiver {
-  align-self: flex-start;
-  background-color: #ffffff;
+  flex-direction: row;
+  justify-content: flex-start;
 }
 
+/* Message avatar */
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+/* Message content wrapper */
+.message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 60%;
+  gap: 4px;
+}
+
+.message.sender .message-content-wrapper {
+  align-items: flex-end;
+}
+
+.message.receiver .message-content-wrapper {
+  align-items: flex-start;
+}
+
+/* Message header (sender name and time) */
 .message-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-  color: #666;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.message.sender .message-header {
+  flex-direction: row-reverse;
 }
 
 .message-sender {
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .message-time {
-  font-size: 0.8rem;
-  color: #999;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
+/* Message bubble */
 .message-body {
-  font-size: 1rem;
-  color: #333;
-  line-height: 1.5;
+  background-color: var(--button-gray);
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.4;
   word-wrap: break-word;
+  position: relative;
+}
+
+.message-body p {
+  margin: 0;
+}
+
+/* Gray bubbles for sent messages (right-aligned) */
+.message.sender .message-body {
+  background-color: var(--button-gray);
+  color: var(--text-primary);
+  border-bottom-right-radius: 4px;
+}
+
+/* Blue bubbles for received messages (left-aligned) */
+.message.receiver .message-body {
+  background-color: #d1e7fd;
+  color: #000;
+  border-bottom-left-radius: 4px;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .message.sender .message-body {
+  background-color: var(--button-gray);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .message.receiver .message-body {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+}
+
+/* Hide avatar for consecutive messages from same sender */
+.message.grouped .message-avatar {
+  visibility: hidden;
+}
+
+.message:not(.grouped) .message-avatar {
+  visibility: visible;
+}
+
+/* Adjust bubble corners for grouped messages */
+.message.receiver.grouped:not(.last-in-group) .message-body {
+  border-bottom-left-radius: 18px;
+  margin-bottom: 2px;
+}
+
+.message.receiver.last-in-group .message-body {
+  border-bottom-left-radius: 4px;
+}
+
+.message.sender.grouped:not(.last-in-group) .message-body {
+  border-bottom-right-radius: 18px;
+  margin-bottom: 2px;
+}
+
+.message.sender.last-in-group .message-body {
+  border-bottom-right-radius: 4px;
+}
+
+/* Hide header for grouped messages except first */
+.message.grouped .message-header {
+  display: none;
+}
+
+.message:not(.grouped) .message-header {
+  display: flex;
+}
+
+/* Date separator */
+.date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.date-separator::before,
+.date-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-secondary);
+}
+
+.date-separator span {
+  padding: 0 16px;
 }

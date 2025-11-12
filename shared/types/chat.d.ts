@@ -9,7 +9,11 @@ import { DatabaseUser } from './user';
  * - `user`: populated user details, including `_id` and `username`, or `null` if no user is found.
  */
 export interface MessageInChat extends DatabaseMessage {
-  user: Pick<DatabaseUser, '_id' | 'username'> | null;
+  user: {
+    _id: ObjectId,
+    username: string;
+    avatarUrl: string;
+  } | null;
 }
 
 /**
@@ -43,6 +47,11 @@ export interface DatabaseChat extends Omit<Chat, 'messages'> {
  */
 export interface PopulatedDatabaseChat extends Omit<DatabaseChat, 'messages'> {
   messages: MessageInChat[];
+  participantsData?: Array<{
+    _id: ObjectId;
+    username: string;
+    avatarUrl: string;
+  }>
 }
 
 /**
