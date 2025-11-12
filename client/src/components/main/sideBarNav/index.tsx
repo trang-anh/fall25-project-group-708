@@ -142,12 +142,12 @@ const SideBarNav = () => {
         </div>
 
         <NavLink to='/messaging' className='message-user-item'>
-          <div className='message-user-avatar'>E</div>
+          <div className='message-user-avatar'>💬</div>
           <div className='message-user-name'>Global Chat</div>
         </NavLink>
 
         <NavLink to='/messaging/direct-message' className='message-user-item'>
-          <div className='message-user-avatar'>D</div>
+          <div className='message-user-avatar'>💭</div>
           <div className='message-user-name'>Direct Messages</div>
         </NavLink>
       </div>

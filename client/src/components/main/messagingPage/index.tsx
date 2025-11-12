@@ -1,5 +1,6 @@
 import './index.css';
 import useMessagingPage from '../../../hooks/useMessagingPage';
+import useUserContext from '../../../hooks/useUserContext';
 import MessageCard from '../messageCard';
 
 /**
@@ -8,6 +9,7 @@ import MessageCard from '../messageCard';
  */
 const MessagingPage = () => {
   const { messages, newMessage, setNewMessage, handleSendMessage, error } = useMessagingPage();
+  const { user } = useUserContext();
 
   return (
     <div className='chat-room'>
@@ -15,9 +17,26 @@ const MessagingPage = () => {
         <h2>Chat Room</h2>
       </div>
       <div className='chat-messages'>
-        {messages.map(message => (
-          <MessageCard key={String(message._id)} message={message} />
-        ))}
+        {messages.map((message, index) => {
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+          
+          // Check if this message is grouped with previous message
+          const isGrouped = prevMessage?.msgFrom === message.msgFrom;
+          
+          // Check if this is the last message in a group
+          const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
+          
+          return (
+            <MessageCard 
+              key={String(message._id)} 
+              message={message}
+              currentUsername={user.username}
+              isGrouped={isGrouped}
+              isLastInGroup={isLastInGroup}
+            />
+          );
+        })}
       </div>
       <div className='message-input'>
         <textarea

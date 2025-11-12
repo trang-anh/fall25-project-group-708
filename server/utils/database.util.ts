@@ -65,7 +65,7 @@ const populateAnswer = async (answerID: string): Promise<PopulatedDatabaseAnswer
  * Fetches and populates a chat document with its related messages and user details.
  *
  * @param {string} chatID - The ID of the chat to fetch.
- * @returns {Promise<Chat | null>} - The populated chat document, or an error if not found.
+ * @returns {Promise<PopulatedDatabaseChat | null>} - The populated chat document, or an error if not found.
  * @throws {Error} - Throws an error if the chat document is not found.
  */
 const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | null> => {
@@ -77,15 +77,25 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
     throw new Error('Chat not found');
   }
 
+  // Get all unique participant usernames
+  const participantUsernames = chatDoc.participants;
+  
+  // Fetch user data for ALL participants in one query
+  const participantUsers = await UserModel.find({ 
+    username: { $in: participantUsernames } 
+  }).select('_id username avatarUrl');
+  
+  // Create a map for quick lookup
+  const userMap = new Map(
+    participantUsers.map(user => [user.username, user])
+  );
+
   const messagesWithUser: Array<MessageInChat | null> = await Promise.all(
     chatDoc.messages.map(async (messageDoc: DatabaseMessage) => {
       if (!messageDoc) return null;
 
-      let userDoc: DatabaseUser | null = null;
-
-      if (messageDoc.msgFrom) {
-        userDoc = await UserModel.findOne({ username: messageDoc.msgFrom });
-      }
+      // Use the map instead of querying again
+      const userDoc = userMap.get(messageDoc.msgFrom);
 
       return {
         _id: messageDoc._id,
@@ -97,6 +107,7 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
           ? {
               _id: userDoc._id!,
               username: userDoc.username,
+              avatarUrl: userDoc.avatarUrl || '',  // ✅ ADD THIS LINE
             }
           : null,
       };
@@ -105,9 +116,16 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
 
   // Filters out null values
   const enrichedMessages = messagesWithUser.filter(Boolean);
+  
+  // Add participantData to the chat object
   const transformedChat: PopulatedDatabaseChat = {
     ...chatDoc.toObject(),
     messages: enrichedMessages as MessageInChat[],
+    participantsData: participantUsers.map(u => ({  
+      _id: u._id!,
+      username: u.username,
+      avatarUrl: u.avatarUrl || ''
+    }))
   };
 
   return transformedChat;
