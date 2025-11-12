@@ -26,6 +26,8 @@ import collectionController from './controllers/collection.controller';
 import communityController from './controllers/community.controller';
 import notDuplicateQuestionController from './controllers/notDuplicateQuestion.controller';
 import authController from './controllers/auth.controller';
+import matchController from './controllers/match.controller';
+import matchProfileController from './controllers/matchProfile.controller';
 
 const MONGO_URL = `${process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'}/fake_so`;
 const PORT = parseInt(process.env.PORT || '8000');
@@ -114,6 +116,8 @@ app.use('/api/collection', collectionController(socket));
 app.use('/api/community', communityController(socket));
 app.use('/api/notDuplicateQuestion', notDuplicateQuestionController(socket));
 app.use('/api/auth', authController());
+app.use('/api/match', matchController(socket));
+app.use('/api/matchProfile', matchProfileController(socket));
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));

@@ -68,3 +68,37 @@ export const getUserMatches = async (
     return { error: (err as Error).message };
   }
 };
+
+/**
+ * Deletes a match by its ID if the requesting user is one of the participants.
+ *
+ * @param matchId - The ID of the match to delete
+ * @param userId - The ID of the user requesting deletion
+ * @returns A Promise resolving to the deleted match document or an error object
+ */
+export const deleteMatch = async (matchId: string, userId: string): Promise<MatchResponse> => {
+  try {
+    // First get the match
+    const match = await MatchModel.findById(matchId);
+
+    if (!match) {
+      return { error: 'Match not found' };
+    }
+
+    // Check if the user is in the match
+    if (match.userA.toString() !== userId && match.userB.toString() !== userId) {
+      return { error: 'Unauthorized: Only participants can delete this match' };
+    }
+
+    // If user is one of the participants, proceed with deletion
+    const deletedMatch = await MatchModel.findByIdAndDelete(matchId);
+
+    if (!deletedMatch) {
+      return { error: 'Match not found or already deleted' };
+    }
+
+    return deletedMatch;
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+};

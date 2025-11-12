@@ -84,6 +84,28 @@ export interface MatchProfileRequest extends Request {
 }
 
 /**
+ * Type definition for join/leave community request
+ */
+export interface ToggleMatchProfileActiveRequest extends Request {
+  body: {
+    userId: string;
+    isActive: boolean;
+  };
+}
+
+/**
+ * Represents a request to update a match profile.
+ * - `userId`: The ID of the user whose match profile is being updated (from params)
+ * - `body`: Partial match profile fields to update
+ */
+export interface UpdateMatchProfileRequest extends Request {
+  params: {
+    userId: string;
+  };
+  body: Partial<MatchProfile>;
+}
+
+/**
  * Type for community operation responses
  * Either returns a DatabaseCommunity (successful operation) or an error message
  */
