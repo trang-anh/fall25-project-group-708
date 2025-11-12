@@ -160,16 +160,12 @@ const questionController = (socket: FakeSOSocket) => {
 
       const savedQuestion = result as DatabaseQuestion;
 
-      // Add points for posting
-      await addRegisterPoints(question.askedBy, 5, 'POST_QUESTION');
-
-      // Deduct points if bad words were found
+      // Deduct points if bad words were found, and add points if none were found
       if (totalBadWords > 0) {
         const pointsToDeduct = totalBadWords * -1;
         await addRegisterPoints(question.askedBy, pointsToDeduct, 'HATEFUL_LANGUAGE');
-        console.log(`
-          =================\n
-          Deducted ${totalBadWords} points for ${totalBadWords} bad words`);
+      } else {
+        await addRegisterPoints(question.askedBy, 5, 'POST_QUESTION');
       }
 
       // Populates the fields of the question that was added, and emits the new object
@@ -230,7 +226,7 @@ const questionController = (socket: FakeSOSocket) => {
       // Emit the updated vote counts to all connected clients
       socket.emit('voteUpdate', { qid, upVotes: status.upVotes, downVotes: status.downVotes });
 
-      // ✅ ADD THIS: Fetch and emit updated user points
+      //Fetch and emit updated user points
       const updatedUser = await UserModel.findOne({ username }).select('-password');
       if (updatedUser) {
         socket.emit('userUpdate', {

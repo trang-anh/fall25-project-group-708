@@ -25,7 +25,10 @@ import {
   sortQuestionsByNewest,
   sortQuestionsByUnanswered,
 } from '../utils/sort.util';
-import addRegisterPoints from './registerPoints.service';
+import addRegisterPoints, {
+  hasReceivedDownvotePenalty,
+  hasReceivedUpvotePoints,
+} from './registerPoints.service';
 
 /**
  * Checks if keywords exist in a question's title or text.
@@ -259,10 +262,14 @@ export const addVoteToQuestion = async (
     if (wasAdded) {
       try {
         if (voteType === 'upvote') {
-          await addRegisterPoints(username, 2, 'UPVOTE_OTHERS');
+          const alreadyRewarded = await hasReceivedUpvotePoints(username, qid);
+          if (!alreadyRewarded && username !== result.askedBy) {
+            await addRegisterPoints(username, 2, 'UPVOTE_OTHERS', qid);
+          }
         } else {
-          if (result.askedBy !== username) {
-            await addRegisterPoints(result.askedBy, -1, 'RECEIVE_DOWNVOTES');
+          const alreadyPenalized = await hasReceivedDownvotePenalty(username, qid);
+          if (!alreadyPenalized && result.askedBy !== username) {
+            await addRegisterPoints(result.askedBy, -1, 'RECEIVE_DOWNVOTES', qid);
           }
         }
       } catch (error) {

@@ -10,7 +10,12 @@ import { updateUserTotalPoints } from './user.service';
  * @param reason - The reason for the point update (one of the enum listed)
  * ENUM: 'ACCEPT_ANSWER','UPVOTE_OTHERS', 'POST_QUESTION', 'HATEFUL_LANGUAGE', 'RECEIVE_DOWNVOTES'
  */
-const addRegisterPoints = async (username: string, pointsChange: number, reason: string) => {
+const addRegisterPoints = async (
+  username: string,
+  pointsChange: number,
+  reason: string,
+  questionId?: string,
+) => {
   try {
     const today = new Date();
 
@@ -29,6 +34,7 @@ const addRegisterPoints = async (username: string, pointsChange: number, reason:
       username,
       change_amount: applied,
       reason,
+      questionId,
       createdAt: today,
     });
 
@@ -40,6 +46,46 @@ const addRegisterPoints = async (username: string, pointsChange: number, reason:
   } catch (error) {
     return { error: (error as Error).message };
   }
+};
+
+/**
+ * Check if user has already received points for upvoting this question
+ *
+ * @param username the username of the person receiving points
+ * @param questionId the question id where the upvote happened
+ * @returns true if the user have upvoted before, false otherwise
+ */
+export const hasReceivedUpvotePoints = async (
+  username: string,
+  questionId: string,
+): Promise<boolean> => {
+  const existingEntry = await RegisterPointsModel.findOne({
+    username,
+    reason: 'UPVOTE_OTHERS',
+    questionId,
+  });
+
+  return !!existingEntry;
+};
+
+/**
+ * Check if user has already been penalized for receiving a downvote on this question
+ *
+ * @param username the username of the person receiving bad points
+ * @param questionId the question id where the downvote happened
+ * @returns true if the user have been penalized for that question before, false otherwise
+ */
+export const hasReceivedDownvotePenalty = async (
+  username: string,
+  questionId: string,
+): Promise<boolean> => {
+  const existingEntry = await RegisterPointsModel.findOne({
+    username,
+    reason: 'RECEIVE_DOWNVOTES',
+    questionId,
+  });
+
+  return !!existingEntry;
 };
 
 export default addRegisterPoints;
