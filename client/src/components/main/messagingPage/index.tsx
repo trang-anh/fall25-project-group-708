@@ -20,16 +20,16 @@ const MessagingPage = () => {
         {messages.map((message, index) => {
           const prevMessage = index > 0 ? messages[index - 1] : null;
           const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
-          
+
           // Check if this message is grouped with previous message
           const isGrouped = prevMessage?.msgFrom === message.msgFrom;
-          
+
           // Check if this is the last message in a group
           const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
-          
+
           return (
-            <MessageCard 
-              key={String(message._id)} 
+            <MessageCard
+              key={String(message._id)}
               message={message}
               currentUsername={user.username}
               isGrouped={isGrouped}

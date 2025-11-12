@@ -23,12 +23,11 @@ const ChatsListCard = ({
   isSelected?: boolean;
 }) => {
   // Filter out current user to show only the other participant
-  const otherParticipant = chat.participants.find(p => p !== currentUsername) || chat.participants[0];
+  const otherParticipant =
+    chat.participants.find(p => p !== currentUsername) || chat.participants[0];
 
   // Get avatar from participantData first (most reliable)
-  const otherParticipantData = chat.participantsData?.find(
-    p => p.username === otherParticipant
-  );
+  const otherParticipantData = chat.participantsData?.find(p => p.username === otherParticipant);
   let avatarUrl = otherParticipantData?.avatarUrl;
 
   // Fallback: search through messages if participantData is not available
@@ -69,10 +68,9 @@ const ChatsListCard = ({
   const timeDisplay = formatTime(chat.updatedAt);
 
   return (
-    <div 
-      onClick={() => handleChatSelect(chat._id)} 
-      className={`chats-list-card ${isSelected ? 'selected' : ''}`}
-    >
+    <div
+      onClick={() => handleChatSelect(chat._id)}
+      className={`chats-list-card ${isSelected ? 'selected' : ''}`}>
       <Avatar username={otherParticipant} avatarUrl={avatarUrl} size='small' />
       <div className='chat-info'>
         <div className='chat-main-info'>

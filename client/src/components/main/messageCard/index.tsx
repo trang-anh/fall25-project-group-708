@@ -13,12 +13,12 @@ import Avatar from '../../avatar';
  * @param isGrouped: Whether this message is part of a group from the same sender.
  * @param isLastInGroup: Whether this is the last message in a group.
  */
-const MessageCard = ({ 
+const MessageCard = ({
   message,
   currentUsername,
   isGrouped = false,
   isLastInGroup = false,
-}: { 
+}: {
   message: MessageInChat;
   currentUsername?: string;
   isGrouped?: boolean;
@@ -27,27 +27,16 @@ const MessageCard = ({
   // Determine if this is a sent or received message
   const isSender = currentUsername && message.msgFrom === currentUsername;
   const avatarUrl = message.user?.avatarUrl;
-  
+
   // Format time
   const timeDisplay = getMetaData(new Date(message.msgDateTime));
 
-  // Debug log (remove after testing)
-  console.log('MessageCard:', {
-    msgFrom: message.msgFrom,
-    currentUsername,
-    isSender,
-    avatarUrl
-  });
-
   return (
-    <div className={`message ${isSender ? 'sender' : 'receiver'} ${isGrouped ? 'grouped' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
+    <div
+      className={`message ${isSender ? 'sender' : 'receiver'} ${isGrouped ? 'grouped' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
       {!isSender && (
         <div className='message-avatar'>
-          <Avatar 
-            username={message.msgFrom} 
-            avatarUrl={avatarUrl}
-            size='small' 
-          />
+          <Avatar username={message.msgFrom} avatarUrl={avatarUrl} size='small' />
         </div>
       )}
       <div className='message-content-wrapper'>
@@ -63,11 +52,7 @@ const MessageCard = ({
       </div>
       {isSender && (
         <div className='message-avatar'>
-          <Avatar 
-            username={message.msgFrom} 
-            avatarUrl={avatarUrl}
-            size='small' 
-          />
+          <Avatar username={message.msgFrom} avatarUrl={avatarUrl} size='small' />
         </div>
       )}
     </div>

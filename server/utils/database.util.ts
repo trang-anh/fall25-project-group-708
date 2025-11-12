@@ -3,7 +3,6 @@ import {
   DatabaseCommunity,
   DatabaseMessage,
   DatabaseTag,
-  DatabaseUser,
   MessageInChat,
   PopulatedDatabaseAnswer,
   PopulatedDatabaseChat,
@@ -79,16 +78,14 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
 
   // Get all unique participant usernames
   const participantUsernames = chatDoc.participants;
-  
+
   // Fetch user data for ALL participants in one query
-  const participantUsers = await UserModel.find({ 
-    username: { $in: participantUsernames } 
+  const participantUsers = await UserModel.find({
+    username: { $in: participantUsernames },
   }).select('_id username avatarUrl');
-  
+
   // Create a map for quick lookup
-  const userMap = new Map(
-    participantUsers.map(user => [user.username, user])
-  );
+  const userMap = new Map(participantUsers.map(user => [user.username, user]));
 
   const messagesWithUser: Array<MessageInChat | null> = await Promise.all(
     chatDoc.messages.map(async (messageDoc: DatabaseMessage) => {
@@ -107,7 +104,7 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
           ? {
               _id: userDoc._id!,
               username: userDoc.username,
-              avatarUrl: userDoc.avatarUrl || '',  // ✅ ADD THIS LINE
+              avatarUrl: userDoc.avatarUrl || '', // ✅ ADD THIS LINE
             }
           : null,
       };
@@ -116,16 +113,16 @@ const populateChat = async (chatID: string): Promise<PopulatedDatabaseChat | nul
 
   // Filters out null values
   const enrichedMessages = messagesWithUser.filter(Boolean);
-  
+
   // Add participantData to the chat object
   const transformedChat: PopulatedDatabaseChat = {
     ...chatDoc.toObject(),
     messages: enrichedMessages as MessageInChat[],
-    participantsData: participantUsers.map(u => ({  
+    participantsData: participantUsers.map(u => ({
       _id: u._id!,
       username: u.username,
-      avatarUrl: u.avatarUrl || ''
-    }))
+      avatarUrl: u.avatarUrl || '',
+    })),
   };
 
   return transformedChat;
