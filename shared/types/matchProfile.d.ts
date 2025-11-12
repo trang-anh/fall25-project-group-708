@@ -43,6 +43,7 @@ export interface DatabaseMatchProfile
   extends Omit<MatchProfile, 'programmingLanguages', 'preferences'> {
   _id: ObjectId;
   userId: ObjectId;
+  isActive: boolean;
   programmingLanguage: ObjectId[];
   preferences: {
     preferredLanguages: ObjectId[];
@@ -80,6 +81,28 @@ export interface MatchProfileRequest extends Request {
   params: {
     userId: string;
   };
+}
+
+/**
+ * Type definition for join/leave community request
+ */
+export interface ToggleMatchProfileActiveRequest extends Request {
+  body: {
+    userId: string;
+    isActive: boolean;
+  };
+}
+
+/**
+ * Represents a request to update a match profile.
+ * - `userId`: The ID of the user whose match profile is being updated (from params)
+ * - `body`: Partial match profile fields to update
+ */
+export interface UpdateMatchProfileRequest extends Request {
+  params: {
+    userId: string;
+  };
+  body: Partial<MatchProfile>;
 }
 
 /**

@@ -1128,6 +1128,274 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+  
+  # --------------------
+  # MATCH CONTROLLER
+  # --------------------
+  /match/getMatch/{matchId}:
+    get:
+      tags:
+        - Match
+      summary: Retrieve a match by its ID.
+      parameters:
+        - in: path
+          name: matchId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the match.
+      responses:
+        '200':
+          description: Successfully retrieved match details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /match/getUserMatches/{userId}:
+    get:
+      tags:
+        - Match
+      summary: Retrieve all user matches by user ID.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the user.
+      responses:
+        '200':
+          description: Successfully retrieved all matches details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMatchesResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /match/create:
+    post:
+      tags:
+        - Match
+      summary: Create a new match.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMatchBody'
+      responses:
+        '200':
+          description: Match successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseMatch'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /match/delete/{matchId}:
+    delete:
+      tags:
+        - Match
+      summary: Delete a match (requires user privileges).
+      parameters:
+        - in: path
+          name: matchId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the match to delete.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteMatchBody'
+      responses:
+        '200':
+          description: Match successfully deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  community:
+                    $ref: '#/components/schemas/DatabaseMatch'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '404':
+          description: Match not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  
+  # --------------------
+  # MATCH PROFILE CONTROLLER
+  # --------------------
+  /matchProfile/getMatchProfile/{userId}:
+    get:
+      tags:
+        - MatchProfile
+      summary: Retrieve a match profile by user ID.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the user.
+      responses:
+        '200':
+          description: Successfully retrieved match profile details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchProfile'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /matchProfile/getAllMatchProfiles:
+    get:
+      tags:
+        - MatchProfile
+      summary: Retrieve all match profiles
+      responses:
+        '200':
+          description: Successfully retrieved all match profiles.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchProfilesResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  
+  /matchProfile/checkOnboardingStatus/{userId}:
+    get:
+      tags:
+        - MatchProfile
+      summary: Check user's onboarding status by their unique ID.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the user.
+      responses:
+        '200':
+          description: Successfully retrieved onboarding status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchProfile'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  
+  /matchProfile/toggleMatchProfileActive/{userId}:
+    patch:
+      tags:
+        - MatchProfile
+      summary: Deactivate or reactivate a match profile.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: object-id
+          description: The unique ID of the user whose active status is being toggled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleMatchProfileActiveBody'
+      responses:
+        '200':
+          description: Active status successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseMatchProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          description: Match Profile not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  
+  /matchProfile/updateMatchProfile/{userId}:
+    patch:
+      tags:
+        - MatchProfile
+      summary: Update a user's match profile.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMatchProfileBody'
+      responses:
+        '200':
+          description: User match profile successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  
+  /matchProfile/create:
+    post:
+      tags:
+        - MatchProfile
+      summary: Create a new match.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMatchProfileBody'
+      responses:
+        '200':
+          description: Match Profile successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseMatchProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
 
 
 components:
@@ -1647,6 +1915,358 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    # --------------------
+    # MATCH SCHEMAS
+    # --------------------
+    Match:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique identifier for the match
+          example: 653b2c2ef5b7c70012a34d93
+        userA:
+          type: string
+          description: ObjectId of the first user
+        userB:
+          type: string
+          description: ObjectId of the second user
+        status:
+          type: string
+          enum: 
+          - pending
+          - accepted
+          - rejected
+          description: Match status
+        score:
+          type: number
+          format: float
+          description: Match score
+        initiatedBy:
+          type: string
+          description: ObjectId of the user who initiated the match
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the match was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the match was last updated
+    
+    CreateMatchBody:
+      type: object
+      required:
+        - userA
+        - userB
+        - initiatedBy
+      properties:
+        userA:
+          type: string
+          description: ObjectId of the first user in the match
+          minLength: 1
+        userB:
+          type: string
+          description: ObjectId of the second user in the match
+          minLength: 1
+        status:
+          type: string
+          enum: 
+          - pending
+          - accepted
+          - rejected
+          default: pending
+          description: Current status of the match
+        score:
+          type: number
+          format: float
+          description: Compatibility score between the two users
+        initiatedBy:
+          type: string
+          description: ObjectId of the user who initiated the match
+
+    DeleteMatchBody:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          minLength: 1
+          description: The user id of the user performing the deletion.
+
+    DatabaseMatch:
+      allOf:
+        - $ref: '#/components/schemas/Match'
+      description: A match object as stored in the database.
+
+    UserMatchesResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          _id:
+            type: string
+          userA:
+            type: string
+          userB:
+            type: string
+          status:
+            type: string
+          score:
+            type: number
+  
+    # --------------------
+    # MATCH PROFILE SCHEMAS
+    # --------------------
+    MatchProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the match profile
+        isActive:
+          type: boolean
+          description: Boolean indicicating active in service or not
+        age:
+          type: integer
+          description: Age of user
+        gender:
+          type: string
+          enum: 
+          - MALE
+          - FEMALE
+          - NON-BINARY
+          - PREFER TO NOT DESCRIBE
+          description: gender of user
+        location:
+          type: string
+          enum:
+          - NORTH AMERICA
+          - SOUTH AMERICA
+          - EUROPE
+          - ASIA
+          - AFRICA
+          - AUSTRALIA
+          - ANTARCTICA
+          description: location of user
+        programmingLanguage:
+          type: array
+          description: Array of ObjectIds referencing programming languages known by the user.
+          items:
+            type: string
+            format: object-id
+        level:
+          type: string
+          enum: 
+          - BEGINNER
+          - INTERMEDIATE
+          - ADVANCED
+          description: user's self-assessed programming level
+        preferences:
+          type: object
+          description: user's preferred criteria when matching with others
+          properties:
+            preferredLanguages:
+              type: array
+              description: Array of ObjectIds referencing preferred programming languages.
+              items:
+                type: string
+                format: object-id
+            preferredLevel:
+              type: string
+              enum: 
+              - BEGINNER
+              - INTERMEDIATE
+              - ADVANCED
+              description: Preferred experience level of the matching user
+        onboardingAnswers:
+          type: object
+          description: Optional onboarding quiz answers provided by the user
+          properties:
+            goals:
+              type: string
+              description: user's personal goals for pair programming
+            personality:
+              type: string
+              description: description of the users personality or working style
+            projectType:
+              type: string
+              description: type of project user prefers.
+        biography:
+          type: string
+          description: Short bio written by the user
+        profileImageUrl:
+          type: string
+          description: Optional URL to the users profile image
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when match profile was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when match profile was last updated
+    
+    CreateMatchProfileBody:
+      type: object
+      required:
+        - userId
+        - gender
+        - level
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the match profile
+          minLength: 1
+        gender:
+          type: string
+          enum: 
+          - MALE
+          - FEMALE
+          - NON-BINARY
+          - PREFER TO NOT DESCRIBE
+          description: gender of user
+          minLength: 1
+        level:
+          type: string
+          enum: 
+          - BEGINNER
+          - INTERMEDIATE
+          - ADVANCED
+          description: user's self-assessed programming level
+    
+    ToggleMatchProfileActiveBody:
+      type: object
+      required:
+        - userId
+        - isActive
+      properties:
+        userId:
+          type: string
+          description: The ID of the user whose profile is being toggled
+        isActive:
+          type: boolean
+          description: New active status for the user.
+      
+    UpdateMatchProfileBody:
+      type: object
+      description: Request body for updating an existing match profile. All fields are optional except userId
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          format: object-id
+          description: The ID of the user whose match profile is being updated
+        isActive:
+          type: boolean
+          description: Whether the user's match profile is currently active
+        age:
+          type: integer
+          description: Updated age of the user
+        gender:
+          type: string
+          enum: 
+          - MALE
+          - FEMALE
+          - NON-BINARY
+          - PREFER TO NOT DESCRIBE
+          description: Updated gender identity
+        location:
+          type: string
+          enum:
+            - NORTH AMERICA
+            - SOUTH AMERICA
+            - EUROPE
+            - ASIA
+            - AFRICA
+            - AUSTRALIA
+            - ANTARCTICA
+          description: Updated location or region of the user
+        programmingLanguage:
+          type: array
+          description: Updated list of programming languages (ObjectIds) for the user
+          items:
+            type: string
+            format: object-id
+        level:
+          type: string
+          enum: 
+          - BEGINNER
+          - INTERMEDIATE
+          - ADVANCED
+          description: Updated programming experience level
+        preferences:
+          type: object
+          description: Updated user preferences for matching
+          properties:
+            preferredLanguages:
+              type: array
+              items:
+                type: string
+                format: object-id
+              description: Updated preferred programming languages
+            preferredLevel:
+              type: string
+              enum: 
+              - BEGINNER
+              - INTERMEDIATE
+              - ADVANCED
+              description: Updated preferred partner level
+        onboardingAnswers:
+          type: object
+          description: Updated onboarding quiz responses
+          properties:
+            goals:
+              type: string
+              description: Updated personal goals
+            personality:
+              type: string
+              description: Updated self-description or personality type
+            projectType:
+              type: string
+              description: Updated preferred project type
+        biography:
+          type: string
+          description: Updated user biography or profile description
+        profileImageUrl:
+          type: string
+          description: Updated URL for the users profile picture
+    
+    DatabaseMatchProfile:
+      allOf:
+        - $ref: '#/components/schemas/MatchProfile'
+      description: A match object as stored in the database
+
+    MatchProfilesResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          userId:
+            type: string
+          isActive:
+            type: boolean
+          age:
+            type: string
+          gender:
+            type: string
+          location:
+            type: string
+          programmingLanguage:
+            type: array
+          level: 
+            type: string
+          preferences:
+            type: object
+          onboardingAnswers:
+            type: object
+          biography:
+            type: string
+          profileImageUrl:
+            type: string
 
   responses:
     # --------------------

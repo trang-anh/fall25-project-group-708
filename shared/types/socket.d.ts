@@ -6,6 +6,8 @@ import { SafeDatabaseUser } from './user';
 import { BaseMove, GameInstance, GameInstanceID, GameMove, GameState } from './game';
 import { DatabaseCommunity } from './community';
 import { PopulatedDatabaseCollection } from './collection';
+import { DatabaseMatch } from './match';
+import { DatabaseMatchProfile } from './matchProfile';
 
 /**
  * Payload for an answer update event.
@@ -142,6 +144,26 @@ export interface ClientToServerEvents {
 }
 
 /**
+ * Interface representing the payload for a match update event.
+ * - `type`: The type of update (`'created'`, `'updated'`, or `'deleted'`).
+ * - `match`: The updated match object.
+ */
+export interface MatchUpdatePayload {
+  type: 'created' | 'updated' | 'deleted';
+  match: DatabaseMatch;
+}
+
+/**
+ * Interface representing the payload for a match profile update event.
+ * - `type`: The type of update (`'created'`, `'updated'`, or `'deleted'`).
+ * - `matchProfile`: The updated match profile object.
+ */
+export interface MatchProfileUpdatePayload {
+  type: 'created' | 'updated' | 'deleted';
+  matchProfile: DatabaseMatchProfile;
+}
+
+/**
  * Interface representing the events the server can emit to the client.
  * - `questionUpdate`: Server sends updated question.
  * - `answerUpdate`: Server sends updated answer.
@@ -155,6 +177,8 @@ export interface ClientToServerEvents {
  * - `chatUpdate`: Server sends updated chat.
  * - `communityUpdate`: Server sends updated community.
  * - `collectionUpdate`: Server sends updated collection.
+ * - `matchUpdate`: Server sends updated match.
+ * - `collectionUpdate`: Server sends updated match.
  */
 export interface ServerToClientEvents {
   questionUpdate: (question: PopulatedDatabaseQuestion) => void;
@@ -170,4 +194,6 @@ export interface ServerToClientEvents {
   chatUpdate: (chat: ChatUpdatePayload) => void;
   communityUpdate: (community: CommunityUpdatePayload) => void;
   collectionUpdate: (community: CollectionUpdatePayload) => void;
+  matchUpdate: (match: MatchUpdatePayload) => void;
+  matchProfileUpdate: (match: MatchProfileUpdatePayload) => void;
 }
