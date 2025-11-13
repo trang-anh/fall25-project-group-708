@@ -10,17 +10,17 @@
   padding: 20px 0;
 }
 
-/* Dark mode variables - add these to your root CSS if not already present */
+/* Dark mode variables */
 :root {
   --bg-primary: #0f1419;
   --bg-secondary: #1a1f2e;
   --bg-tertiary: #242938;
-  --tag-bg: #1e2431;
-  --tag-bg-hover: #2a3142;
-  --tag-bg-active: #4a7ba7;
-  --tag-text: #e1e8ed;
-  --tag-text-secondary: #8899a6;
-  --accent-blue: #6c9bd1;
+  --tag-bg: #1e293b;
+  --tag-bg-hover: #334155;
+  --tag-bg-active: #475569;
+  --tag-text: #e2e8f0;
+  --tag-text-secondary: #94a3b8;
+  --accent-blue: #60a5fa;
 }
 
 /* Light mode support */
@@ -29,11 +29,11 @@
     --bg-primary: #ffffff;
     --bg-secondary: #f7f9fa;
     --bg-tertiary: #eef2f5;
-    --tag-bg: #e8f0f8;
-    --tag-bg-hover: #d4e4f3;
-    --tag-bg-active: #5b8fc4;
-    --tag-text: #1a1f2e;
-    --tag-text-secondary: #536471;
-    --accent-blue: #4a7ba7;
+    --tag-bg: #d1d5db;
+    --tag-bg-hover: #b8bdc4;
+    --tag-bg-active: #9ca3af;
+    --tag-text: #1f2937;
+    --tag-text-secondary: #4b5563;
+    --accent-blue: #6b7280;
   }
 }
