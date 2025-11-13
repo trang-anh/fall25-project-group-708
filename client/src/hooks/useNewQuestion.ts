@@ -38,7 +38,7 @@ const useNewQuestion = () => {
 
   const [communityList, setCommunityList] = useState<DatabaseCommunity[]>([]);
 
-  // New state for bad word detection
+  // state for bad word detection
   const [showBadWordWarning, setShowBadWordWarning] = useState<boolean>(false);
   const [badWordDetails, setBadWordDetails] = useState<string[]>([]);
 
