@@ -29,7 +29,7 @@ const useAnswerForm = () => {
   const [textErr, setTextErr] = useState<string>('');
   const [questionID, setQuestionID] = useState<string>('');
 
-  // New state for bad word detection
+  // state for bad word detection
   const [showBadWordWarning, setShowBadWordWarning] = useState<boolean>(false);
   const [badWordDetails, setBadWordDetails] = useState<string[]>([]);
 

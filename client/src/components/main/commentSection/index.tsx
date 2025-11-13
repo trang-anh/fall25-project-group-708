@@ -5,6 +5,14 @@ import { getMetaData } from '../../../tool';
 import { Comment, DatabaseComment } from '../../../types/types';
 import './index.css';
 import useUserContext from '../../../hooks/useUserContext';
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
+import BadWordWarningModal from '../badWordsWarningModal';
+
+// Create matcher with English dataset
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 /**
  * Interface representing the props for the Comment Section component.
@@ -29,10 +37,28 @@ const CommentSection = ({ comments, handleAddComment }: CommentSectionProps) => 
   const [textErr, setTextErr] = useState<string>('');
   const [showComments, setShowComments] = useState<boolean>(false);
 
+  // state for bad word detection
+  const [showBadWordWarning, setShowBadWordWarning] = useState<boolean>(false);
+  const [badWordDetails, setBadWordDetails] = useState<string[]>([]);
+
+  const checkForBadWords = (): boolean => {
+    const detectedIn: string[] = [];
+
+    if (text && matcher.hasMatch(text)) {
+      detectedIn.push('answer text');
+    }
+
+    if (detectedIn.length > 0) {
+      setBadWordDetails(detectedIn);
+      return true;
+    }
+    return false;
+  };
+
   /**
    * Function to handle the addition of a new comment.
    */
-  const handleAddCommentClick = () => {
+  const handleAddCommentClick = (forcePost = false) => {
     if (text.trim() === '' || user.username.trim() === '') {
       setTextErr(text.trim() === '' ? 'Comment text cannot be empty' : '');
       return;
@@ -44,13 +70,42 @@ const CommentSection = ({ comments, handleAddComment }: CommentSectionProps) => 
       commentDateTime: new Date(),
     };
 
+    // Check for bad words if not force posting
+    if (!forcePost && checkForBadWords()) {
+      setShowBadWordWarning(true);
+      return;
+    }
+
     handleAddComment(newComment);
     setText('');
     setTextErr('');
   };
 
+  /**
+   * Handle closing the bad word warning modal
+   */
+  const handleCloseBadWordWarning = () => {
+    setShowBadWordWarning(false);
+    setBadWordDetails([]);
+  };
+
+  /**
+   * Handle posting the comment anyway despite bad words
+   */
+  const handlePostAnyway = () => {
+    setShowBadWordWarning(false);
+    handleAddCommentClick(true);
+  };
+
   return (
     <div className='comment-section'>
+      <BadWordWarningModal
+        show={showBadWordWarning}
+        onClose={handleCloseBadWordWarning}
+        onPostAnyway={handlePostAnyway}
+        detectedIn={badWordDetails}
+      />
+
       <button className='toggle-button' onClick={() => setShowComments(!showComments)}>
         {showComments ? 'Hide Comments' : 'Show Comments'}
       </button>
@@ -82,7 +137,7 @@ const CommentSection = ({ comments, handleAddComment }: CommentSectionProps) => 
                 onChange={e => setText(e.target.value)}
                 className='comment-textarea'
               />
-              <button className='add-comment-button' onClick={handleAddCommentClick}>
+              <button className='add-comment-button' onClick={() => handleAddCommentClick(false)}>
                 Add Comment
               </button>
             </div>

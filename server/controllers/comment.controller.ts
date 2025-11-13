@@ -8,6 +8,8 @@ import {
 } from '../types/types';
 import { addComment, saveComment } from '../services/comment.service';
 import { populateDocument } from '../utils/database.util';
+import { cleanText, moderateContent } from '../services/contentModeration.service';
+import addRegisterPoints from '../services/registerPoints.service';
 
 const commentController = (socket: FakeSOSocket) => {
   const router = express.Router();
@@ -33,7 +35,32 @@ const commentController = (socket: FakeSOSocket) => {
     const { comment, type } = req.body;
 
     try {
-      const comFromDb = await saveComment(comment);
+      //bad words checker
+      const moderation = moderateContent({
+        text: comment.text,
+      });
+
+      //counting words for point deductions
+      const totalBadWords = Object.values(moderation.badWords).reduce(
+        (sum, words) => sum + words.length,
+        0,
+      );
+
+      //cleaning out any bad words to be stored in the database
+      const cleanedComment = {
+        ...comment,
+        text: comment.text ? cleanText(comment.text) : comment.text,
+      };
+
+      // Deduct points if bad words were found, and add points if none were found
+      if (totalBadWords > 0) {
+        const pointsToDeduct = totalBadWords * -1;
+        await addRegisterPoints(cleanedComment.commentBy, pointsToDeduct, 'HATEFUL_LANGUAGE');
+      } else {
+        await addRegisterPoints(cleanedComment.commentBy, 10, 'ACCEPT_ANSWER');
+      }
+
+      const comFromDb = await saveComment(cleanedComment);
 
       if ('error' in comFromDb) {
         throw new Error(comFromDb.error);
