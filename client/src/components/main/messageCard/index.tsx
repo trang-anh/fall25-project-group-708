@@ -25,7 +25,7 @@ const MessageCard = ({
   isLastInGroup?: boolean;
 }) => {
   // Determine if this is a sent or received message
-  const isSender = currentUsername && message.msgFrom === currentUsername;
+  const isSender = currentUsername && message.msgFrom !== currentUsername;
   const avatarUrl = message.user?.avatarUrl;
 
   // Format time

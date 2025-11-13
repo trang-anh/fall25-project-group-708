@@ -1,5 +1,39 @@
+.tag-page-container {
+  background-color: var(--bg-primary, #0f1419);
+  min-height: 100vh;
+}
+
 .tag_list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-gap: 80px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+/* Dark mode variables - add these to your root CSS if not already present */
+:root {
+  --bg-primary: #0f1419;
+  --bg-secondary: #1a1f2e;
+  --bg-tertiary: #242938;
+  --tag-bg: #1e2431;
+  --tag-bg-hover: #2a3142;
+  --tag-bg-active: #4a7ba7;
+  --tag-text: #e1e8ed;
+  --tag-text-secondary: #8899a6;
+  --accent-blue: #6c9bd1;
+}
+
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f9fa;
+    --bg-tertiary: #eef2f5;
+    --tag-bg: #e8f0f8;
+    --tag-bg-hover: #d4e4f3;
+    --tag-bg-active: #5b8fc4;
+    --tag-text: #1a1f2e;
+    --tag-text-secondary: #536471;
+    --accent-blue: #4a7ba7;
+  }
 }
