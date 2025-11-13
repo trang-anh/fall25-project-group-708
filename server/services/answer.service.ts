@@ -9,7 +9,6 @@ import {
 } from '../types/types';
 import AnswerModel from '../models/answers.model';
 import QuestionModel from '../models/questions.model';
-import addRegisterPoints from './registerPoints.service';
 
 /**
  * Records the most recent answer time for a given question based on its answers.
@@ -69,9 +68,6 @@ export const addAnswerToQuestion = async (
     if (result === null) {
       throw new Error('Error when adding answer to question');
     }
-
-    // Author of the answer earns +10 points
-    await addRegisterPoints(ans.ansBy, 10, 'ACCEPT_ANSWER');
 
     return result;
   } catch (error) {
