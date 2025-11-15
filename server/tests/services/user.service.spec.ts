@@ -7,6 +7,7 @@ import {
   loginUser,
   saveUser,
   updateUser,
+  updateUserTotalPoints,
 } from '../../services/user.service';
 import { SafeDatabaseUser, User, UserCredentials } from '../../types/types';
 import { user, safeUser } from '../mockData.models';
@@ -346,5 +347,51 @@ describe('updateUser', () => {
     const updatedError = await updateUser(user.username, biographyUpdates);
 
     expect('error' in updatedError).toBe(true);
+  });
+});
+
+describe('updateUserTotalPoints', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('increments user totalPoints successfully', async () => {
+    // mock findOneAndUpdate return
+    (UserModel.findOneAndUpdate as jest.Mock).mockResolvedValue({
+      username: 'testUser',
+      totalPoints: 12,
+    });
+
+    await updateUserTotalPoints('testUser', 5);
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { username: 'testUser' },
+      { $inc: { totalPoints: 5 } },
+      { new: true },
+    );
+  });
+
+  test('correctly applies negative point changes', async () => {
+    (UserModel.findOneAndUpdate as jest.Mock).mockResolvedValue({
+      username: 'testUser',
+      totalPoints: 3,
+    });
+
+    await updateUserTotalPoints('testUser', -2);
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { username: 'testUser' },
+      { $inc: { totalPoints: -2 } },
+      { new: true },
+    );
+  });
+
+  test('throws error if DB update fails', async () => {
+    (UserModel.findOneAndUpdate as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+    await expect(updateUserTotalPoints('testUser', 5)).rejects.toThrow('DB error');
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
   });
 });
