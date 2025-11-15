@@ -207,3 +207,24 @@
     font-size: 0.75rem;
   }
 }
+
+.justification_section {
+  margin-bottom: 20px;
+}
+
+.justification_field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-top: 8px;
+}
+
+.justification_field:focus {
+  outline: none;
+  border-color: #00b896;
+  box-shadow: 0 0 0 3px rgba(0, 184, 150, 0.1);
+}
