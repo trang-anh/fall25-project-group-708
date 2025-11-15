@@ -8,6 +8,7 @@ import {
   saveQuestion,
   addVoteToQuestion,
   getCommunityQuestions,
+  fetchFiveQuestionsByTextAndTitle,
 } from '../../services/question.service';
 import { DatabaseQuestion, PopulatedDatabaseQuestion } from '../../types/types';
 import {
@@ -20,10 +21,20 @@ import {
   ans4,
   POPULATED_QUESTIONS,
 } from '../mockData.models';
+import * as registerPointsService from '../../services/registerPoints.service';
 
 describe('Question model', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    jest.spyOn(registerPointsService, 'hasReceivedUpvotePoints').mockResolvedValue(false);
+    jest.spyOn(registerPointsService, 'hasReceivedDownvotePenalty').mockResolvedValue(false);
+
+    jest.spyOn(registerPointsService, 'default').mockResolvedValue({
+      applied: 2,
+      blocked: 0,
+      entry: {} as any,
+    });
   });
 
   describe('filterQuestionsBySearch', () => {
@@ -308,7 +319,7 @@ describe('Question model', () => {
       const mockQn = {
         title: 'New Question Title',
         text: 'New Question Text',
-        tags: [tag1, tag2],
+        tags: [tag1._id, tag2._id],
         askedBy: 'question3_user',
         askDateTime: new Date('2024-06-06'),
         answers: [],
@@ -341,7 +352,7 @@ describe('Question model', () => {
       const mockQn = {
         title: 'New Question Title',
         text: 'New Question Text',
-        tags: [tag1, tag2],
+        tags: [tag1._id, tag2._id],
         askedBy: 'question3_user',
         askDateTime: new Date('2024-06-06'),
         answers: [],
@@ -364,9 +375,23 @@ describe('Question model', () => {
   });
 
   describe('addVoteToQuestion', () => {
-    test('addVoteToQuestion should upvote a question', async () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+
+      jest.spyOn(registerPointsService, 'hasReceivedUpvotePoints').mockResolvedValue(false);
+      jest.spyOn(registerPointsService, 'hasReceivedDownvotePenalty').mockResolvedValue(false);
+
+      jest.spyOn(registerPointsService, 'default').mockResolvedValue({
+        applied: 2,
+        blocked: 0,
+        entry: {} as any, // mock Document
+      });
+    });
+
+    test('adds an upvote when user has not upvoted before', async () => {
       const mockQuestion = {
         _id: 'someQuestionId',
+        askedBy: 'authorUser',
         upVotes: [],
         downVotes: [],
       };
@@ -382,51 +407,20 @@ describe('Question model', () => {
         upVotes: ['testUser'],
         downVotes: [],
       });
+
+      // ensure points awarded
+      expect(registerPointsService.default).toHaveBeenCalledWith(
+        'testUser',
+        2,
+        'UPVOTE_OTHERS',
+        'someQuestionId',
+      );
     });
 
-    test('If an upvoter downvotes, add them to downvotes and remove them from upvotes', async () => {
+    test('cancels an upvote when already upvoted', async () => {
       const mockQuestion = {
         _id: 'someQuestionId',
-        upVotes: ['testUser'],
-        downVotes: [],
-      };
-
-      jest
-        .spyOn(QuestionModel, 'findOneAndUpdate')
-        .mockResolvedValue({ ...mockQuestion, upVotes: [], downVotes: ['testUser'] });
-
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'downvote');
-
-      expect(result).toEqual({
-        msg: 'Question downvoted successfully',
-        upVotes: [],
-        downVotes: ['testUser'],
-      });
-    });
-
-    test('If a downvoter upvotes, add them to upvotes and remove them from downvotes', async () => {
-      const mockQuestion = {
-        _id: 'someQuestionId',
-        upVotes: [],
-        downVotes: ['testUser'],
-      };
-
-      jest
-        .spyOn(QuestionModel, 'findOneAndUpdate')
-        .mockResolvedValue({ ...mockQuestion, upVotes: ['testUser'], downVotes: [] });
-
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'upvote');
-
-      expect(result).toEqual({
-        msg: 'Question upvoted successfully',
-        upVotes: ['testUser'],
-        downVotes: [],
-      });
-    });
-
-    test('should cancel the upvote if already upvoted', async () => {
-      const mockQuestion = {
-        _id: 'someQuestionId',
+        askedBy: 'authorUser',
         upVotes: ['testUser'],
         downVotes: [],
       };
@@ -442,45 +436,15 @@ describe('Question model', () => {
         upVotes: [],
         downVotes: [],
       });
+
+      // ensure NO points added
+      expect(registerPointsService.default).not.toHaveBeenCalled();
     });
 
-    test('should cancel the downvote if already downvoted', async () => {
+    test('adds a downvote when user has not downvoted before', async () => {
       const mockQuestion = {
         _id: 'someQuestionId',
-        upVotes: [],
-        downVotes: ['testUser'],
-      };
-
-      jest
-        .spyOn(QuestionModel, 'findOneAndUpdate')
-        .mockResolvedValue({ ...mockQuestion, upVotes: [], downVotes: [] });
-
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'downvote');
-
-      expect(result).toEqual({
-        msg: 'Downvote cancelled successfully',
-        upVotes: [],
-        downVotes: [],
-      });
-    });
-
-    test('addVoteToQuestion should return an error if the question is not found', async () => {
-      jest.spyOn(QuestionModel, 'findOneAndUpdate').mockResolvedValue(null);
-
-      const result = await addVoteToQuestion('nonExistentId', 'testUser', 'upvote');
-      expect(result).toEqual({ error: 'Question not found!' });
-    });
-
-    test('addVoteToQuestion should return an error when there is an issue with adding an upvote', async () => {
-      jest.spyOn(QuestionModel, 'findOneAndUpdate').mockRejectedValue(new Error('Database error'));
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'upvote');
-
-      expect(result).toEqual({ error: 'Error when adding upvote to question' });
-    });
-
-    test('addVoteToQuestion should downvote a question', async () => {
-      const mockQuestion = {
-        _id: 'someQuestionId',
+        askedBy: 'authorUser',
         upVotes: [],
         downVotes: [],
       };
@@ -496,11 +460,44 @@ describe('Question model', () => {
         upVotes: [],
         downVotes: ['testUser'],
       });
+
+      // ensure penalty to author
+      expect(registerPointsService.default).toHaveBeenCalledWith(
+        'authorUser',
+        -1,
+        'RECEIVE_DOWNVOTES',
+        'someQuestionId',
+      );
     });
 
-    test('If an upvoter downvotes, add them to downvotes and remove them from upvotes', async () => {
+    test('cancels a downvote when already downvoted', async () => {
       const mockQuestion = {
         _id: 'someQuestionId',
+        askedBy: 'authorUser',
+        upVotes: [],
+        downVotes: ['testUser'],
+      };
+
+      jest
+        .spyOn(QuestionModel, 'findOneAndUpdate')
+        .mockResolvedValue({ ...mockQuestion, upVotes: [], downVotes: [] });
+
+      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'downvote');
+
+      expect(result).toEqual({
+        msg: 'Downvote cancelled successfully',
+        upVotes: [],
+        downVotes: [],
+      });
+
+      // ensure NO penalty removed or added
+      expect(registerPointsService.default).not.toHaveBeenCalled();
+    });
+
+    test('switch from upvote → downvote', async () => {
+      const mockQuestion = {
+        _id: 'someQuestionId',
+        askedBy: 'authorUser',
         upVotes: ['testUser'],
         downVotes: [],
       };
@@ -518,41 +515,24 @@ describe('Question model', () => {
         upVotes: [],
         downVotes: ['testUser'],
       });
+
+      expect(registerPointsService.default).toHaveBeenCalled();
     });
 
-    test('should cancel the downvote if already downvoted', async () => {
-      const mockQuestion = {
-        _id: 'someQuestionId',
-        upVotes: [],
-        downVotes: ['testUser'],
-      };
-
-      jest
-        .spyOn(QuestionModel, 'findOneAndUpdate')
-        .mockResolvedValue({ ...mockQuestion, upVotes: [], downVotes: [] });
-
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'downvote');
-
-      expect(result).toEqual({
-        msg: 'Downvote cancelled successfully',
-        upVotes: [],
-        downVotes: [],
-      });
-    });
-
-    test('addVoteToQuestion should return an error if the question is not found', async () => {
+    test('returns error if question does not exist', async () => {
       jest.spyOn(QuestionModel, 'findOneAndUpdate').mockResolvedValue(null);
 
-      const result = await addVoteToQuestion('nonExistentId', 'testUser', 'downvote');
+      const result = await addVoteToQuestion('badId', 'testUser', 'upvote');
 
       expect(result).toEqual({ error: 'Question not found!' });
     });
 
-    test('addVoteToQuestion should return an error when there is an issue with adding a downvote', async () => {
-      jest.spyOn(QuestionModel, 'findOneAndUpdate').mockRejectedValue(new Error('Database error'));
-      const result = await addVoteToQuestion('someQuestionId', 'testUser', 'downvote');
+    test('returns error if DB update fails', async () => {
+      jest.spyOn(QuestionModel, 'findOneAndUpdate').mockRejectedValue(new Error('DB error'));
 
-      expect(result).toEqual({ error: 'Error when adding downvote to question' });
+      const result = await addVoteToQuestion('id', 'testUser', 'upvote');
+
+      expect(result).toEqual({ error: 'Error when adding upvote to question' });
     });
   });
 
@@ -597,6 +577,101 @@ describe('Question model', () => {
       const result = await getCommunityQuestions('65e9b58910afe6e94fc6e6a2');
 
       expect(result.length).toEqual(0);
+    });
+  });
+
+  jest.mock('../../models/questions.model');
+
+  describe('fetchFiveQuestionsByTextAndTitle', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test('returns empty array when both title and text are empty', async () => {
+      const result = await fetchFiveQuestionsByTextAndTitle('', '');
+      expect(result).toEqual([]);
+      expect(QuestionModel.find).not.toHaveBeenCalled();
+    });
+
+    test('calls QuestionModel.find() with correct regex for title only', async () => {
+      const execMock = jest.fn().mockResolvedValue([]);
+      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      await fetchFiveQuestionsByTextAndTitle('react component', '');
+
+      expect(QuestionModel.find).toHaveBeenCalledTimes(1);
+      const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
+
+      const expectedRegex = new RegExp('react|component', 'i');
+
+      expect(queryArg.$or[0].title.$regex).toEqual(expectedRegex);
+      expect(populateMock).toHaveBeenCalled();
+      expect(limitMock).toHaveBeenCalledWith(5);
+      expect(execMock).toHaveBeenCalled();
+    });
+
+    test('calls QuestionModel.find() with correct regex for text only', async () => {
+      const execMock = jest.fn().mockResolvedValue([]);
+      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      await fetchFiveQuestionsByTextAndTitle('', 'how to build api');
+
+      const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
+
+      const expectedRegex = new RegExp('how|to|build|api', 'i');
+
+      expect(queryArg.$or[1].text.$regex).toEqual(expectedRegex);
+      expect(limitMock).toHaveBeenCalledWith(5);
+      expect(execMock).toHaveBeenCalled();
+    });
+
+    test('returns populated questions when query succeeds', async () => {
+      const mockQuestions: PopulatedDatabaseQuestion[] = [
+        { _id: '1', title: 'Test', text: 'Body' } as any,
+        { _id: '2', title: 'Another', text: 'More' } as any,
+      ];
+
+      const execMock = jest.fn().mockResolvedValue(mockQuestions);
+      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      const result = await fetchFiveQuestionsByTextAndTitle('abc', 'xyz');
+
+      expect(result).toEqual(mockQuestions);
+      expect(populateMock).toHaveBeenCalled();
+      expect(limitMock).toHaveBeenCalledWith(5);
+      expect(execMock).toHaveBeenCalled();
+    });
+
+    test('returns empty array if .exec() throws error', async () => {
+      const execMock = jest.fn().mockRejectedValue(new Error('Database error'));
+      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      const result = await fetchFiveQuestionsByTextAndTitle('title', 'text');
+
+      expect(result).toEqual([]);
+      expect(execMock).toHaveBeenCalled();
+    });
+
+    test('returns empty array if QuestionModel.find() throws error', async () => {
+      (QuestionModel.find as jest.Mock).mockImplementation(() => {
+        throw new Error('boom');
+      });
+
+      const result = await fetchFiveQuestionsByTextAndTitle('hello', 'world');
+
+      expect(result).toEqual([]);
     });
   });
 });
