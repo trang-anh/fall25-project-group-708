@@ -18,7 +18,6 @@ const notDuplicateQuestionController = (socket: FakeSOSocket) => {
     res: Response,
   ): Promise<void> => {
     const question: NotDuplicateQuestion = req.body;
-
     try {
       const result = await saveNotDuplicateQuestion(question);
 
@@ -26,7 +25,17 @@ const notDuplicateQuestionController = (socket: FakeSOSocket) => {
         throw new Error(result.error);
       }
 
-      res.json(result);
+      // Convert MongoDB document to plain object with string IDs
+      const responseData = {
+        _id: result._id.toString(),
+        username: result.username,
+        question: result.question.toString(),
+        duplicateOf: result.duplicateOf.map(id => id.toString()),
+        justification: result.justification,
+        createdAt: result.createdAt,
+      };
+
+      res.json(responseData);
     } catch (err: unknown) {
       if (err instanceof Error) {
         res.status(500).send(`Error when saving not duplicate question: ${err.message}`);
@@ -36,7 +45,7 @@ const notDuplicateQuestionController = (socket: FakeSOSocket) => {
     }
   };
 
-  router.get('/saveNotDuplicateQuestion', addNotDuplicateQuestion);
+  router.post('/saveNotDuplicateQuestion', addNotDuplicateQuestion);
   return router;
 };
 

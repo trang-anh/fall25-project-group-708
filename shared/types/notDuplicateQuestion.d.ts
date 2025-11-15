@@ -12,8 +12,8 @@ import { Question } from './question';
  */
 export interface NotDuplicateQuestion {
   username: string;
-  question: Question;
-  duplicateOf: Question[];
+  question: ObjectId;
+  duplicateOf: ObjectId[];
   justification: string;
   createdAt: Date;
 }

@@ -1,58 +1,24 @@
 import api from './config';
-import { Question, PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
+import { NotDuplicateQuestion, PopulatedDatabaseNotDuplicateQuestion } from '../types/types';
 
-interface SaveNotDuplicateQuestionResponse {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-}
+const NOT_DUPLICATED_QUESTION_API_URL = `/api/notDuplicateQuestion`;
 
 /**
- * saves a 'not duplicate question' to backend
+ * Function to add a NotDuplicateQuestion.
  *
- * @param newQuestion - the full question object being posted
- * @param similarQuestions - array of similar question object
- * @param justification - user's explanation of why it's not a duplicate
- * @param username - username of the person who posts
- * @returns promise with success status and any error message
+ * @param q - The entry object to add.
+ * @throws Error if there is an issue creating the new question.
  */
 const saveNotDuplicateQuestion = async (
-  newQuestion: Question,
-  similarQuestions: PopulatedDatabaseQuestion[],
-  justification: string,
-  username: string,
-): Promise<SaveNotDuplicateQuestionResponse> => {
-  try {
-    const notDuplicateQuestion = {
-      username,
-      question: newQuestion,
-      duplicateOf: similarQuestions,
-      justification,
-      createdAt: new Date(),
-    };
+  q: NotDuplicateQuestion,
+): Promise<PopulatedDatabaseNotDuplicateQuestion> => {
+  const res = await api.post(`${NOT_DUPLICATED_QUESTION_API_URL}/saveNotDuplicateQuestion`, q);
 
-    // backend uses get method
-    const response = await api.get('/api/notDuplicateQuestion/saveNotDuplicateQuestion', {
-      data: notDuplicateQuestion,
-    });
-
-    if (response.status !== 200) {
-      return {
-        success: false,
-        error: 'Failed to find duplicated question',
-      };
-    }
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occured',
-    };
+  if (res.status !== 200) {
+    throw new Error('Error while creating a new question');
   }
+
+  return res.data;
 };
 
 export default saveNotDuplicateQuestion;

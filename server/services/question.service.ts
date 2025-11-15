@@ -169,7 +169,6 @@ export const saveQuestion = async (
   question: Omit<Question, 'tags'> & { tags: ObjectId[] },
 ): Promise<QuestionResponse> => {
   try {
-    //Creating posts with cleaned content
     const result: DatabaseQuestion = await QuestionModel.create(question);
     return result;
   } catch (error) {

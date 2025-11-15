@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
 import './index.css';
 
 interface QuestionSuggestionsProps {
   suggestions: PopulatedDatabaseQuestion[];
   loading: boolean;
-  onClose: () => void;
-  onAcknowledge: (justification: string) => void;
   show: boolean;
 }
 
@@ -17,13 +15,8 @@ interface QuestionSuggestionsProps {
 const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   suggestions,
   loading,
-  onClose,
-  onAcknowledge,
   show,
 }) => {
-  const [showJustification, setShowJustification] = useState(false);
-  const [justification, setJustification] = useState('');
-
   if (!show) {
     return null;
   }
@@ -51,23 +44,7 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   };
 
   const handleQuestionClick = (questionId: string) => {
-    // Use relative path instead of hardcoded URL
     window.open(`/question/${questionId}`, '_blank');
-  };
-
-  const handleAcknowledge = () => {
-    if (showJustification) {
-      onAcknowledge(justification);
-      setShowJustification(false);
-      setJustification('');
-    } else {
-      setShowJustification(true);
-    }
-  };
-
-  const handleCancel = () => {
-    setShowJustification(false);
-    setJustification('');
   };
 
   return (
@@ -98,38 +75,6 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
           </div>
         ))}
       </div>
-
-      {!showJustification ? (
-        <div className='similar_posts_acknowledge'>
-          <button onClick={handleAcknowledge} className='acknowledge_btn'>
-            My Question is Different - Proceed to Post
-          </button>
-        </div>
-      ) : (
-        <div className='similar_posts_justification'>
-          <label className='justification_label'>
-            Please explain how your question is different from the ones above:
-          </label>
-          <textarea
-            className='justification_textarea'
-            value={justification}
-            onChange={e => setJustification(e.target.value)}
-            placeholder="E.g., I'm asking about a different framework, different error message, specific version, etc."
-            rows={3}
-          />
-          <div className='justification_actions'>
-            <button onClick={handleCancel} className='cancel_btn'>
-              Cancel
-            </button>
-            <button
-              onClick={handleAcknowledge}
-              className='confirm_btn'
-              disabled={justification.trim().length === 0}>
-              Confirm & Post Question
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

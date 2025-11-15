@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { validateHyperlink } from '../tool';
 import { addQuestion } from '../services/questionService';
 import useUserContext from './useUserContext';
-import { DatabaseCommunity, Question } from '../types/types';
+import {
+  DatabaseCommunity,
+  NotDuplicateQuestion,
+  PopulatedDatabaseQuestion,
+  Question,
+} from '../types/types';
 import { getCommunities } from '../services/communityService';
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
+import saveNotDuplicateQuestion from '../services/notDuplicateQuestionService';
 
 // Create matcher with English dataset
 const matcher = new RegExpMatcher({
@@ -122,7 +128,10 @@ const useNewQuestion = () => {
    *
    * @returns title - The current value of the title input.
    */
-  const postQuestion = async (forcePost = false) => {
+  const postQuestion = async (
+    forcePost = false,
+    notDuplicateData?: { similarQuestions: PopulatedDatabaseQuestion[]; justification: string },
+  ) => {
     if (!validateForm()) return;
 
     // Check for bad words if not force posting
@@ -153,8 +162,21 @@ const useNewQuestion = () => {
 
     const res = await addQuestion(question);
 
+    const notDuplicateQuestion: NotDuplicateQuestion = {
+      username: user.username,
+      question: res._id, // ← Send just the ID
+      duplicateOf: notDuplicateData
+        ? notDuplicateData.similarQuestions.map(q => q._id) // ← Map to IDs
+        : [],
+      justification: notDuplicateData ? notDuplicateData.justification : '',
+      createdAt: new Date(),
+    };
+
     // Handle both regular response and response with warning
-    if (res) {
+    if (res && res._id) {
+      if (notDuplicateData) {
+        await saveNotDuplicateQuestion(notDuplicateQuestion);
+      }
       navigate('/home');
     }
   };

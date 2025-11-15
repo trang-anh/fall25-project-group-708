@@ -5,7 +5,6 @@ import Form from '../baseComponents/form';
 import Input from '../baseComponents/input';
 import TextArea from '../baseComponents/textarea';
 import QuestionSuggestion from './QuestionSuggestion';
-import SimilarQuestionModal from './SimilarQuestionModal';
 import './index.css';
 import BadWordWarningModal from '../badWordsWarningModal';
 
@@ -34,69 +33,35 @@ const NewQuestionPage = () => {
   } = useNewQuestion();
 
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [manuallyClosedSuggestions, setManuallyClosedSuggestions] = useState(false);
-  const [acknowledgedSuggestions, setAcknowledgedSuggestions] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [justification, setJustification] = useState('');
 
-  // Fetch suggestions based on title and text input - this calls the backend
+  // Fetch suggestions based on title and text input (limited to 5)
   const { suggestions, loading } = useQuestionSuggestions(title, text);
 
   // Control when to show suggestions based on backend results
   useEffect(() => {
     if (title.trim().length < 3) {
       setShowSuggestions(false);
-      setManuallyClosedSuggestions(false);
-      setAcknowledgedSuggestions(false);
       return;
     }
 
-    const shouldShow = !manuallyClosedSuggestions && (loading || suggestions.length > 0);
-    setShowSuggestions(shouldShow);
-
-    // Reset acknowledgement when suggestions change
-    if (suggestions.length > 0 && !manuallyClosedSuggestions) {
-      setAcknowledgedSuggestions(false);
-    }
-  }, [suggestions, loading, title, manuallyClosedSuggestions]);
+    setShowSuggestions(loading || suggestions.length > 0);
+  }, [suggestions, loading, title]);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
-    setManuallyClosedSuggestions(false);
   };
 
-  const handleCloseSuggestions = () => {
-    if (acknowledgedSuggestions || suggestions.length === 0) {
-      setShowSuggestions(false);
-      setManuallyClosedSuggestions(true);
+  const handlePostQuestion = async () => {
+    // If there are suggestions and user provided justification, save it
+    if (suggestions.length > 0 && justification.trim()) {
+      postQuestion(false, {
+        similarQuestions: suggestions,
+        justification: justification.trim(),
+      });
+    } else {
+      postQuestion();
     }
-  };
-
-  const handleAcknowledgeSuggestions = (justification: string) => {
-    setAcknowledgedSuggestions(true);
-    setShowSuggestions(false);
-    setManuallyClosedSuggestions(true);
-  };
-
-  const handlePostQuestion = () => {
-    // Check if there are unacknowledged suggestions
-    if (suggestions.length > 0 && !acknowledgedSuggestions && title.trim().length >= 3) {
-      setShowWarningModal(true);
-      return;
-    }
-
-    //Check for badwords and show modal if needed
-    postQuestion();
-  };
-
-  const handleCloseModal = () => {
-    setShowWarningModal(false);
-  };
-
-  const handleReviewSuggestions = () => {
-    setShowWarningModal(false);
-    setShowSuggestions(true);
-    setManuallyClosedSuggestions(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseBadWordWarning = () => {
@@ -110,13 +75,6 @@ const NewQuestionPage = () => {
 
   return (
     <>
-      <SimilarQuestionModal
-        show={showWarningModal}
-        onClose={handleCloseModal}
-        onReview={handleReviewSuggestions}
-        suggestionCount={suggestions.length}
-      />
-
       <BadWordWarningModal
         show={showBadWordWarning}
         onClose={handleCloseBadWordWarning}
@@ -134,13 +92,7 @@ const NewQuestionPage = () => {
           err={titleErr}
         />
 
-        <QuestionSuggestion
-          suggestions={suggestions}
-          loading={loading}
-          onClose={handleCloseSuggestions}
-          onAcknowledge={handleAcknowledgeSuggestions}
-          show={showSuggestions}
-        />
+        <QuestionSuggestion suggestions={suggestions} loading={loading} show={showSuggestions} />
 
         <TextArea
           title={'Question Text'}
@@ -161,6 +113,23 @@ const NewQuestionPage = () => {
           setState={setTagNames}
           err={tagErr}
         />
+
+        {suggestions.length > 0 && (
+          <div className='justification_section'>
+            <label htmlFor='justification' className='input_title'>
+              Why is your question different? (Optional)
+            </label>
+            <textarea
+              id='justification'
+              className='justification_field'
+              value={justification}
+              onChange={e => setJustification(e.target.value)}
+              placeholder="E.g., I'm asking about a different framework, version, or specific use case..."
+              rows={3}
+            />
+          </div>
+        )}
+
         <div className='input_title'>Community</div>
         <select className='form_communitySelect' onChange={handleDropdownChange}>
           <option value=''>Select Community</option>
