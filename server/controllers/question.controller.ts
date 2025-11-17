@@ -79,11 +79,6 @@ const questionController = (socket: FakeSOSocket) => {
     const { qid } = req.params;
     const { username } = req.query;
 
-    if (!ObjectId.isValid(qid)) {
-      res.status(400).send('Invalid ID format');
-      return;
-    }
-
     try {
       const q = await fetchAndIncrementQuestionViewsById(qid, username);
 

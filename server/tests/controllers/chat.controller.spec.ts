@@ -62,6 +62,7 @@ describe('Chat Controller', () => {
             user: {
               _id: new mongoose.Types.ObjectId(),
               username: 'user1',
+              avatarUrl: '',
             },
             type: 'direct',
           },
@@ -171,6 +172,7 @@ describe('Chat Controller', () => {
         user: {
           _id: new mongoose.Types.ObjectId(),
           username: 'user1',
+          avatarUrl: '',
         },
       };
 
@@ -384,6 +386,7 @@ describe('Chat Controller', () => {
             user: {
               _id: new mongoose.Types.ObjectId(),
               username: 'user1',
+              avatarUrl: '',
             },
             type: 'direct',
           },
