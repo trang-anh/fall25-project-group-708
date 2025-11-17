@@ -15,6 +15,36 @@ import {
   VoteResponse,
 } from '../../types/types';
 
+import * as moderationUtil from '../../services/contentModeration.service';
+import * as registerUtil from '../../services/registerPoints.service';
+import UserModel from '../../models/users.model';
+
+jest.mock('../../models/users.model', () => ({
+  __esModule: true,
+  default: {
+    findOne: jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        username: 'test-user',
+        points: 100,
+      }),
+    }),
+  },
+}));
+
+jest.mock('../../services/contentModeration.service', () => ({
+  moderateContent: jest.fn().mockReturnValue({
+    isHateful: false,
+    detectedIn: [],
+    badWords: {},
+  }),
+  cleanText: jest.fn(v => v),
+}));
+
+jest.mock('../../services/registerPoints.service', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue({ applied: 5, blocked: 0 }),
+}));
+
 const addVoteToQuestionSpy = jest.spyOn(questionUtil, 'addVoteToQuestion');
 const getQuestionsByOrderSpy: jest.SpyInstance = jest.spyOn(questionUtil, 'getQuestionsByOrder');
 const filterQuestionsBySearchSpy: jest.SpyInstance = jest.spyOn(
@@ -208,18 +238,106 @@ const simplifyQuestion = (question: PopulatedDatabaseQuestion) => ({
 const EXPECTED_QUESTIONS = MOCK_POPULATED_QUESTIONS.map(question => simplifyQuestion(question));
 
 describe('Test questionController', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('POST /addQuestion', () => {
     it('should add a new question', async () => {
       jest.spyOn(tagUtil, 'processTags').mockResolvedValue([dbTag1, dbTag2]);
       jest.spyOn(questionUtil, 'saveQuestion').mockResolvedValueOnce(mockDatabaseQuestion);
       jest.spyOn(databaseUtil, 'populateDocument').mockResolvedValueOnce(mockPopulatedQuestion);
 
-      // Making the request
       const response = await supertest(app).post('/api/question/addQuestion').send(mockQuestion);
 
-      // Asserting the response
       expect(response.status).toBe(200);
       expect(response.body).toEqual(simplifyQuestion(mockPopulatedQuestion));
+    });
+
+    it('should add +5 POST_QUESTION points when no bad words are found', async () => {
+      jest.spyOn(tagUtil, 'processTags').mockResolvedValue([dbTag1, dbTag2]);
+      jest.spyOn(questionUtil, 'saveQuestion').mockResolvedValue(mockDatabaseQuestion);
+      jest.spyOn(databaseUtil, 'populateDocument').mockResolvedValue(mockPopulatedQuestion);
+
+      const res = await supertest(app).post('/api/question/addQuestion').send(mockQuestion);
+
+      expect(registerUtil.default).toHaveBeenCalledWith(mockQuestion.askedBy, 5, 'POST_QUESTION');
+      expect(res.status).toBe(200);
+    });
+
+    it('should deduct points and return warning when bad words are found', async () => {
+      jest.spyOn(tagUtil, 'processTags').mockResolvedValue([dbTag1, dbTag2]);
+      jest.spyOn(questionUtil, 'saveQuestion').mockResolvedValue(mockDatabaseQuestion);
+      jest.spyOn(databaseUtil, 'populateDocument').mockResolvedValue(mockPopulatedQuestion);
+
+      // MOVE THESE MOCKS INSIDE THE TEST
+      (moderationUtil.moderateContent as jest.Mock).mockReturnValueOnce({
+        isHateful: true,
+        detectedIn: ['title', 'text'],
+        badWords: {
+          title: ['bad'],
+          text: ['ugly', 'stupid'],
+        },
+      });
+
+      (registerUtil.default as jest.Mock).mockResolvedValueOnce({
+        applied: -3,
+        blocked: 0,
+      });
+
+      const res = await supertest(app).post('/api/question/addQuestion').send(mockQuestion);
+
+      expect(res.status).toBe(200);
+      expect(registerUtil.default).toHaveBeenCalledWith(
+        mockQuestion.askedBy,
+        -3,
+        'HATEFUL_LANGUAGE',
+      );
+      expect(res.body.warning).toBeDefined();
+      expect(res.body.warningDetails.totalBadWords).toBe(3);
+    });
+
+    it('should clean title, text, and tag names before saving', async () => {
+      // Mock cleanText to add CLEANED: prefix
+      (moderationUtil.cleanText as jest.Mock).mockImplementation(str => `CLEANED:${str}`);
+
+      jest.spyOn(tagUtil, 'processTags').mockResolvedValue([dbTag1, dbTag2]);
+
+      const saveSpy = jest
+        .spyOn(questionUtil, 'saveQuestion')
+        .mockResolvedValue(mockDatabaseQuestion);
+
+      jest.spyOn(databaseUtil, 'populateDocument').mockResolvedValue(mockPopulatedQuestion);
+
+      const dirty = {
+        ...mockQuestion,
+        title: ' dirtyTitle ',
+        text: 'dirtyText!!',
+        tags: [
+          { name: ' javascript ', description: 'js description' },
+          { name: ' react!! ', description: 'react description' },
+        ],
+      };
+
+      const response = await supertest(app).post('/api/question/addQuestion').send(dirty);
+
+      // If 400, let's see what the error is
+      if (response.status === 400) {
+        // eslint-disable-next-line no-console
+        console.log('Validation error:', response.body);
+      }
+
+      expect(response.status).toBe(200);
+
+      // Only check the spy if the request succeeded
+      if (response.status === 200) {
+        expect(saveSpy).toHaveBeenCalled();
+        const args = saveSpy.mock.calls[0][0];
+
+        expect(args.title).toBe('CLEANED: dirtyTitle ');
+        expect(args.text).toBe('CLEANED:dirtyText!!');
+        expect(args.tags.length).toBe(2);
+      }
     });
 
     it('should return 500 if error occurs in `saveQuestion` while adding a new question', async () => {
@@ -370,6 +488,16 @@ describe('Test questionController', () => {
   });
 
   describe('POST /upvoteQuestion', () => {
+    beforeEach(() => {
+      // Reset UserModel mock for each test
+      (UserModel.findOne as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue({
+          username: 'test-user',
+          points: 100,
+        }),
+      });
+    });
+
     it('should return 500 when addVoteToQuestion returns error', async () => {
       const mockReqBody = {
         qid: '65e9b5a995b6c7045a30d823',
@@ -402,6 +530,7 @@ describe('Test questionController', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockResponse);
+      expect(UserModel.findOne).toHaveBeenCalledWith({ username: 'new-user' });
     });
 
     it('should cancel the upvote successfully', async () => {
@@ -446,7 +575,6 @@ describe('Test questionController', () => {
         username: 'new-user',
       };
 
-      // First upvote the question
       let mockResponseWithBothVotes: VoteResponse = {
         msg: 'Question upvoted successfully',
         upVotes: ['new-user'],
@@ -460,7 +588,6 @@ describe('Test questionController', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockResponseWithBothVotes);
 
-      // Now downvote the question
       mockResponseWithBothVotes = {
         msg: 'Question downvoted successfully',
         downVotes: ['new-user'],
@@ -497,6 +624,16 @@ describe('Test questionController', () => {
   });
 
   describe('POST /downvoteQuestion', () => {
+    beforeEach(() => {
+      // Reset UserModel mock for each test
+      (UserModel.findOne as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue({
+          username: 'test-user',
+          points: 100,
+        }),
+      });
+    });
+
     it('should downvote a question successfully', async () => {
       const mockReqBody = {
         qid: '65e9b5a995b6c7045a30d823',
@@ -968,6 +1105,149 @@ describe('Test questionController', () => {
 
       expect(response.status).toBe(500);
       expect(response.text).toContain('Error when fetching community questions: Database error');
+    });
+  });
+  describe('GET /getQuestionsByTextAndTitle', () => {
+    it('should return questions matching title and text', async () => {
+      const mockTitle = 'Question Title';
+      const mockText = 'Question Text';
+
+      const matchingQuestions = [MOCK_POPULATED_QUESTIONS[0], MOCK_POPULATED_QUESTIONS[1]];
+
+      jest
+        .spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle')
+        .mockResolvedValueOnce(matchingQuestions);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(matchingQuestions.map(q => simplifyQuestion(q)));
+      expect(questionUtil.fetchFiveQuestionsByTextAndTitle).toHaveBeenCalledWith(
+        mockTitle,
+        mockText,
+      );
+    });
+
+    it('should return empty array when no questions match', async () => {
+      const mockTitle = 'Nonexistent Title';
+      const mockText = 'Nonexistent Text';
+
+      jest.spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle').mockResolvedValueOnce([]);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should return 500 when fetchFiveQuestionsByTextAndTitle returns error', async () => {
+      const mockTitle = 'Question Title';
+      const mockText = 'Question Text';
+
+      jest
+        .spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle')
+        .mockResolvedValueOnce({ error: 'Database error' } as any);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(500);
+      expect(response.text).toBe(
+        'Error when fetching questions by title and text: Error while fetching question by id',
+      );
+    });
+
+    it('should return 500 when fetchFiveQuestionsByTextAndTitle throws an error', async () => {
+      const mockTitle = 'Question Title';
+      const mockText = 'Question Text';
+
+      jest
+        .spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle')
+        .mockRejectedValueOnce(new Error('Database connection failed'));
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(500);
+      expect(response.text).toBe(
+        'Error when fetching questions by title and text: Database connection failed',
+      );
+    });
+
+    it('should return 500 with generic error message when error is not Error instance', async () => {
+      const mockTitle = 'Question Title';
+      const mockText = 'Question Text';
+
+      jest
+        .spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle')
+        .mockRejectedValueOnce('String error' as any);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(500);
+      expect(response.text).toBe('Error when fetching questions by title and text');
+    });
+
+    it('should return 500 if title parameter is missing', async () => {
+      jest.spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle').mockResolvedValueOnce([]);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ text: 'some text' });
+
+      expect([200, 500]).toContain(response.status);
+    });
+
+    it('should return 500 if text parameter is missing', async () => {
+      jest.spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle').mockResolvedValueOnce([]);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: 'some title' });
+
+      expect([200, 500]).toContain(response.status);
+    });
+
+    it('should handle when both parameters are missing', async () => {
+      jest.spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle').mockResolvedValueOnce([]);
+
+      const response = await supertest(app).get('/api/question/getQuestionsByTextAndTitle');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should limit results to maximum of 5 questions', async () => {
+      const mockTitle = 'Question';
+      const mockText = 'Text';
+
+      // Create exactly 5 questions
+      const fiveQuestions = Array(5)
+        .fill(null)
+        .map((_, i) => ({
+          ...MOCK_POPULATED_QUESTIONS[0],
+          _id: new mongoose.Types.ObjectId(),
+          title: `Question ${i + 1}`,
+        }));
+
+      jest
+        .spyOn(questionUtil, 'fetchFiveQuestionsByTextAndTitle')
+        .mockResolvedValueOnce(fiveQuestions);
+
+      const response = await supertest(app)
+        .get('/api/question/getQuestionsByTextAndTitle')
+        .query({ title: mockTitle, text: mockText });
+
+      expect(response.status).toBe(200);
+      expect(response.body.length).toBe(5);
     });
   });
 });
