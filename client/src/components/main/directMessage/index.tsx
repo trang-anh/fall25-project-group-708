@@ -74,18 +74,6 @@ const DirectMessage = () => {
           </div>
         </div>
 
-        {/* Create Chat Panel */}
-        {showCreatePanel && (
-          <div className='create-chat-panel'>
-            {error && <div className='panel-error'>{error}</div>}
-            <p className='panel-label'>Selected user: {chatToCreate || 'None'}</p>
-            <button className='panel-button' onClick={handleCreateChat} disabled={!chatToCreate}>
-              Create Chat
-            </button>
-            <UsersListPage handleUserSelect={handleUserSelect} />
-          </div>
-        )}
-
         {/* Chat List Items */}
         <div className='chats-list-items'>
           {chats.map(chat => (
@@ -99,6 +87,26 @@ const DirectMessage = () => {
           ))}
         </div>
       </div>
+
+      {/* Create Chat Panel */}
+      {showCreatePanel && (
+        <div className='create-chat-panel'>
+          <div className='create-chat-header'>
+            <h3>New Chat</h3>
+            <button className='close-panel-btn' onClick={() => setShowCreatePanel(false)}>
+              ×
+            </button>
+          </div>
+          {error && <div className='panel-error'>{error}</div>}
+          <p className='panel-label'>Selected user: {chatToCreate || 'None'}</p>
+          <button className='panel-button' onClick={handleCreateChat} disabled={!chatToCreate}>
+            Create Chat
+          </button>
+          <div className='users-list-container'>
+            <UsersListPage handleUserSelect={handleUserSelect} />
+          </div>
+        </div>
+      )}
 
       <div className='chat-container'>
         {selectedChat && otherParticipant ? (
@@ -131,14 +139,6 @@ const DirectMessage = () => {
 
                 // Check if this is the last message in a group
                 const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
-
-                // Debug log
-                // eslint-disable-next-line no-console
-                console.log('DirectMessage rendering message:', {
-                  msgFrom: message.msgFrom,
-                  currentUsername: currentUsername,
-                  index,
-                });
 
                 return (
                   <MessageCard
