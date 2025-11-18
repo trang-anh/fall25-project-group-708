@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import express, { Response } from 'express';
-import { ObjectId } from 'mongodb';
 import {
   Question,
   FindQuestionRequest,
