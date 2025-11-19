@@ -59,12 +59,21 @@ const createUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
  * @returns {Promise<User>} The authenticated user object.
  * @throws {Error} If an error occurs during the login process.
  */
+type LoginOptions = {
+  twoFactorCode?: string;
+  rememberDevice?: boolean;
+};
+
 const loginUser = async (
   user: UserCredentials,
-  twoFactorCode?: string,
+  options?: LoginOptions,
 ): Promise<SafeDatabaseUser> => {
   try {
-    const payload = twoFactorCode ? { ...user, twoFactorCode } : user;
+    const payload = {
+      ...user,
+      ...(options?.twoFactorCode ? { twoFactorCode: options.twoFactorCode } : {}),
+      rememberDevice: options?.rememberDevice ?? false,
+    };
     const res = await api.post(`${USER_API_URL}/login`, payload);
     return res.data;
   } catch (error) {

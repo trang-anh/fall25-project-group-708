@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLoginContext from './useLoginContext';
 import { getCurrentUser } from '../services/userService';
+import { clearRememberedUser } from '../utils/authStorage';
 
 /**
- * custom hook to check authentication status on app mount.
+ * Custom hook to check authentication status on app mount.
  * this hook is used to detect if a user is already authenticated
- *
  * should be called once at the app level, not in individual components.
  */
 const useCheckAuth = () => {
@@ -27,8 +27,8 @@ const useCheckAuth = () => {
           }
         }
       } catch (error) {
-        // User is not authenticated - this is normal, don't set error
         setUser(null);
+        clearRememberedUser();
       }
     };
 

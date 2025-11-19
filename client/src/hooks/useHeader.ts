@@ -1,6 +1,8 @@
 import { ChangeEvent, useState, KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLoginContext from './useLoginContext';
+import { clearRememberedUser } from '../utils/authStorage';
+import { logoutUser } from '../services/userService';
 
 /**
  * Custom hook to manage the state and logic for a header input field.
@@ -49,9 +51,14 @@ const useHeader = () => {
   /**
    * Signs the user out by clearing the user context and navigating to the landing page.
    */
-  const handleSignOut = () => {
-    setUser(null);
-    navigate('/');
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+    } finally {
+      setUser(null);
+      clearRememberedUser();
+      navigate('/');
+    }
   };
 
   return {

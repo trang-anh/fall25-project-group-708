@@ -3,6 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import useLoginContext from './useLoginContext';
 import { createUser, loginUser, requestTwoFactorCode } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
+import { clearRememberedUser, loadRememberedUser, saveRememberedUser } from '../utils/authStorage';
 
 /**
  * Custom hook to manage authentication logic, including handling input changes,
@@ -31,6 +32,7 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
   const [isSendingTwoFactorCode, setIsSendingTwoFactorCode] = useState(false);
   const [twoFactorOptIn, setTwoFactorOptIn] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(() => !!loadRememberedUser());
 
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
@@ -149,6 +151,13 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
   };
 
+  const handleRememberDeviceChange = (checked: boolean) => {
+    setRememberDevice(checked);
+    if (!checked) {
+      clearRememberedUser();
+    }
+  };
+
   /**
    * Handles the submission of the form.
    * Validates input, performs login/signup, and navigates to the home page on success.
@@ -174,7 +183,10 @@ const useAuth = (authType: 'login' | 'signup') => {
 
       const result = await loginUser(
         { username, password },
-        requires2FA ? twoFactorCode : undefined,
+        {
+          twoFactorCode: requires2FA ? twoFactorCode : undefined,
+          rememberDevice,
+        },
       );
 
       if ('requires2FA' in result && result.requires2FA) {
@@ -183,6 +195,11 @@ const useAuth = (authType: 'login' | 'signup') => {
       }
 
       setUser(result as SafeDatabaseUser);
+      if (rememberDevice) {
+        saveRememberedUser(result as SafeDatabaseUser);
+      } else {
+        clearRememberedUser();
+      }
       navigate('/home');
     } catch (error) {
       setErr((error as Error).message);
@@ -205,12 +222,14 @@ const useAuth = (authType: 'login' | 'signup') => {
     twoFactorDevCode,
     isSendingTwoFactorCode,
     twoFactorOptIn,
+    rememberDevice,
     handleInputChange,
     handleSubmit,
     togglePasswordVisibility,
     handleRequestTwoFactorCode,
     cancelTwoFactorFlow,
     handleTwoFactorOptInChange,
+    handleRememberDeviceChange,
   };
 };
 

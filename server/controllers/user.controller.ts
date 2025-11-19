@@ -9,6 +9,7 @@ import {
   UserByUsernameRequest,
   FakeSOSocket,
   UpdateBiographyRequest,
+  SafeDatabaseUser,
 } from '../types/types';
 import {
   deleteUserByUsername,
@@ -24,6 +25,13 @@ import {
   is2FAEnabled,
   verifyAndEnable2FA,
 } from '../services/twoFactor.service';
+import {
+  SESSION_COOKIE_NAME,
+  createSession,
+  deleteSession,
+  getSessionTtl,
+} from '../services/session.service';
+import { getSessionIdFromRequest } from '../utils/sessionCookie';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -72,11 +80,32 @@ const userController = (socket: FakeSOSocket) => {
         username: req.body.username,
         password: req.body.password,
       };
+      const rememberDevice = Boolean(req.body.rememberDevice);
 
       const user = await loginUser(loginCredentials);
 
       if ('error' in user) {
         throw Error(user.error);
+      }
+
+      if (rememberDevice) {
+        const { sessionId } = createSession(user as SafeDatabaseUser);
+        res.cookie(SESSION_COOKIE_NAME, sessionId, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: getSessionTtl(),
+        });
+      } else {
+        const existingSessionId = getSessionIdFromRequest(req);
+        if (existingSessionId) {
+          deleteSession(existingSessionId);
+          res.clearCookie(SESSION_COOKIE_NAME, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
       }
 
       res.status(200).json(user);

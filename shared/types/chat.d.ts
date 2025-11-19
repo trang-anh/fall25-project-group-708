@@ -1,7 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Request } from 'express';
 import { DatabaseMessage, Message } from './message';
-import { DatabaseUser } from './user';
 
 /**
  * Extends the raw Message with an extra `user` field for
@@ -10,7 +9,7 @@ import { DatabaseUser } from './user';
  */
 export interface MessageInChat extends DatabaseMessage {
   user: {
-    _id: ObjectId,
+    _id: ObjectId;
     username: string;
     avatarUrl: string;
   } | null;
@@ -51,7 +50,7 @@ export interface PopulatedDatabaseChat extends Omit<DatabaseChat, 'messages'> {
     _id: ObjectId;
     username: string;
     avatarUrl: string;
-  }>
+  }>;
 }
 
 /**
