@@ -5,6 +5,11 @@ import api from './config';
 const USER_API_URL = `/api/user`;
 const AUTH_API_URL = `/api/auth`;
 
+type AuthStatusResponse = {
+  authenticated: boolean;
+  user?: SafeDatabaseUser;
+};
+
 /**
  * Function to get users
  *
@@ -213,13 +218,16 @@ const loginWithGithub = (): void => {
  * @returns {Promise<SafeDatabaseUser>} the currently authenticated user object
  * @throws {Error} If the user is not authenticated or if an error occurs
  */
-const getCurrentUser = async (): Promise<SafeDatabaseUser> => {
+const getCurrentUser = async (): Promise<SafeDatabaseUser | null> => {
   try {
-    const res = await api.get(`${AUTH_API_URL}/user`);
+    const res = await api.get<AuthStatusResponse>(`${AUTH_API_URL}/user`);
     if (res.status !== 200) {
       throw new Error('Not authenticated');
     }
-    return res.data;
+    if (!res.data.authenticated || !res.data.user) {
+      return null;
+    }
+    return res.data.user;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(

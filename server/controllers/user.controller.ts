@@ -1,4 +1,4 @@
-import express, { Request, Response, Router } from 'express';
+import express, { CookieOptions, Request, Response, Router } from 'express';
 import { uploadAvatar, deleteAvatar } from './avatar.controller';
 import avatarUpload from '../utils/multer.config';
 
@@ -88,25 +88,23 @@ const userController = (socket: FakeSOSocket) => {
         throw Error(user.error);
       }
 
-      if (rememberDevice) {
-        const { sessionId } = createSession(user as SafeDatabaseUser);
-        res.cookie(SESSION_COOKIE_NAME, sessionId, {
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: getSessionTtl(),
-        });
-      } else {
-        const existingSessionId = getSessionIdFromRequest(req);
-        if (existingSessionId) {
-          deleteSession(existingSessionId);
-          res.clearCookie(SESSION_COOKIE_NAME, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-          });
-        }
+      const existingSessionId = getSessionIdFromRequest(req);
+      if (existingSessionId) {
+        deleteSession(existingSessionId);
       }
+
+      const { sessionId } = createSession(user as SafeDatabaseUser);
+      const cookieOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      };
+
+      if (rememberDevice) {
+        cookieOptions.maxAge = getSessionTtl();
+      }
+
+      res.cookie(SESSION_COOKIE_NAME, sessionId, cookieOptions);
 
       res.status(200).json(user);
     } catch (error) {

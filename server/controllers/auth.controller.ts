@@ -71,10 +71,10 @@ const authController = (): Router => {
     const user = getSessionUser(sessionId);
 
     if (!user) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(200).json({ authenticated: false });
     }
 
-    return res.status(200).json(user);
+    return res.status(200).json({ authenticated: true, user });
   });
 
   router.post('/logout', (req: Request, res: Response) => {

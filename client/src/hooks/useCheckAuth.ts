@@ -25,6 +25,9 @@ const useCheckAuth = () => {
           if (currentPath === '/login' || currentPath === '/signup' || currentPath === '/') {
             navigate('/home');
           }
+        } else {
+          setUser(null);
+          clearRememberedUser();
         }
       } catch (error) {
         setUser(null);
