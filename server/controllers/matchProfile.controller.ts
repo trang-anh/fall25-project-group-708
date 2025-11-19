@@ -133,7 +133,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
     req: ToggleMatchProfileActiveRequest,
     res: Response,
   ): Promise<void> => {
-    const { userId, isActive } = req.body;
+    const { userId } = req.params;
+    const { isActive } = req.body;
 
     try {
       const result = await toggleMatchProfileActive(userId, isActive);
@@ -143,7 +144,7 @@ const matchProfileController = (socket: FakeSOSocket) => {
         if (result.error.includes('not found')) {
           res.status(404).json({ error: result.error });
         } else {
-          res.status(500).json({ error: result.error });
+          res.status(400).json({ error: result.error });
         }
         return;
       }
