@@ -51,7 +51,7 @@ export const getMatchProfile = async (userId: string): Promise<MatchProfileRespo
 
     const id = new ObjectId(userId);
 
-    const matchProfile = await MatchProfileModel.findById({ userId: id });
+    const matchProfile = await MatchProfileModel.findOne({ userId: id });
     if (!matchProfile) {
       return { error: 'Match Profile not found' };
     }
