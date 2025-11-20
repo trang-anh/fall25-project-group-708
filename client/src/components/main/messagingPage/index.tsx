@@ -30,7 +30,7 @@ const MessagingPage = () => {
           return (
             <MessageCard
               key={String(message._id)}
-              message={message}
+              message={{ ...message, user: null }}
               currentUsername={user.username}
               isGrouped={isGrouped}
               isLastInGroup={isLastInGroup}
