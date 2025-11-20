@@ -27,6 +27,8 @@ const Login = () => {
     cancelTwoFactorFlow,
     twoFactorOptIn,
     handleTwoFactorOptInChange,
+    rememberDevice,
+    handleRememberDeviceChange,
   } = useAuth('login');
 
   /**
@@ -113,6 +115,17 @@ const Login = () => {
                   disabled={requires2FA}
                 />
                 <label htmlFor='twofactor-optin-checkbox'>Enable two-factor authentication</label>
+              </div>
+
+              <div className='remember-device'>
+                <input
+                  type='checkbox'
+                  id='remember-device-checkbox'
+                  checked={rememberDevice}
+                  onChange={event => handleRememberDeviceChange(event.target.checked)}
+                  disabled={requires2FA}
+                />
+                <label htmlFor='remember-device-checkbox'>Remember this device</label>
               </div>
 
               {requires2FA && (
