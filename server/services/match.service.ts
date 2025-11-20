@@ -61,8 +61,6 @@ export const getUserMatches = async (
     })
       .lean<DatabaseMatch[]>()
       .exec();
-
-    if (!matches.length) return { error: 'No matches found for this user' };
     return matches;
   } catch (err) {
     return { error: (err as Error).message };
