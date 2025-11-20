@@ -149,13 +149,10 @@ export const generateMatchesForUser = async (userId: string): Promise<GenerateMa
       const features = extractFeatures(userProfile, otherProfile);
 
       const [skillOverlap] = features;
-
-      // Enforce your requirement:
       // 3.6 Essential: Given User A (Python & Java), don't see User B (C, Assembly)
       // --> skip pairs with no shared languages
       if (skillOverlap === 0) {
         // no overlap in programmingLanguage -> don't create a match
-        // eslint-disable-next-line no-continue
         continue;
       }
 
@@ -163,7 +160,7 @@ export const generateMatchesForUser = async (userId: string): Promise<GenerateMa
       const score = computeScore(features);
 
       // 5. Upsert Match document for this pair
-      //    We'll store userA as the caller, userB as the other profile.
+      // We'll store userA as the caller, userB as the other profile.
       const matchDoc = await MatchModel.findOneAndUpdate(
         {
           userA: userProfile._id,
