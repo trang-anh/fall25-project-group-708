@@ -13,6 +13,7 @@ import {
 import { SafeDatabaseUser } from '../types/types';
 import useUserContext from './useUserContext';
 import LoginContext from '../contexts/LoginContext';
+import { rememberedUserMatches, saveRememberedUser } from '../utils/authStorage';
 
 /**
  * A custom hook to encapsulate all logic/state for the ProfileSettings component.
@@ -99,6 +100,10 @@ const useProfileSettings = () => {
         // Silently fail if localStorage is unavailable
         // Could log to error tracking service in production
       }
+    }
+
+    if (rememberedUserMatches(updatedUser.username)) {
+      saveRememberedUser(updatedUser);
     }
   };
 
