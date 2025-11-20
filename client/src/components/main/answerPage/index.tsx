@@ -7,6 +7,8 @@ import QuestionBody from './questionBody';
 import VoteComponent from '../voteComponent';
 import CommentSection from '../commentSection';
 import useAnswerPage from '../../../hooks/useAnswerPage';
+import useQuestionSuggestions from '../../../hooks/useQuestionSuggestions';
+import QuestionSuggestion from '../newQuestion/QuestionSuggestion';
 
 /**
  * AnswerPage component that displays the full content of a question along with its answers.
@@ -14,6 +16,11 @@ import useAnswerPage from '../../../hooks/useAnswerPage';
  */
 const AnswerPage = () => {
   const { questionID, question, handleNewComment, handleNewAnswer } = useAnswerPage();
+  // Fetch suggestions based on title and text input (limited to 5)
+  const { suggestions, loading } = useQuestionSuggestions(
+    question?.title ?? '',
+    question?.text ?? '',
+  );
 
   if (!question) {
     return null;
@@ -52,6 +59,7 @@ const AnswerPage = () => {
         }}>
         Answer Question
       </button>
+      <QuestionSuggestion suggestions={suggestions} loading={loading} show={true} />
     </>
   );
 };

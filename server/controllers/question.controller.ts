@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import express, { Response } from 'express';
-import { ObjectId } from 'mongodb';
 import {
   Question,
   FindQuestionRequest,
@@ -78,11 +77,6 @@ const questionController = (socket: FakeSOSocket) => {
   const getQuestionById = async (req: FindQuestionByIdRequest, res: Response): Promise<void> => {
     const { qid } = req.params;
     const { username } = req.query;
-
-    if (!ObjectId.isValid(qid)) {
-      res.status(400).send('Invalid ID format');
-      return;
-    }
 
     try {
       const q = await fetchAndIncrementQuestionViewsById(qid, username);

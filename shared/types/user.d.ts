@@ -52,6 +52,8 @@ export interface UserRequest extends Request {
     username: string;
     password: string;
     biography?: string;
+    rememberDevice?: boolean;
+    twoFactorCode?: string;
   };
 }
 

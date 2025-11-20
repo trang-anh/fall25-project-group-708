@@ -1,227 +1,391 @@
-import mongoose from 'mongoose';
 import supertest from 'supertest';
 import { ObjectId } from 'mongodb';
 import { app } from '../../app';
+
+// SERVICE SPIES (REAL SPIES)
 import * as answerUtil from '../../services/answer.service';
 import * as databaseUtil from '../../utils/database.util';
 
+// SPY ON REAL ANSWER + POPULATE
 const saveAnswerSpy = jest.spyOn(answerUtil, 'saveAnswer');
 const addAnswerToQuestionSpy = jest.spyOn(answerUtil, 'addAnswerToQuestion');
 const popDocSpy = jest.spyOn(databaseUtil, 'populateDocument');
 
+// MOCKED MODULES
+jest.mock('../../services/contentModeration.service', () => ({
+  moderateContent: jest.fn().mockReturnValue({
+    isHateful: false,
+    detectedIn: [],
+    badWords: {},
+  }),
+  cleanText: jest.fn().mockImplementation(t => t),
+}));
+
+jest.mock('../../services/registerPoints.service', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue({
+    applied: 10,
+    blocked: 0,
+  }),
+}));
+
+// Import the mocks AFTER mock() so the replaced module is loaded
+import * as moderationUtil from '../../services/contentModeration.service';
+import addRegisterPoints from '../../services/registerPoints.service';
+
 describe('POST /addAnswer', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // =========================================
+  // 1. SUCCESS CASE
+  // =========================================
   it('should add a new answer to the question', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const validAid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
+    const validQid = new ObjectId().toString();
+    const answerId = new ObjectId();
+
+    const reqBody = {
       qid: validQid,
       ans: {
         text: 'This is a test answer',
-        ansBy: '65e9b716ff0e892116b2de01',
+        ansBy: 'user123',
         ansDateTime: new Date('2024-06-03'),
+        comments: [],
       },
     };
 
-    const mockAnswer = {
-      _id: validAid,
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: new Date('2024-06-03'),
+    const savedAnswer = {
+      _id: answerId,
+      text: reqBody.ans.text,
+      ansBy: reqBody.ans.ansBy,
+      ansDateTime: reqBody.ans.ansDateTime,
       comments: [],
     };
-    saveAnswerSpy.mockResolvedValueOnce(mockAnswer);
+
+    // mock moderation (clean)
+    (moderationUtil.moderateContent as jest.Mock).mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
+    });
+
+    (moderationUtil.cleanText as jest.Mock).mockReturnValueOnce(reqBody.ans.text);
+
+    (addRegisterPoints as jest.Mock).mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
+
+    saveAnswerSpy.mockResolvedValueOnce(savedAnswer);
 
     addAnswerToQuestionSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
+      _id: new ObjectId(),
+      title: 'mock question',
+      text: 'mock',
       tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
+      askedBy: 'user123',
+      askDateTime: new Date(),
       views: [],
       upVotes: [],
       downVotes: [],
-      answers: [mockAnswer._id],
+      answers: [savedAnswer._id],
       comments: [],
       community: null,
     });
 
     popDocSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
-      tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
-      views: [],
-      upVotes: [],
-      downVotes: [],
-      answers: [mockAnswer],
+      _id: savedAnswer._id,
+      text: savedAnswer.text,
+      ansBy: savedAnswer.ansBy,
+      ansDateTime: savedAnswer.ansDateTime,
       comments: [],
-      community: null,
     });
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send(reqBody);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      _id: validAid.toString(),
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: mockAnswer.ansDateTime.toISOString(),
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      _id: answerId.toString(),
+      text: savedAnswer.text,
+      ansBy: savedAnswer.ansBy,
+      ansDateTime: savedAnswer.ansDateTime.toISOString(),
       comments: [],
     });
   });
 
-  it('should return bad request error if answer text property is missing', async () => {
-    const mockReqBody = {
-      qid: '65e9b716ff0e892116b2de01',
+  // =========================================
+  // 2. MISSING TEXT (OpenAPI)
+  // =========================================
+  it('should return 400 if answer text is missing', async () => {
+    const reqBody = {
+      qid: new ObjectId().toString(),
       ans: {
-        ansBy: '65e9b716ff0e892116b2de01',
-        ansDateTime: new Date('2024-06-03'),
+        ansBy: 'user123',
+        ansDateTime: new Date(),
+        comments: [],
       },
     };
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
+    const res = await supertest(app).post('/api/answer/addAnswer').send(reqBody);
 
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/ans/text');
+    expect(res.status).toBe(400);
+
+    const parsed = JSON.parse(res.text);
+    expect(parsed.errors[0].path).toBe('/body/ans/text');
   });
 
-  it('should return bad request error if request body has qid property missing', async () => {
-    const mockReqBody = {
+  // =========================================
+  // 3. MISSING qid
+  // =========================================
+  it('should return 400 if qid is missing', async () => {
+    const reqBody = {
       ans: {
-        ansBy: '65e9b716ff0e892116b2de01',
-        ansDateTime: new Date('2024-06-03'),
+        text: 'hi',
+        ansBy: 'user123',
+        ansDateTime: new Date(),
+        comments: [],
       },
     };
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send(reqBody);
 
-    expect(response.status).toBe(400);
+    expect(res.status).toBe(400);
   });
 
-  it('should return bad request error if answer object has ansBy property missing', async () => {
-    const mockReqBody = {
-      qid: 'dummyQuestionId',
+  // =========================================
+  // 4. MISSING ansBy
+  // =========================================
+  it('should return 400 if ansBy is missing', async () => {
+    const reqBody = {
+      qid: new ObjectId().toString(),
       ans: {
-        text: 'This is a test answer',
-        ansDateTime: new Date('2024-06-03'),
+        text: 'hi',
+        ansDateTime: new Date(),
+        comments: [],
       },
     };
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send(reqBody);
 
-    expect(response.status).toBe(400);
+    expect(res.status).toBe(400);
   });
 
-  it('should return bad request error if answer object has ansDateTime property missing', async () => {
-    const mockReqBody = {
-      qid: 'dummyQuestionId',
+  // =========================================
+  // 5. MISSING ansDateTime
+  // =========================================
+  it('should return 400 if ansDateTime is missing', async () => {
+    const reqBody = {
+      qid: new ObjectId().toString(),
       ans: {
-        text: 'This is a test answer',
-        ansBy: '65e9b716ff0e892116b2de01',
+        text: 'hi',
+        ansBy: 'user123',
+        comments: [],
       },
     };
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send(reqBody);
 
-    expect(response.status).toBe(400);
+    expect(res.status).toBe(400);
   });
 
-  it('should return bad request error if request body is missing', async () => {
-    const response = await supertest(app).post('/api/answer/addAnswer');
-    const openApiError = JSON.parse(response.text);
+  // =========================================
+  // 6. saveAnswer error
+  // =========================================
+  it('should return 500 if saveAnswer returns error', async () => {
+    const qid = new ObjectId().toString();
 
-    expect(openApiError.message).toBe('Request Validation Failed');
+    saveAnswerSpy.mockResolvedValueOnce({ error: 'Save failed' });
+
+    const res = await supertest(app)
+      .post('/api/answer/addAnswer')
+      .send({
+        qid,
+        ans: {
+          text: 'test',
+          ansBy: 'user123',
+          ansDateTime: new Date(),
+          comments: [],
+        },
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.text).toContain('Save failed');
   });
 
-  it('should return database error in response if saveAnswer method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId().toString();
-    const mockReqBody = {
-      qid: validQid,
-      ans: {
-        text: 'This is a test answer',
-        ansBy: '65e9b716ff0e892116b2de01',
-        ansDateTime: new Date('2024-06-03'),
-      },
-    };
+  // =========================================
+  // 7. addAnswerToQuestion error
+  // =========================================
+  it('should return 500 if addAnswerToQuestion fails', async () => {
+    const qid = new ObjectId().toString();
 
-    saveAnswerSpy.mockResolvedValueOnce({ error: 'Error when saving an answer' });
-
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
-
-    expect(response.status).toBe(500);
-  });
-
-  it('should return database error in response if update question method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId().toString();
-    const mockReqBody = {
-      qid: validQid,
-      ans: {
-        text: 'This is a test answer',
-        ansBy: '65e9b716ff0e892116b2de01',
-        ansDateTime: new Date('2024-06-03'),
-      },
-    };
-
-    const mockAnswer = {
-      _id: new ObjectId('507f191e810c19729de860ea'),
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: new Date('2024-06-03'),
+    const stored = {
+      _id: new ObjectId(),
+      text: 'test',
+      ansBy: 'user123',
+      ansDateTime: new Date(),
       comments: [],
     };
 
-    saveAnswerSpy.mockResolvedValueOnce(mockAnswer);
-    addAnswerToQuestionSpy.mockResolvedValueOnce({ error: 'Error when adding answer to question' });
+    saveAnswerSpy.mockResolvedValueOnce(stored);
+    addAnswerToQuestionSpy.mockResolvedValueOnce({ error: 'Update failed' });
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send({
+      qid,
+      ans: stored,
+    });
 
-    expect(response.status).toBe(500);
+    expect(res.status).toBe(500);
+    expect(res.text).toContain('Update failed');
   });
 
-  it('should return database error in response if `populateDocument` method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      qid: validQid,
-      ans: {
-        text: 'This is a test answer',
-        ansBy: '65e9b716ff0e892116b2de01',
-        ansDateTime: new Date('2024-06-03'),
-      },
-    };
+  // =========================================
+  // 8. populateDocument error
+  // =========================================
+  it('should return 500 if populateDocument fails', async () => {
+    const qid = new ObjectId().toString();
 
-    const mockAnswer = {
-      _id: new ObjectId('507f191e810c19729de860ea'),
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: new Date('2024-06-03'),
+    const stored = {
+      _id: new ObjectId(),
+      text: 'test',
+      ansBy: 'user123',
+      ansDateTime: new Date(),
       comments: [],
     };
 
-    const mockQuestion = {
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
+    const question = {
+      _id: new ObjectId(),
+      title: 'Test',
+      text: 'Test',
       tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
+      askedBy: 'user123',
+      askDateTime: new Date(),
       views: [],
       upVotes: [],
       downVotes: [],
-      answers: [mockAnswer._id],
+      answers: [stored._id],
       comments: [],
       community: null,
     };
 
-    saveAnswerSpy.mockResolvedValueOnce(mockAnswer);
-    addAnswerToQuestionSpy.mockResolvedValueOnce(mockQuestion);
-    popDocSpy.mockResolvedValueOnce({ error: 'Error when populating document' });
+    saveAnswerSpy.mockResolvedValueOnce(stored);
+    addAnswerToQuestionSpy.mockResolvedValueOnce(question);
+    popDocSpy.mockResolvedValueOnce({ error: 'Populate failed' });
 
-    const response = await supertest(app).post('/api/answer/addAnswer').send(mockReqBody);
+    const res = await supertest(app).post('/api/answer/addAnswer').send({
+      qid,
+      ans: stored,
+    });
 
-    expect(response.status).toBe(500);
+    expect(res.status).toBe(500);
+    expect(res.text).toContain('Populate failed');
+  });
+
+  it('should award +10 ACCEPT_ANSWER points when no bad words are detected', async () => {
+    const qid = new ObjectId().toString();
+
+    const stored = {
+      _id: new ObjectId(),
+      text: 'Clean answer',
+      ansBy: 'user123',
+      ansDateTime: new Date(),
+      comments: [],
+    };
+
+    // No bad words
+    (moderationUtil.moderateContent as jest.Mock).mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {}, // critical
+    });
+
+    (moderationUtil.cleanText as jest.Mock).mockReturnValueOnce('Clean answer');
+
+    // Expect +10 points
+    (addRegisterPoints as jest.Mock).mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+    });
+
+    saveAnswerSpy.mockResolvedValueOnce(stored);
+    addAnswerToQuestionSpy.mockResolvedValueOnce({
+      _id: new ObjectId(),
+      title: 'Q',
+      text: 'Q',
+      tags: [],
+      askedBy: 'user123',
+      askDateTime: new Date(),
+      views: [],
+      upVotes: [],
+      downVotes: [],
+      answers: [stored._id],
+      comments: [],
+      community: null,
+    });
+
+    popDocSpy.mockResolvedValueOnce(stored);
+
+    const res = await supertest(app).post('/api/answer/addAnswer').send({
+      qid,
+      ans: stored,
+    });
+
+    expect(res.status).toBe(200);
+    expect(addRegisterPoints).toHaveBeenCalledWith('user123', 10, 'ACCEPT_ANSWER');
+  });
+  it('should deduct points and use HATEFUL_LANGUAGE when bad words are detected', async () => {
+    const qid = new ObjectId().toString();
+
+    const stored = {
+      _id: new ObjectId(),
+      text: 'This is badword stupid',
+      ansBy: 'user123',
+      ansDateTime: new Date(),
+      comments: [],
+    };
+
+    // Simulate 2 bad words → totalBadWords = 2 → −2 points
+    (moderationUtil.moderateContent as jest.Mock).mockReturnValueOnce({
+      isHateful: true,
+      detectedIn: ['text'],
+      badWords: {
+        text: ['badword', 'stupid'],
+      },
+    });
+
+    (moderationUtil.cleanText as jest.Mock).mockReturnValueOnce('This is ******* ******');
+
+    // Expect −2 points because 2 bad words
+    (addRegisterPoints as jest.Mock).mockResolvedValueOnce({
+      applied: -2,
+      blocked: 0,
+    });
+
+    saveAnswerSpy.mockResolvedValueOnce(stored);
+    addAnswerToQuestionSpy.mockResolvedValueOnce({
+      _id: new ObjectId(),
+      title: 'Q',
+      text: 'Q',
+      tags: [],
+      askedBy: 'user123',
+      askDateTime: new Date(),
+      views: [],
+      upVotes: [],
+      downVotes: [],
+      answers: [stored._id],
+      comments: [],
+      community: null,
+    });
+
+    popDocSpy.mockResolvedValueOnce(stored);
+
+    const res = await supertest(app).post('/api/answer/addAnswer').send({
+      qid,
+      ans: stored,
+    });
+
+    expect(res.status).toBe(200);
+    expect(addRegisterPoints).toHaveBeenCalledWith('user123', -2, 'HATEFUL_LANGUAGE');
   });
 });

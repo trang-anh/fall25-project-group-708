@@ -1,7 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Request } from 'express';
 import { DatabaseMessage, Message } from './message';
-import { DatabaseUser } from './user';
 
 /**
  * Extends the raw Message with an extra `user` field for
@@ -9,11 +8,7 @@ import { DatabaseUser } from './user';
  * - `user`: populated user details, including `_id` and `username`, or `null` if no user is found.
  */
 export interface MessageInChat extends DatabaseMessage {
-  user: {
-    _id: ObjectId,
-    username: string;
-    avatarUrl: string;
-  } | null;
+  user: Pick<DatabaseUser, '_id' | 'username' | 'avatarUrl'> | null;
 }
 
 /**
@@ -24,6 +19,9 @@ export interface MessageInChat extends DatabaseMessage {
 export interface Chat {
   participants: string[];
   messages: Message[];
+  chatType: 'direct' | 'group';
+  chatName?: string;
+  chatAdmin?: string;
 }
 
 /**
@@ -42,6 +40,18 @@ export interface DatabaseChat extends Omit<Chat, 'messages'> {
 }
 
 /**
+ * Creating a group chat request.
+ */
+export interface CreateGroupChatRequest extends Request {
+  body: {
+    participants: string[];
+    messages: Omit<Message, 'type'>[];
+    chatName: string;
+    chatAdmin: string;
+  };
+}
+
+/**
  * Represents a fully populated Chat from the database.
  * - `messages`: Array of `MessageInChat` objects, each populated with user details.
  */
@@ -51,7 +61,7 @@ export interface PopulatedDatabaseChat extends Omit<DatabaseChat, 'messages'> {
     _id: ObjectId;
     username: string;
     avatarUrl: string;
-  }>
+  }>;
 }
 
 /**

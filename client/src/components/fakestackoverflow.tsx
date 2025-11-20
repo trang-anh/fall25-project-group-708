@@ -26,6 +26,8 @@ import NewCollectionPage from './main/collections/newCollectionPage';
 import MatchDiscoveryPage from './main/matchProfilePage/MatchDiscoveryPage';
 import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
 import { getUserByUsername } from '../services/userService';
+import { loadRememberedUser } from '../utils/authStorage';
+import useCheckAuth from '../hooks/useCheckAuth';
 import MatchOnboardingPage from './main/matchProfilePage/MatchOnboardingPage';
 
 const ProtectedRoute = ({
@@ -58,6 +60,11 @@ const ProtectedRoute = ({
  * Represents the main component of the application.
  * It manages the state for search terms and the main title.
  */
+const AuthBootstrap = () => {
+  useCheckAuth();
+  return null;
+};
+
 const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
   // Check for OAuth callback params during initialization
   const urlParams = new URLSearchParams(window.location.search);
@@ -104,8 +111,17 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
     }
   }, [user, isProcessingOAuth]);
 
+  useEffect(() => {
+    if (user) return;
+    const remembered = loadRememberedUser();
+    if (remembered) {
+      setUser(remembered);
+    }
+  }, [user]);
+
   return (
     <LoginContext.Provider value={{ setUser }}>
+      <AuthBootstrap />
       <Routes>
         {/* Public Route */}
         <Route path='/' element={<Login />} />
