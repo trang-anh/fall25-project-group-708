@@ -3,6 +3,8 @@ import { ObjectId } from 'mongodb';
 import { Answer, AddAnswerRequest, FakeSOSocket, PopulatedDatabaseAnswer } from '../types/types';
 import { addAnswerToQuestion, saveAnswer } from '../services/answer.service';
 import { populateDocument } from '../utils/database.util';
+import { cleanText, moderateContent } from '../services/contentModeration.service';
+import addRegisterPoints from '../services/registerPoints.service';
 
 const answerController = (socket: FakeSOSocket) => {
   const router = express.Router();
@@ -21,7 +23,32 @@ const answerController = (socket: FakeSOSocket) => {
     const ansInfo: Answer = req.body.ans;
 
     try {
-      const ansFromDb = await saveAnswer(ansInfo);
+      //bad words checker
+      const moderation = moderateContent({
+        text: ansInfo.text,
+      });
+
+      //counting words for point deductions
+      const totalBadWords = Object.values(moderation.badWords).reduce(
+        (sum, words) => sum + words.length,
+        0,
+      );
+
+      //cleaning out any bad words to be stored in the database
+      const cleanedAnswer = {
+        ...ansInfo,
+        text: ansInfo.text ? cleanText(ansInfo.text) : ansInfo.text,
+      };
+
+      // Deduct points if bad words were found, and add points if none were found
+      if (totalBadWords > 0) {
+        const pointsToDeduct = totalBadWords * -1;
+        await addRegisterPoints(cleanedAnswer.ansBy, pointsToDeduct, 'HATEFUL_LANGUAGE');
+      } else {
+        await addRegisterPoints(cleanedAnswer.ansBy, 10, 'ACCEPT_ANSWER');
+      }
+
+      const ansFromDb = await saveAnswer(cleanedAnswer);
 
       if ('error' in ansFromDb) {
         throw new Error(ansFromDb.error as string);

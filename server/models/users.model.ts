@@ -1,6 +1,23 @@
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Document } from 'mongoose';
 import userSchema from './schema/user.schema';
-import { DatabaseUser } from '../types/types';
+import { DatabaseUser, User } from '../types/types';
+
+/**
+ * Interface for User Document with Mongoose methods
+ * Extends the User interface
+ */
+export interface UserDocument extends User, Document {
+  _id: mongoose.Types.ObjectId;
+  username: string;
+  password: string;
+  dateJoined: Date;
+  biography?: string;
+  githubId?: string;
+  totalPoints?: number;
+  avatarUrl?: string;
+  twoFactorEnabled?: boolean;
+  twoFactorCode?: string | null;
+}
 
 /**
  * Mongoose model for the `User` collection.

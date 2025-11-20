@@ -1,5 +1,3 @@
-/* eslint no-console: "off" */
-
 // The server should run on localhost port 8000.
 // This is where you should start writing server-side code for this application.
 // startServer() is a function that starts the server
@@ -12,6 +10,8 @@ import * as OpenApiValidator from 'express-openapi-validator';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'yaml';
 import * as fs from 'fs';
+import path from 'path';
+import cors from 'cors';
 
 import answerController from './controllers/answer.controller';
 import questionController from './controllers/question.controller';
@@ -44,22 +44,16 @@ const socket: FakeSOSocket = new Server(server, {
 });
 
 function connectDatabase() {
-  return mongoose.connect(MONGO_URL).catch(err => console.log('MongoDB connection error: ', err));
+  return mongoose.connect(MONGO_URL);
 }
 
 function startServer() {
   connectDatabase();
-  server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  server.listen(PORT, () => {});
 }
 
 socket.on('connection', socket => {
-  console.log('A user connected ->', socket.id);
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
+  socket.on('disconnect', () => {});
 });
 
 process.on('SIGINT', async () => {
@@ -67,12 +61,35 @@ process.on('SIGINT', async () => {
   socket.close();
 
   server.close(() => {
-    console.log('Server closed.');
     process.exit(0);
   });
 });
 
+// Add CORS middleware 
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:4530',
+  credentials: true,
+}));
+
 app.use(express.json());
+
+// construct the path for uploads
+const UPLOAD_PATHS = path.join(process.cwd(), 'uploads');
+
+// Serve static files
+app.use('/uploads', express.static(UPLOAD_PATHS));
+const UPLOADS_PATH = path.join(process.cwd(), 'uploads');
+
+// Serve static files
+app.use('/uploads', express.static(UPLOADS_PATH));
+
+/**
+ * Type for OpenAPI validation errors
+ */
+interface ValidationError extends Error {
+  status?: number;
+  errors?: unknown[];
+}
 
 try {
   app.use(
@@ -88,8 +105,7 @@ try {
   );
 
   // Custom Error Handler for express-openapi-validator errors
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  app.use((err: ValidationError, req: Request, res: Response, next: NextFunction) => {
     // Format error response for validation errors
     if (err.status && err.errors) {
       res.status(err.status).json({
@@ -100,8 +116,9 @@ try {
       next(err); // Pass through other errors
     }
   });
-} catch (e) {
-  console.error('Failed to load or initialize OpenAPI Validator:', e);
+} catch (error) {
+  // Failed to load OpenAPI validator - server will continue without request validation
+  // This allows the server to start even if openapi.yaml has issues
 }
 
 app.use('/api/question', questionController(socket));
@@ -121,7 +138,6 @@ app.use('/api/matchProfile', matchProfileController(socket));
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
-console.log('Swagger UI is available at /api/docs');
 
 // Export the app instance
 export { app, server, startServer };

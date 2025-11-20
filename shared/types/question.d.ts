@@ -75,7 +75,19 @@ export interface PopulatedDatabaseQuestion
  * Type representing possible responses for a Question-related operation.
  * - Either a `DatabaseQuestion` object or an error message.
  */
-export type QuestionResponse = DatabaseQuestion | { error: string };
+export type QuestionResponse =
+  | DatabaseQuestion
+  | { error: string }
+  | {
+      question: DatabaseQuestion;
+      warning: string;
+      warningDetails: {
+        detectedIn: string[];
+        badWords: Record<string, string[]>;
+        totalBadWords: number;
+        pointsDeducted: number;
+      };
+    };
 
 /**
  * Type representing an object with the vote success message, updated upVotes,

@@ -9,7 +9,7 @@ import { DatabaseProgrammingLanguage } from '../types/types';
  * `Message` collection in the MongoDB database, and provides an interface for interacting with
  * the stored messages.
  *
- * @type {Model<DabataseProgrammingLanguage>}
+ * @type {Model<DatabaseProgrammingLanguage>}
  */
 const MessageModel: Model<DatabaseProgrammingLanguage> =
   mongoose.model<DatabaseProgrammingLanguage>('Message', programmingLanguageSchema);

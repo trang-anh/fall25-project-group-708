@@ -4,6 +4,13 @@ import { validateHyperlink } from '../tool';
 import addAnswer from '../services/answerService';
 import useUserContext from './useUserContext';
 import { Answer } from '../types/types';
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
+
+// Create matcher with English dataset
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 /**
  * Custom hook for managing the state and logic of an answer submission form.
@@ -22,6 +29,24 @@ const useAnswerForm = () => {
   const [textErr, setTextErr] = useState<string>('');
   const [questionID, setQuestionID] = useState<string>('');
 
+  // state for bad word detection
+  const [showBadWordWarning, setShowBadWordWarning] = useState<boolean>(false);
+  const [badWordDetails, setBadWordDetails] = useState<string[]>([]);
+
+  const checkForBadWords = (): boolean => {
+    const detectedIn: string[] = [];
+
+    if (text && matcher.hasMatch(text)) {
+      detectedIn.push('answer text');
+    }
+
+    if (detectedIn.length > 0) {
+      setBadWordDetails(detectedIn);
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     if (!qid) {
       setTextErr('Question ID is missing.');
@@ -36,8 +61,14 @@ const useAnswerForm = () => {
    * Function to post an answer to a question.
    * It validates the answer text and posts the answer if it is valid.
    */
-  const postAnswer = async () => {
+  const postAnswer = async (forcePost = false) => {
     let isValid = true;
+
+    // Check for bad words if not force posting
+    if (!forcePost && checkForBadWords()) {
+      setShowBadWordWarning(true);
+      return;
+    }
 
     if (!text) {
       setTextErr('Answer text cannot be empty');
@@ -74,6 +105,9 @@ const useAnswerForm = () => {
     textErr,
     setText,
     postAnswer,
+    showBadWordWarning,
+    setShowBadWordWarning,
+    badWordDetails,
   };
 };
 

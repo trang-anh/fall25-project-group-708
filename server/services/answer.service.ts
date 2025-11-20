@@ -68,6 +68,7 @@ export const addAnswerToQuestion = async (
     if (result === null) {
       throw new Error('Error when adding answer to question');
     }
+
     return result;
   } catch (error) {
     return { error: 'Error when adding answer to question' };

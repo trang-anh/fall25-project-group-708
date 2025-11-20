@@ -151,3 +151,20 @@ export const updateUser = async (
     return { error: `Error occurred when updating user: ${error}` };
   }
 };
+
+/**
+ * Updates the user total points based on whether it is rewarded/lost.
+ *
+ * @param username - The username to be rewarded/punished.
+ * @param points - The number of points to be changed.
+ */
+export const updateUserTotalPoints = async (
+  username: string,
+  pointsChange: number,
+): Promise<void> => {
+  await UserModel.findOneAndUpdate(
+    { username },
+    { $inc: { totalPoints: pointsChange } },
+    { new: true }, // Return the updated document
+  );
+};

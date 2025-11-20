@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ObjectId } from 'mongodb';
 import { QueryOptions } from 'mongoose';
 import {
@@ -24,6 +25,10 @@ import {
   sortQuestionsByNewest,
   sortQuestionsByUnanswered,
 } from '../utils/sort.util';
+import addRegisterPoints, {
+  hasReceivedDownvotePenalty,
+  hasReceivedUpvotePoints,
+} from './registerPoints.service';
 
 /**
  * Checks if keywords exist in a question's title or text.
@@ -158,12 +163,14 @@ export const fetchAndIncrementQuestionViewsById = async (
 /**
  * Saves a new question to the database.
  * @param {Question} question - The question to save
- * @returns {Promise<QuestionResponse>} - The saved question or error message
+ * @returns {Promise<DatabaseQuestion | {error: string}>} - The saved question or error message
  */
-export const saveQuestion = async (question: Question): Promise<QuestionResponse> => {
+export const saveQuestion = async (
+  question: Omit<Question, 'tags'> & { tags: ObjectId[] },
+): Promise<QuestionResponse> => {
   try {
+    //Creating posts with cleaned content
     const result: DatabaseQuestion = await QuestionModel.create(question);
-
     return result;
   } catch (error) {
     return { error: 'Error when saving a question' };
@@ -240,15 +247,36 @@ export const addVoteToQuestion = async (
     }
 
     let msg = '';
+    //determine if vote has been added or removed, do nothing if removed
+    let wasAdded = false;
 
     if (voteType === 'upvote') {
-      msg = result.upVotes.includes(username)
-        ? 'Question upvoted successfully'
-        : 'Upvote cancelled successfully';
+      wasAdded = result.upVotes.includes(username);
+      msg = wasAdded ? 'Question upvoted successfully' : 'Upvote cancelled successfully';
     } else {
-      msg = result.downVotes.includes(username)
-        ? 'Question downvoted successfully'
-        : 'Downvote cancelled successfully';
+      wasAdded = result.downVotes.includes(username);
+      msg = wasAdded ? 'Question downvoted successfully' : 'Downvote cancelled successfully';
+    }
+
+    // POINT LOGIC
+    if (wasAdded) {
+      try {
+        if (voteType === 'upvote') {
+          const alreadyRewarded = await hasReceivedUpvotePoints(username, qid);
+          if (!alreadyRewarded && username !== result.askedBy) {
+            await addRegisterPoints(username, 2, 'UPVOTE_OTHERS', qid);
+          }
+        } else {
+          const alreadyPenalized = await hasReceivedDownvotePenalty(username, qid);
+          if (!alreadyPenalized && result.askedBy !== username) {
+            await addRegisterPoints(result.askedBy, -1, 'RECEIVE_DOWNVOTES', qid);
+          }
+        }
+      } catch (error) {
+        console.error('CRITICAL ERROR in points logic:', error);
+      }
+    } else {
+      console.log('Vote was removed, no points awarded');
     }
 
     return {
@@ -328,7 +356,6 @@ export const fetchFiveQuestionsByTextAndTitle = async (
 
     return similarQuestions;
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.log(`The error is` + error);
     return [];
   }

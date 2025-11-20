@@ -210,6 +210,62 @@
   filter: brightness(0.9);
 }
 
+.form-helper {
+  font-size: 12px;
+  color: var(--login-text-secondary);
+  margin-top: 8px;
+}
+
+.code-preview {
+  display: inline-block;
+  margin-left: 8px;
+  color: #007bff;
+  font-weight: 600;
+}
+
+.twofactor-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.twofactor-optin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.secondary-button {
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--login-border);
+  background-color: transparent;
+  color: var(--login-text);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-button:not(:disabled):hover {
+  background-color: var(--login-hover-bg);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+}
+
 /* Divider */
 .vertical-divider {
   display: flex;

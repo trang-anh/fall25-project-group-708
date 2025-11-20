@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import express, { Response } from 'express';
 import { ObjectId } from 'mongodb';
 import {
@@ -10,6 +11,7 @@ import {
   PopulatedDatabaseQuestion,
   CommunityQuestionsRequest,
   FindQuestionByTitleAndText,
+  DatabaseQuestion,
 } from '../types/types';
 import {
   addVoteToQuestion,
@@ -23,6 +25,9 @@ import {
 } from '../services/question.service';
 import { processTags } from '../services/tag.service';
 import { populateDocument } from '../utils/database.util';
+import UserModel from '../models/users.model';
+import { cleanText, moderateContent } from '../services/contentModeration.service';
+import addRegisterPoints from '../services/registerPoints.service';
 
 const questionController = (socket: FakeSOSocket) => {
   const router = express.Router();
@@ -110,14 +115,42 @@ const questionController = (socket: FakeSOSocket) => {
     const question: Question = req.body;
 
     try {
-      const questionswithtags = {
+      //clean tags before processing them into ObjectIds
+      const cleanedQuestion = {
         ...question,
-        tags: await processTags(question.tags),
+        title: question.title ? cleanText(question.title) : question.title,
+        text: question.text ? cleanText(question.text) : question.text,
+        tags: question.tags
+          ? question.tags.map(tag => ({
+              ...tag,
+              name: cleanText(tag.name),
+            }))
+          : question.tags,
       };
 
-      if (questionswithtags.tags.length === 0) {
+      //bad words checker
+      const moderation = moderateContent({
+        title: question.title,
+        text: question.text,
+        tags: question.tags?.map(tag => tag.name),
+      });
+
+      const totalBadWords = Object.values(moderation.badWords).reduce(
+        (sum, words) => sum + words.length,
+        0,
+      );
+
+      //process cleaned tags - this returns DatabaseTag[]
+      const processedTags = await processTags(cleanedQuestion.tags);
+
+      if (processedTags.length === 0) {
         throw new Error('Invalid tags');
       }
+
+      const questionswithtags = {
+        ...cleanedQuestion,
+        tags: processedTags.map(tag => tag._id),
+      };
 
       const result = await saveQuestion(questionswithtags);
 
@@ -125,15 +158,39 @@ const questionController = (socket: FakeSOSocket) => {
         throw new Error(result.error);
       }
 
+      const savedQuestion = result as DatabaseQuestion;
+
+      // Deduct points if bad words were found, and add points if none were found
+      if (totalBadWords > 0) {
+        const pointsToDeduct = totalBadWords * -1;
+        await addRegisterPoints(question.askedBy, pointsToDeduct, 'HATEFUL_LANGUAGE');
+      } else {
+        await addRegisterPoints(question.askedBy, 5, 'POST_QUESTION');
+      }
+
       // Populates the fields of the question that was added, and emits the new object
-      const populatedQuestion = await populateDocument(result._id.toString(), 'question');
+      const populatedQuestion = await populateDocument(savedQuestion._id.toString(), 'question');
 
       if ('error' in populatedQuestion) {
         throw new Error(populatedQuestion.error);
       }
 
       socket.emit('questionUpdate', populatedQuestion as PopulatedDatabaseQuestion);
-      res.json(populatedQuestion);
+
+      if (totalBadWords > 0) {
+        res.json({
+          ...populatedQuestion,
+          warning: 'Some words were automatically filtered for inappropriate language.',
+          warningDetails: {
+            detectedIn: moderation.detectedIn,
+            badWords: moderation.badWords,
+            totalBadWords,
+            pointsDeducted: totalBadWords,
+          },
+        });
+      } else {
+        res.json(populatedQuestion);
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         res.status(500).send(`Error when saving question: ${err.message}`);
@@ -160,13 +217,7 @@ const questionController = (socket: FakeSOSocket) => {
     const { qid, username } = req.body;
 
     try {
-      let status;
-
-      if (type === 'upvote') {
-        status = await addVoteToQuestion(qid, username, type);
-      } else {
-        status = await addVoteToQuestion(qid, username, type);
-      }
+      const status = await addVoteToQuestion(qid, username, type);
 
       if (status && 'error' in status) {
         throw new Error(status.error);
@@ -174,8 +225,19 @@ const questionController = (socket: FakeSOSocket) => {
 
       // Emit the updated vote counts to all connected clients
       socket.emit('voteUpdate', { qid, upVotes: status.upVotes, downVotes: status.downVotes });
+
+      //Fetch and emit updated user points
+      const updatedUser = await UserModel.findOne({ username }).select('-password');
+      if (updatedUser) {
+        socket.emit('userUpdate', {
+          user: updatedUser,
+          type: 'updated',
+        });
+      }
+
       res.json(status);
     } catch (err) {
+      console.error('ERROR in voteQuestion:', err);
       res.status(500).send(`Error when ${type}ing: ${(err as Error).message}`);
     }
   };

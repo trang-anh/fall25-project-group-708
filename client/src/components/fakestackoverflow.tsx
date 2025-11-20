@@ -23,17 +23,22 @@ import CommunityPage from './main/communities/communityPage';
 import AllCollectionsPage from './main/collections/allCollectionsPage';
 import CollectionPage from './main/collections/collectionPage';
 import NewCollectionPage from './main/collections/newCollectionPage';
+import MatchDiscoveryPage from './main/matchProfilePage/MatchDiscoveryPage';
+import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
 import { getUserByUsername } from '../services/userService';
+import MatchOnboardingPage from './main/matchProfilePage/MatchOnboardingPage';
 
 const ProtectedRoute = ({
   user,
   socket,
   isProcessingOAuth,
+  updateUser,
   children,
 }: {
   user: SafeDatabaseUser | null;
   socket: FakeSOSocket | null;
   isProcessingOAuth: boolean;
+  updateUser: (updates: Partial<SafeDatabaseUser>) => void;
   children: JSX.Element;
 }) => {
   if (isProcessingOAuth) {
@@ -44,7 +49,9 @@ const ProtectedRoute = ({
     return <Navigate to='/' />;
   }
 
-  return <UserContext.Provider value={{ user, socket }}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={{ user, socket, updateUser }}>{children}</UserContext.Provider>
+  );
 };
 
 /**
@@ -58,6 +65,13 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
 
   const [user, setUser] = useState<SafeDatabaseUser | null>(null);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(hasOAuthParams);
+
+  const updateUser = (updates: Partial<SafeDatabaseUser>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      return { ...prev, ...updates };
+    });
+  };
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -97,32 +111,38 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
         <Route path='/' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
         {/* Protected Routes */}
-        {
-          <Route
-            element={
-              <ProtectedRoute user={user} socket={socket} isProcessingOAuth={isProcessingOAuth}>
-                <Layout />
-              </ProtectedRoute>
-            }>
-            <Route path='/home' element={<QuestionPage />} />
-            <Route path='tags' element={<TagPage />} />
-            <Route path='/messaging' element={<MessagingPage />} />
-            <Route path='/messaging/direct-message' element={<DirectMessage />} />
-            <Route path='/question/:qid' element={<AnswerPage />} />
-            <Route path='/new/question' element={<NewQuestionPage />} />
-            <Route path='/new/answer/:qid' element={<NewAnswerPage />} />
-            <Route path='/users' element={<UsersListPage />} />
-            <Route path='/user/:username' element={<ProfileSettings />} />
-            <Route path='/new/collection' element={<NewCollectionPage />} />
-            <Route path='/collections/:username' element={<AllCollectionsPage />} />
-            <Route path='/collections/:username/:collectionId' element={<CollectionPage />} />
-            <Route path='/games' element={<AllGamesPage />} />
-            <Route path='/games/:gameID' element={<GamePage />} />
-            <Route path='/communities' element={<AllCommunitiesPage />} />
-            <Route path='/new/community' element={<NewCommunityPage />} />
-            <Route path='/communities/:communityID' element={<CommunityPage />} />
-          </Route>
-        }
+
+        <Route
+          element={
+            <ProtectedRoute
+              user={user}
+              socket={socket}
+              isProcessingOAuth={isProcessingOAuth}
+              updateUser={updateUser}>
+              <Layout />
+            </ProtectedRoute>
+          }>
+          <Route path='/home' element={<QuestionPage />} />
+          <Route path='tags' element={<TagPage />} />
+          <Route path='/messaging' element={<MessagingPage />} />
+          <Route path='/messaging/direct-message' element={<DirectMessage />} />
+          <Route path='/question/:qid' element={<AnswerPage />} />
+          <Route path='/new/question' element={<NewQuestionPage />} />
+          <Route path='/new/answer/:qid' element={<NewAnswerPage />} />
+          <Route path='/users' element={<UsersListPage />} />
+          <Route path='/user/:username' element={<ProfileSettings />} />
+          <Route path='/new/collection' element={<NewCollectionPage />} />
+          <Route path='/collections/:username' element={<AllCollectionsPage />} />
+          <Route path='/collections/:username/:collectionId' element={<CollectionPage />} />
+          <Route path='/games' element={<AllGamesPage />} />
+          <Route path='/games/:gameID' element={<GamePage />} />
+          <Route path='/communities' element={<AllCommunitiesPage />} />
+          <Route path='/new/community' element={<NewCommunityPage />} />
+          <Route path='/communities/:communityID' element={<CommunityPage />} />
+          <Route path='/matchProfile' element={<MatchDiscoveryPage />} />
+          <Route path='/match' element={<UserMatchesPage />} />
+          <Route path='/match-onboarding' element={<MatchOnboardingPage />} />
+        </Route>
       </Routes>
     </LoginContext.Provider>
   );

@@ -35,10 +35,11 @@ const UsersListPage = (props: UserListPageProps) => {
       navigate(`/user/${user.username}`);
     }
   };
+
   return (
     <div className='user-card-container'>
       <UsersListHeader userCount={userList.length} setUserFilter={setUserFilter} />
-      <div id='users_list' className='users_list'>
+      <div className='users_list'>
         {userList.map(user => (
           <UserCardView
             user={user}
@@ -48,7 +49,7 @@ const UsersListPage = (props: UserListPageProps) => {
         ))}
       </div>
       {(!userList.length || userList.length === 0) && (
-        <div className='bold_title right_padding'>No Users Found</div>
+        <div className='no-users-message'>No Users Found</div>
       )}
     </div>
   );

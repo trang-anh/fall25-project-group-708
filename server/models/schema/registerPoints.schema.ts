@@ -32,6 +32,10 @@ const registerPoints: Schema = new Schema(
         'RECEIVE_DOWNVOTES',
       ],
     },
+    questionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Question',
+    },
     createdAt: {
       type: Date,
       default: Date.now,

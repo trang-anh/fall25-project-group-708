@@ -9,7 +9,7 @@ import { PopulatedDatabaseQuestion } from '../types/types';
  *
  * @param question - The question object for which the voting is tracked.
  *
- * @returns count - The urrent vote count (upVotes - downVotes)
+ * @returns count - The current vote count (upVotes - downVotes)
  * @returns setCount - The function to manually update vote count
  * @returns voted - The user's vote status
  * @returns setVoted - The function to manually update user's vote status

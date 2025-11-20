@@ -5,6 +5,13 @@ import { addQuestion } from '../services/questionService';
 import useUserContext from './useUserContext';
 import { DatabaseCommunity, Question } from '../types/types';
 import { getCommunities } from '../services/communityService';
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity';
+
+// Create matcher with English dataset
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 /**
  * Custom hook to handle question submission and form validation
@@ -30,6 +37,35 @@ const useNewQuestion = () => {
   const [tagErr, setTagErr] = useState<string>('');
 
   const [communityList, setCommunityList] = useState<DatabaseCommunity[]>([]);
+
+  // state for bad word detection
+  const [showBadWordWarning, setShowBadWordWarning] = useState<boolean>(false);
+  const [badWordDetails, setBadWordDetails] = useState<string[]>([]);
+
+  /**
+   * Check for bad words in the content
+   */
+  const checkForBadWords = (): boolean => {
+    const detectedIn: string[] = [];
+
+    if (title && matcher.hasMatch(title)) {
+      detectedIn.push('title');
+    }
+    if (text && matcher.hasMatch(text)) {
+      detectedIn.push('question text');
+    }
+
+    const tagnames = tagNames.split(' ').filter(tag => tag.trim() !== '');
+    if (tagnames.some(tag => matcher.hasMatch(tag))) {
+      detectedIn.push('tags');
+    }
+
+    if (detectedIn.length > 0) {
+      setBadWordDetails(detectedIn);
+      return true;
+    }
+    return false;
+  };
 
   /**
    * Function to validate the form before submitting the question.
@@ -86,8 +122,14 @@ const useNewQuestion = () => {
    *
    * @returns title - The current value of the title input.
    */
-  const postQuestion = async () => {
+  const postQuestion = async (forcePost = false) => {
     if (!validateForm()) return;
+
+    // Check for bad words if not force posting
+    if (!forcePost && checkForBadWords()) {
+      setShowBadWordWarning(true);
+      return;
+    }
 
     const tagnames = tagNames.split(' ').filter(tagName => tagName.trim() !== '');
     const tags = tagnames.map(tagName => ({
@@ -111,7 +153,8 @@ const useNewQuestion = () => {
 
     const res = await addQuestion(question);
 
-    if (res && res._id) {
+    // Handle both regular response and response with warning
+    if (res) {
       navigate('/home');
     }
   };
@@ -148,6 +191,9 @@ const useNewQuestion = () => {
     postQuestion,
     communityList,
     handleDropdownChange,
+    showBadWordWarning,
+    setShowBadWordWarning,
+    badWordDetails,
   };
 };
 

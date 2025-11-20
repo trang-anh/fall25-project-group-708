@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import useLoginContext from './useLoginContext';
-import { createUser, loginUser } from '../services/userService';
+import { createUser, loginUser, requestTwoFactorCode } from '../services/userService';
+import { SafeDatabaseUser } from '../types/types';
 
 /**
  * Custom hook to manage authentication logic, including handling input changes,
@@ -25,6 +26,12 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState<string>('');
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState<string>('');
+  const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
+  const [isSendingTwoFactorCode, setIsSendingTwoFactorCode] = useState(false);
+  const [twoFactorOptIn, setTwoFactorOptIn] = useState(false);
+
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
 
@@ -43,7 +50,7 @@ const useAuth = (authType: 'login' | 'signup') => {
    */
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
-    field: 'username' | 'password' | 'confirmPassword',
+    field: 'username' | 'password' | 'confirmPassword' | 'twoFactor',
   ) => {
     const fieldText = e.target.value.trim();
 
@@ -53,6 +60,9 @@ const useAuth = (authType: 'login' | 'signup') => {
       setPassword(fieldText);
     } else if (field === 'confirmPassword') {
       setPasswordConfirmation(fieldText);
+    } else if (field === 'twoFactor') {
+      const digitsOnly = fieldText.replace(/\D/g, '').slice(0, 6);
+      setTwoFactorCode(digitsOnly);
     }
   };
 
@@ -73,7 +83,70 @@ const useAuth = (authType: 'login' | 'signup') => {
       return false;
     }
 
+    if (requires2FA && twoFactorCode.length !== 6) {
+      setErr('Enter the 6-digit verification code');
+      return false;
+    }
+
     return true;
+  };
+
+  const resetTwoFactorFlow = (keepError = false) => {
+    setRequires2FA(false);
+    setTwoFactorCode('');
+    setTwoFactorDevCode(null);
+    if (!keepError) {
+      setErr('');
+    }
+  };
+
+  const handleRequestTwoFactorCode = async (): Promise<boolean> => {
+    if (!username) {
+      setErr('Enter your username before requesting a verification code');
+      return false;
+    }
+
+    setIsSendingTwoFactorCode(true);
+    try {
+      const response = await requestTwoFactorCode(username);
+      setRequires2FA(true);
+      setTwoFactorDevCode(response.code ?? null);
+      setTwoFactorCode('');
+      setErr('Enter the 6-digit verification code we just sent you');
+      return true;
+    } catch (error) {
+      setErr((error as Error).message);
+      return false;
+    } finally {
+      setIsSendingTwoFactorCode(false);
+    }
+  };
+
+  const cancelTwoFactorFlow = () => {
+    resetTwoFactorFlow();
+    setTwoFactorOptIn(false);
+  };
+
+  useEffect(() => {
+    if (requires2FA && !twoFactorOptIn) {
+      setTwoFactorOptIn(true);
+    }
+  }, [requires2FA, twoFactorOptIn]);
+
+  const handleTwoFactorOptInChange = async (checked: boolean) => {
+    setTwoFactorOptIn(checked);
+
+    if (authType !== 'login') {
+      return;
+    }
+
+    if (checked) {
+      if (!requires2FA) {
+        await handleRequestTwoFactorCode();
+      }
+    } else if (!requires2FA) {
+      cancelTwoFactorFlow();
+    }
   };
 
   /**
@@ -82,28 +155,42 @@ const useAuth = (authType: 'login' | 'signup') => {
    *
    * @param event - The form submission event.
    */
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!validateInputs()) {
-      return;
-    }
-
-    let user;
+    if (!validateInputs()) return;
 
     try {
       if (authType === 'signup') {
-        user = await createUser({ username, password });
-      } else if (authType === 'login') {
-        user = await loginUser({ username, password });
-      } else {
-        throw new Error('Invalid auth type');
+        const user = await createUser({ username, password });
+        setUser(user);
+        if (twoFactorOptIn) {
+          navigate(`/user/${user.username}`);
+        } else {
+          navigate('/home');
+        }
+        return;
       }
 
-      setUser(user);
+      const result = await loginUser(
+        { username, password },
+        requires2FA ? twoFactorCode : undefined,
+      );
+
+      if ('requires2FA' in result && result.requires2FA) {
+        await handleRequestTwoFactorCode();
+        return;
+      }
+
+      setUser(result as SafeDatabaseUser);
       navigate('/home');
     } catch (error) {
       setErr((error as Error).message);
+      if (requires2FA) {
+        setTwoFactorCode('');
+      } else {
+        resetTwoFactorFlow(true);
+      }
     }
   };
 
@@ -113,9 +200,17 @@ const useAuth = (authType: 'login' | 'signup') => {
     passwordConfirmation,
     showPassword,
     err,
+    requires2FA,
+    twoFactorCode,
+    twoFactorDevCode,
+    isSendingTwoFactorCode,
+    twoFactorOptIn,
     handleInputChange,
     handleSubmit,
     togglePasswordVisibility,
+    handleRequestTwoFactorCode,
+    cancelTwoFactorFlow,
+    handleTwoFactorOptInChange,
   };
 };
 

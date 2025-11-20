@@ -16,6 +16,7 @@ export interface RegisterPoints {
     | 'POST_QUESTION'
     | 'HATEFUL_LANGUAGE'
     | 'RECEIVE_DOWNVOTES';
+  questionId: ObjectId;
   createdAt: Date;
 }
 

@@ -16,6 +16,8 @@ const Signup = () => {
     handleSubmit,
     handleInputChange,
     togglePasswordVisibility,
+    twoFactorOptIn,
+    handleTwoFactorOptInChange,
   } = useAuth('signup');
 
   return (
@@ -58,6 +60,15 @@ const Signup = () => {
             onChange={togglePasswordVisibility}
           />
           <label htmlFor='showPasswordToggle'>Show Password</label>
+        </div>
+        <div className='twofactor-optin'>
+          <input
+            type='checkbox'
+            id='signupTwoFactor'
+            checked={twoFactorOptIn}
+            onChange={event => handleTwoFactorOptInChange(event.target.checked)}
+          />
+          <label htmlFor='signupTwoFactor'>Set up two-factor authentication after sign up</label>
         </div>
         <button type='submit' className='login-button'>
           Submit

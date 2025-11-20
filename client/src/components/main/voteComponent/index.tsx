@@ -3,6 +3,7 @@ import './index.css';
 import useUserContext from '../../../hooks/useUserContext';
 import { PopulatedDatabaseQuestion } from '../../../types/types';
 import useVoteStatus from '../../../hooks/useVoteStatus';
+import { getUserByUsername } from '../../../services/userService';
 
 /**
  * Interface represents the props for the VoteComponent.
@@ -19,7 +20,7 @@ interface VoteComponentProps {
  * @param question - The question object containing voting information.
  */
 const VoteComponent = ({ question }: VoteComponentProps) => {
-  const { user } = useUserContext();
+  const { user, updateUser } = useUserContext();
   const { count, voted } = useVoteStatus({ question });
 
   /**
@@ -32,6 +33,12 @@ const VoteComponent = ({ question }: VoteComponentProps) => {
       if (question._id) {
         if (type === 'upvote') {
           await upvoteQuestion(question._id, user.username);
+          // eslint-disable-next-line no-console
+          console.log(user.totalPoints);
+
+          // Refetch the user to get updated totalPoints
+          const updatedUserData = await getUserByUsername(user.username);
+          updateUser({ totalPoints: updatedUserData.totalPoints });
         } else if (type === 'downvote') {
           await downvoteQuestion(question._id, user.username);
         }
