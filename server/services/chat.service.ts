@@ -28,9 +28,50 @@ export const saveChat = async (chatPayload: Chat): Promise<ChatResponse> => {
     return await ChatModel.create({
       participants: chatPayload.participants,
       messages: messageIds,
+      chatType: chatPayload.chatType || 'direct', // Default to direct
+      chatName: chatPayload.chatName,
+      chatAdmin: chatPayload.chatAdmin,
     });
   } catch (error) {
     return { error: `Error saving chat: ${error}` };
+  }
+};
+
+/**
+ * Removes a participant from a chat.
+ * @param chatId the ID of the groupchat
+ * @param username the username of the user to be removed
+ * @returns
+ */
+export const removeParticipantFromChat = async (
+  chatId: string,
+  username: string,
+): Promise<ChatResponse> => {
+  try {
+    const chat = await ChatModel.findById(chatId);
+
+    if (!chat) {
+      throw new Error('Chat not found');
+    }
+
+    // Don't allow removing from direct chats or if only 2 participants left
+    if (chat.chatType === 'direct' || chat.participants.length <= 2) {
+      throw new Error('Cannot remove participant from this chat');
+    }
+
+    const updatedChat = await ChatModel.findByIdAndUpdate(
+      chatId,
+      { $pull: { participants: username } },
+      { new: true },
+    );
+
+    if (!updatedChat) {
+      throw new Error('Failed to remove participant');
+    }
+
+    return updatedChat;
+  } catch (error) {
+    return { error: `Error removing participant: ${(error as Error).message}` };
   }
 };
 
