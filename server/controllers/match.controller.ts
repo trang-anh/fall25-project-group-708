@@ -5,8 +5,16 @@ import {
   MatchRequest,
   FakeSOSocket,
   DeleteMatchRequest,
+  MatchProfileRequest,
+  DatabaseMatch,
 } from '../types/types';
-import { createMatch, deleteMatch, getMatch, getUserMatches } from '../services/match.service';
+import {
+  createMatch,
+  deleteMatch,
+  generateMatchesForUser,
+  getMatch,
+  getUserMatches,
+} from '../services/match.service';
 
 /**
  * This controller handles match-related routes.
@@ -132,11 +140,53 @@ const matchController = (socket: FakeSOSocket) => {
     }
   };
 
+  /**
+   * Generates matches for a user and emits matchUpdate events for each match.
+   */
+  /**
+   * Generates matches for a user, emits matchUpdate events,
+   * and returns the list of generated matches.
+   */
+  const generateMatchesForUserRoute = async (
+    req: MatchProfileRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { userId } = req.params;
+
+    try {
+      const result = await generateMatchesForUser(userId);
+
+      if ('error' in result) {
+        if (result.error.includes('not found')) {
+          res.status(404).json({ error: result.error });
+        } else {
+          res.status(500).json({ error: result.error });
+        }
+        return;
+      }
+
+      // Emit one event per generated match (matches your MatchUpdatePayload)
+      result.matches.forEach((match: DatabaseMatch) => {
+        socket.emit('matchUpdate', {
+          type: 'generated',
+          match,
+        });
+      });
+
+      res.json({
+        matches: result.matches,
+        message: 'Matches generated successfully',
+      });
+    } catch (err) {
+      res.status(500).json({ error: `Error generating matches: ${(err as Error).message}` });
+    }
+  };
   // Registering routes
   router.get('/getMatch/:matchId', getMatchRoute);
   router.get('/getUserMatches/:userId', getUserMatchesRoute);
   router.post('/create', createMatchRoute);
   router.delete('/delete/:matchId', deleteMatchRoute);
+  router.post('/generate/:userId', generateMatchesForUserRoute);
 
   return router;
 };

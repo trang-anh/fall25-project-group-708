@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongodb';
 import MatchProfileModel from '../models/matchProfiles.model';
 import { MatchProfile, MatchProfileResponse, DatabaseMatchProfile } from '../types/types';
+import { Types } from 'mongoose';
 
 /**
  * Creates a new community with the provided data.
@@ -43,7 +45,13 @@ export const createMatchProfile = async (
  */
 export const getMatchProfile = async (userId: string): Promise<MatchProfileResponse> => {
   try {
-    const matchProfile = await MatchProfileModel.findById(userId);
+    if (!Types.ObjectId.isValid(userId)) {
+      return { error: 'Invalid userId' };
+    }
+
+    const id = new ObjectId(userId);
+
+    const matchProfile = await MatchProfileModel.findOne({ userId: id });
     if (!matchProfile) {
       return { error: 'Match Profile not found' };
     }
@@ -81,8 +89,14 @@ export const updateMatchProfile = async (
   updates: Partial<MatchProfile>,
 ): Promise<MatchProfileResponse> => {
   try {
+    if (!Types.ObjectId.isValid(userId)) {
+      return { error: 'Invalid userId' };
+    }
+
+    const id = new Types.ObjectId(userId);
+
     const updatedProfile = await MatchProfileModel.findOneAndUpdate(
-      { userId },
+      { userId: id },
       { $set: updates },
       { new: true },
     );
@@ -123,7 +137,12 @@ export const checkOnboardingStatus = async (
   userId: string,
 ): Promise<{ exists: boolean; isActive: boolean } | { error: string }> => {
   try {
-    const matchProfile = await MatchProfileModel.findOne({ userId })
+    if (!Types.ObjectId.isValid(userId)) {
+      return { error: 'Invalid userId' };
+    }
+
+    const id = new Types.ObjectId(userId);
+    const matchProfile = await MatchProfileModel.findOne({ userId: id })
       .lean<DatabaseMatchProfile>()
       .exec();
 
