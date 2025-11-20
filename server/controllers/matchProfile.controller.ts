@@ -144,7 +144,7 @@ const matchProfileController = (socket: FakeSOSocket) => {
         if (result.error.includes('not found')) {
           res.status(404).json({ error: result.error });
         } else {
-          res.status(400).json({ error: result.error });
+          res.status(500).json({ error: result.error });
         }
         return;
       }

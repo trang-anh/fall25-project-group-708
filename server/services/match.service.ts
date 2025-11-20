@@ -1,5 +1,14 @@
 import MatchModel from '../models/match.model';
-import { Match, DatabaseMatch, MatchResponse } from '../types/types';
+import MatchProfileModel from '../models/matchProfiles.model';
+import {
+  Match,
+  DatabaseMatch,
+  MatchResponse,
+  GenerateMatchesResponse,
+  PopulatedDatabaseMatchProfile,
+} from '../types/types';
+import extractFeatures from './matchFeature.service';
+import computeScore from './matchMath.service';
 
 /**
  * Creates a new community with the provided data.
@@ -96,6 +105,95 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<Matc
     }
 
     return deletedMatch;
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+};
+
+/**
+ * Generates or updates matches for a given user based on their match profile
+ * and returns the list of match documents sorted by descending score.
+ *
+ * - Only considers other active match profiles.
+ * - Skips pairs with no language overlap (skillOverlap = 0).
+ */
+export const generateMatchesForUser = async (userId: string): Promise<GenerateMatchesResponse> => {
+  try {
+    // 1. Get this user's populated match profile
+    const userProfileDoc = await MatchProfileModel.findOne({ userId, isActive: true })
+      .populate('programmingLanguage')
+      .populate('preferences.preferredLanguages')
+      .exec();
+
+    if (!userProfileDoc) {
+      return { error: 'Active MatchProfile not found for this user' };
+    }
+
+    const userProfile = userProfileDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+
+    // 2. Get all other active profiles
+    const otherProfilesDocs = await MatchProfileModel.find({
+      userId: { $ne: userId },
+      isActive: true,
+    })
+      .populate('programmingLanguage')
+      .populate('preferences.preferredLanguages')
+      .exec();
+
+    const matches: DatabaseMatch[] = [];
+
+    for (const otherDoc of otherProfilesDocs) {
+      const otherProfile = otherDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+
+      // 3. Extract features between user A and user B
+      const features = extractFeatures(userProfile, otherProfile);
+
+      const [skillOverlap] = features;
+
+      // Enforce your requirement:
+      // 3.6 Essential: Given User A (Python & Java), don't see User B (C, Assembly)
+      // --> skip pairs with no shared languages
+      if (skillOverlap === 0) {
+        // no overlap in programmingLanguage -> don't create a match
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      // 4. Compute compatibility score (0–1)
+      const score = computeScore(features);
+
+      // 5. Upsert Match document for this pair
+      //    We'll store userA as the caller, userB as the other profile.
+      const matchDoc = await MatchModel.findOneAndUpdate(
+        {
+          userA: userProfile._id,
+          userB: otherProfile._id,
+        },
+        {
+          $set: {
+            score,
+            status: 'pending',
+            updatedAt: new Date(),
+          },
+          $setOnInsert: {
+            createdAt: new Date(),
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+        },
+      ).exec();
+
+      if (matchDoc) {
+        matches.push(matchDoc.toObject() as DatabaseMatch);
+      }
+    }
+
+    // 6. Sort matches by score descending
+    matches.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+    return { matches };
   } catch (err) {
     return { error: (err as Error).message };
   }
