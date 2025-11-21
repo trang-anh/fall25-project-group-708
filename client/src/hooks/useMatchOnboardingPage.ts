@@ -59,10 +59,10 @@ const useMatchOnboardingPage = () => {
         age: formData.age,
         gender: formData.gender,
         location: formData.location,
-        programmingLanguage: formData.programmingLanguage.map(name => ({ name })),
+        programmingLanguage: formData.programmingLanguage,
         level: formData.level,
         preferences: {
-          preferredLanguages: formData.preferences.preferredLanguages.map(name => ({ name })),
+          preferredLanguages: formData.preferences.preferredLanguages,
           preferredLevel: formData.preferences.preferredLevel,
         },
         onboardingAnswers: { ...formData.onboardingAnswers },

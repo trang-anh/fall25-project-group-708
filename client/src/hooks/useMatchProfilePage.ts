@@ -21,10 +21,10 @@ import { ObjectId } from 'mongodb';
 
 type CreateMatchProfileDTO = Omit<MatchProfile, '_id' | 'createdAt'>;
 
-export interface ProgrammingLanguage {
-  name: string;
-  proficiency?: string;
-}
+// export interface ProgrammingLanguage {
+//   name: string;
+//   proficiency?: string;
+// }
 
 /**
  * Extended match profile with calculated compatibility score
@@ -37,13 +37,13 @@ export interface MatchProfileWithScore {
   gender?: string;
 
   level: string;
-  programmingLanguage: ProgrammingLanguage[];
+  programmingLanguage: string[];
 
   biography?: string;
   location?: string;
 
   preferences?: {
-    preferredLanguages?: ProgrammingLanguage[];
+    preferredLanguages?: string[];
     preferredLevel?: string;
   };
 
