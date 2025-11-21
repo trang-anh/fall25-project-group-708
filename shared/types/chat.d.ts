@@ -8,11 +8,7 @@ import { DatabaseMessage, Message } from './message';
  * - `user`: populated user details, including `_id` and `username`, or `null` if no user is found.
  */
 export interface MessageInChat extends DatabaseMessage {
-  user: {
-    _id: ObjectId;
-    username: string;
-    avatarUrl: string;
-  } | null;
+  user: Pick<DatabaseUser, '_id' | 'username' | 'avatarUrl'> | null;
 }
 
 /**
@@ -23,6 +19,9 @@ export interface MessageInChat extends DatabaseMessage {
 export interface Chat {
   participants: string[];
   messages: Message[];
+  chatType: 'direct' | 'group';
+  chatName?: string;
+  chatAdmin?: string;
 }
 
 /**
@@ -38,6 +37,18 @@ export interface DatabaseChat extends Omit<Chat, 'messages'> {
   messages: ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * Creating a group chat request.
+ */
+export interface CreateGroupChatRequest extends Request {
+  body: {
+    participants: string[];
+    messages: Omit<Message, 'type'>[];
+    chatName: string;
+    chatAdmin: string;
+  };
 }
 
 /**
@@ -90,7 +101,7 @@ export interface AddMessageRequestToChat extends ChatIdRequest {
  */
 export interface AddParticipantRequest extends ChatIdRequest {
   body: {
-    username: string;
+    userId: string;
   };
 }
 
@@ -100,7 +111,7 @@ export interface AddParticipantRequest extends ChatIdRequest {
  */
 export interface GetChatByParticipantsRequest extends Request {
   params: {
-    username: string;
+    userId: string;
   };
 }
 
@@ -109,3 +120,12 @@ export interface GetChatByParticipantsRequest extends Request {
  * - Either a `DatabaseChat` object or an error message.
  */
 export type ChatResponse = DatabaseChat | { error: string };
+
+export interface LeaveGroupChatRequest extends Request {
+  params: {
+    chatId: string;
+  };
+  body: {
+    username: string;
+  };
+}

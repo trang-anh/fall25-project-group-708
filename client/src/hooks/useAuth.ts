@@ -3,6 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import useLoginContext from './useLoginContext';
 import { createUser, loginUser, requestTwoFactorCode } from '../services/userService';
 import { SafeDatabaseUser } from '../types/types';
+import { clearRememberedUser, loadRememberedUser, saveRememberedUser } from '../utils/authStorage';
 
 /**
  * Custom hook to manage authentication logic, including handling input changes,
@@ -31,6 +32,7 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
   const [isSendingTwoFactorCode, setIsSendingTwoFactorCode] = useState(false);
   const [twoFactorOptIn, setTwoFactorOptIn] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(() => !!loadRememberedUser());
 
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
@@ -42,26 +44,50 @@ const useAuth = (authType: 'login' | 'signup') => {
     setShowPassword(prevState => !prevState);
   };
 
-  /**
-   * Handles changes in input fields and updates the corresponding state.
-   *
-   * @param e - The input change event.
-   * @param field - The field being updated ('username', 'password', or 'confirmPassword').
-   */
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     field: 'username' | 'password' | 'confirmPassword' | 'twoFactor',
   ) => {
-    const fieldText = e.target.value.trim();
+    const value = e.target.value;
 
     if (field === 'username') {
-      setUsername(fieldText);
-    } else if (field === 'password') {
-      setPassword(fieldText);
-    } else if (field === 'confirmPassword') {
-      setPasswordConfirmation(fieldText);
-    } else if (field === 'twoFactor') {
-      const digitsOnly = fieldText.replace(/\D/g, '').slice(0, 6);
+      setUsername(value.trim());
+      return;
+    }
+
+    if (field === 'password') {
+      setPassword(value);
+
+      // Validate password only on signup
+      if (authType === 'signup') {
+        const isValid = value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+
+        if (!isValid) {
+          setErr('Password must be at least 8 characters and contain a letter and number');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'confirmPassword') {
+      setPasswordConfirmation(value);
+
+      if (authType === 'signup') {
+        if (value !== password) {
+          setErr('Passwords do not match');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'twoFactor') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
       setTwoFactorCode(digitsOnly);
     }
   };
@@ -149,6 +175,13 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
   };
 
+  const handleRememberDeviceChange = (checked: boolean) => {
+    setRememberDevice(checked);
+    if (!checked) {
+      clearRememberedUser();
+    }
+  };
+
   /**
    * Handles the submission of the form.
    * Validates input, performs login/signup, and navigates to the home page on success.
@@ -174,7 +207,10 @@ const useAuth = (authType: 'login' | 'signup') => {
 
       const result = await loginUser(
         { username, password },
-        requires2FA ? twoFactorCode : undefined,
+        {
+          twoFactorCode: requires2FA ? twoFactorCode : undefined,
+          rememberDevice,
+        },
       );
 
       if ('requires2FA' in result && result.requires2FA) {
@@ -183,6 +219,11 @@ const useAuth = (authType: 'login' | 'signup') => {
       }
 
       setUser(result as SafeDatabaseUser);
+      if (rememberDevice) {
+        saveRememberedUser(result as SafeDatabaseUser);
+      } else {
+        clearRememberedUser();
+      }
       navigate('/home');
     } catch (error) {
       setErr((error as Error).message);
@@ -205,12 +246,14 @@ const useAuth = (authType: 'login' | 'signup') => {
     twoFactorDevCode,
     isSendingTwoFactorCode,
     twoFactorOptIn,
+    rememberDevice,
     handleInputChange,
     handleSubmit,
     togglePasswordVisibility,
     handleRequestTwoFactorCode,
     cancelTwoFactorFlow,
     handleTwoFactorOptInChange,
+    handleRememberDeviceChange,
   };
 };
 

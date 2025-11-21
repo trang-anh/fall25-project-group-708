@@ -133,7 +133,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
     req: ToggleMatchProfileActiveRequest,
     res: Response,
   ): Promise<void> => {
-    const { userId, isActive } = req.body;
+    const { userId } = req.params;
+    const { isActive } = req.body;
 
     try {
       const result = await toggleMatchProfileActive(userId, isActive);

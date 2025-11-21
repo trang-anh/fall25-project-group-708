@@ -21,6 +21,19 @@ const chatSchema = new Schema(
         ref: 'Message',
       },
     ],
+    chatType: {
+      type: String,
+      required: true,
+      enum: ['direct', 'group'],
+    },
+    chatName: {
+      type: String,
+      required: false,
+    },
+    chatAdmin: {
+      type: String,
+      required: false,
+    },
   },
   {
     collection: 'Chat',

@@ -1,4 +1,4 @@
-import express, { Request, Response, Router } from 'express';
+import express, { CookieOptions, Request, Response, Router } from 'express';
 import { uploadAvatar, deleteAvatar } from './avatar.controller';
 import avatarUpload from '../utils/multer.config';
 
@@ -9,6 +9,7 @@ import {
   UserByUsernameRequest,
   FakeSOSocket,
   UpdateBiographyRequest,
+  SafeDatabaseUser,
 } from '../types/types';
 import {
   deleteUserByUsername,
@@ -24,6 +25,13 @@ import {
   is2FAEnabled,
   verifyAndEnable2FA,
 } from '../services/twoFactor.service';
+import {
+  SESSION_COOKIE_NAME,
+  createSession,
+  deleteSession,
+  getSessionTtl,
+} from '../services/session.service';
+import { getSessionIdFromRequest } from '../utils/sessionCookie';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -72,12 +80,31 @@ const userController = (socket: FakeSOSocket) => {
         username: req.body.username,
         password: req.body.password,
       };
+      const rememberDevice = Boolean(req.body.rememberDevice);
 
       const user = await loginUser(loginCredentials);
 
       if ('error' in user) {
         throw Error(user.error);
       }
+
+      const existingSessionId = getSessionIdFromRequest(req);
+      if (existingSessionId) {
+        deleteSession(existingSessionId);
+      }
+
+      const { sessionId } = createSession(user as SafeDatabaseUser);
+      const cookieOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      };
+
+      if (rememberDevice) {
+        cookieOptions.maxAge = getSessionTtl();
+      }
+
+      res.cookie(SESSION_COOKIE_NAME, sessionId, cookieOptions);
 
       res.status(200).json(user);
     } catch (error) {
@@ -297,8 +324,8 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/getUsers', getUsers);
   router.delete('/deleteUser/:username', deleteUser);
   router.patch('/updateBiography', updateBiography);
-  router.post('/avatar', avatarUpload.single('avatar'), uploadAvatar);
-  router.delete('/avatar', deleteAvatar);
+  router.post('/uploadAvatar', avatarUpload.single('avatar'), uploadAvatar);
+  router.delete('/deleteAvatar', deleteAvatar);
   router.post('/2fa/generate/:username', generate2FA);
   router.post('/2fa/enable', enable2FA);
   router.post('/2fa/disable', disable2FAHandler);

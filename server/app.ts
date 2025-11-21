@@ -11,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import yaml from 'yaml';
 import * as fs from 'fs';
 import path from 'path';
+import cors from 'cors';
 
 import answerController from './controllers/answer.controller';
 import questionController from './controllers/question.controller';
@@ -63,6 +64,12 @@ process.on('SIGINT', async () => {
     process.exit(0);
   });
 });
+
+// Add CORS middleware 
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:4530',
+  credentials: true,
+}));
 
 app.use(express.json());
 

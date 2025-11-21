@@ -2,6 +2,7 @@ import './index.css';
 import useMessagingPage from '../../../hooks/useMessagingPage';
 import useUserContext from '../../../hooks/useUserContext';
 import MessageCard from '../messageCard';
+import { MessageInChat } from '@fake-stack-overflow/shared';
 
 /**
  * Represents the MessagingPage component which displays the public chat room.
@@ -30,7 +31,7 @@ const MessagingPage = () => {
           return (
             <MessageCard
               key={String(message._id)}
-              message={message}
+              message={message as MessageInChat}
               currentUsername={user.username}
               isGrouped={isGrouped}
               isLastInGroup={isLastInGroup}
