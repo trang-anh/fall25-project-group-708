@@ -106,6 +106,34 @@ const getCommunityQuestionsById = async (
   return res.data;
 };
 
+/**
+ * Fetching a limited of the top 5 suggested questions from the backend based on title and text.
+ *
+ * @param title the title of the new question
+ * @param text the text/body of the new question
+ * @returns the list of suggested questions
+ */
+const getSuggestedQuestions = async (
+  title: string,
+  text: string,
+): Promise<PopulatedDatabaseQuestion[]> => {
+  const params = new URLSearchParams();
+  params.append('title', title.trim());
+  if (text.trim()) {
+    params.append('text', text.trim());
+  }
+
+  const response = await api.get(
+    `${QUESTION_API_URL}/getQuestionsByTextAndTitle?${params.toString()}`,
+  );
+
+  if (response.status !== 200) {
+    throw new Error('Error when fetching community questions');
+  }
+
+  return response.data;
+};
+
 export {
   getQuestionsByFilter,
   getQuestionById,
@@ -113,4 +141,5 @@ export {
   upvoteQuestion,
   downvoteQuestion,
   getCommunityQuestionsById,
+  getSuggestedQuestions,
 };

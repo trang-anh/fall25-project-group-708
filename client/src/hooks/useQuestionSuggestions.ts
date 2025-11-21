@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
+import { getSuggestedQuestions } from '../services/questionService';
 
 /**
  * Custom hook to fetch question suggestions based on title and text input
@@ -23,28 +24,7 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
     // Debounce the API call - wait 500ms after user stops typing
     const timeoutId = setTimeout(async () => {
       try {
-        // Build query parameters matching backend expectations
-        // Only include 'text' parameter if it has a value (backend validation rejects empty text)
-        const params = new URLSearchParams();
-        params.append('title', title.trim());
-        if (text.trim()) {
-          params.append('text', text.trim());
-        }
-
-        // Backend route: GET /api/question/getQuestionsByTextAndTitle
-        const url = `/api/question/getQuestionsByTextAndTitle?${params.toString()}`;
-
-        const response = await fetch(url, {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        const data = await response.json();
+        const data = await getSuggestedQuestions(title, text);
         setSuggestions(data);
       } catch (error) {
         setSuggestions([]);

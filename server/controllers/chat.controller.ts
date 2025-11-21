@@ -5,6 +5,7 @@ import {
   getChat,
   addParticipantToChat,
   getChatsByParticipants,
+  removeParticipantFromChat,
 } from '../services/chat.service';
 import { populateDocument } from '../utils/database.util';
 import {
@@ -15,6 +16,7 @@ import {
   ChatIdRequest,
   GetChatByParticipantsRequest,
   PopulatedDatabaseChat,
+  CreateGroupChatRequest,
 } from '../types/types';
 import { saveMessage } from '../services/message.service';
 
@@ -39,7 +41,11 @@ const chatController = (socket: FakeSOSocket) => {
     const formattedMessages = messages.map(m => ({ ...m, type: 'direct' as 'direct' | 'global' }));
 
     try {
-      const savedChat = await saveChat({ participants, messages: formattedMessages });
+      const savedChat = await saveChat({
+        participants,
+        messages: formattedMessages,
+        chatType: 'direct',
+      });
 
       if ('error' in savedChat) {
         throw new Error(savedChat.error);
@@ -56,6 +62,88 @@ const chatController = (socket: FakeSOSocket) => {
       res.json(populatedChat);
     } catch (err: unknown) {
       res.status(500).send(`Error creating a chat: ${(err as Error).message}`);
+    }
+  };
+
+  /**
+   * Creating a group chat with the given participants
+   * @param req The request object containing the chat data.
+   * @param res The response object to send the result.
+   * @returns {Promise<void>} A promise that resolves when the chat is created.
+   */
+  const createGroupChatRoute = async (
+    req: CreateGroupChatRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { participants, messages, chatName, chatAdmin } = req.body;
+
+    // Validate minimum participants for group chat
+    if (participants.length < 2) {
+      res.status(400).send('Group chats require at least 2 participants');
+      return;
+    }
+
+    const formattedMessages = messages.map(m => ({
+      ...m,
+      type: 'direct' as 'direct' | 'global',
+    }));
+
+    try {
+      const savedChat = await saveChat({
+        participants,
+        messages: formattedMessages,
+        chatType: 'group',
+        chatName,
+        chatAdmin,
+      });
+
+      if ('error' in savedChat) {
+        throw new Error(savedChat.error);
+      }
+
+      const populatedChat = await populateDocument(savedChat._id.toString(), 'chat');
+
+      if ('error' in populatedChat) {
+        throw new Error(populatedChat.error);
+      }
+
+      socket.emit('chatUpdate', {
+        chat: populatedChat as PopulatedDatabaseChat,
+        type: 'created',
+      });
+      res.json(populatedChat);
+    } catch (err: unknown) {
+      res.status(500).send(`Error creating group chat: ${(err as Error).message}`);
+    }
+  };
+
+  /**
+   * The route for a user to leave a group chat.
+   * @param req The request object containing the chat data.
+   * @param res The response object to send the result.
+   * @returns {Promise<void>} A promise that resolves when the user is removed.
+   */
+  const leaveGroupChatRoute = async (req: ChatIdRequest, res: Response): Promise<void> => {
+    const { chatId } = req.params;
+    const { username } = req.body;
+
+    try {
+      const updatedChat = await removeParticipantFromChat(chatId, username);
+
+      if ('error' in updatedChat) {
+        throw new Error(updatedChat.error);
+      }
+
+      const populatedChat = await populateDocument(updatedChat._id.toString(), 'chat');
+
+      socket.emit('chatUpdate', {
+        chat: populatedChat as PopulatedDatabaseChat,
+        type: 'removedParticipant',
+      });
+
+      res.json(populatedChat);
+    } catch (err: unknown) {
+      res.status(500).send(`Error leaving chat: ${(err as Error).message}`);
     }
   };
 
@@ -209,10 +297,12 @@ const chatController = (socket: FakeSOSocket) => {
 
   // Register the routes
   router.post('/createChat', createChatRoute);
+  router.post('/createGroupChat', createGroupChatRoute);
   router.post('/:chatId/addMessage', addMessageToChatRoute);
   router.get('/:chatId', getChatRoute);
   router.post('/:chatId/addParticipant', addParticipantToChatRoute);
   router.get('/getChatsByUser/:username', getChatsByUserRoute);
+  router.post('/:chatId/leaveChat', leaveGroupChatRoute);
 
   return router;
 };

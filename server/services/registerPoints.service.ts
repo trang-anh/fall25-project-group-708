@@ -55,10 +55,7 @@ const addRegisterPoints = async (
  * @param questionId the question id where the upvote happened
  * @returns true if the user have upvoted before, false otherwise
  */
-export const hasReceivedUpvotePoints = async (
-  username: string,
-  questionId: string,
-): Promise<boolean> => {
+const hasReceivedUpvotePoints = async (username: string, questionId: string): Promise<boolean> => {
   const existingEntry = await RegisterPointsModel.findOne({
     username,
     reason: 'UPVOTE_OTHERS',
@@ -75,7 +72,7 @@ export const hasReceivedUpvotePoints = async (
  * @param questionId the question id where the downvote happened
  * @returns true if the user have been penalized for that question before, false otherwise
  */
-export const hasReceivedDownvotePenalty = async (
+const hasReceivedDownvotePenalty = async (
   username: string,
   questionId: string,
 ): Promise<boolean> => {
@@ -89,3 +86,5 @@ export const hasReceivedDownvotePenalty = async (
 };
 
 export default addRegisterPoints;
+
+export { hasReceivedUpvotePoints, hasReceivedDownvotePenalty };
