@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UserCredentials, SafeDatabaseUser } from '../types/types';
+import { UserCredentials, SafeDatabaseUser, UserSessionsResponse } from '../types/types';
 import api from './config';
 
 const USER_API_URL = `/api/user`;
@@ -282,6 +282,22 @@ const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> 
   }
 };
 
+const getActiveSessions = async (): Promise<UserSessionsResponse> => {
+  const res = await api.get(`${AUTH_API_URL}/sessions`);
+  if (res.status !== 200) {
+    throw new Error('Failed to fetch sessions');
+  }
+  return res.data;
+};
+
+const revokeSession = async (sessionId: string): Promise<{ currentSessionRevoked: boolean }> => {
+  const res = await api.delete(`${AUTH_API_URL}/sessions/${sessionId}`);
+  if (res.status !== 200) {
+    throw new Error('Failed to revoke session');
+  }
+  return res.data;
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -298,4 +314,6 @@ export {
   getTwoFactorStatus,
   enableTwoFactor,
   disableTwoFactor,
+  getActiveSessions,
+  revokeSession,
 };

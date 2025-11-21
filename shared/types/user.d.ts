@@ -21,6 +21,7 @@ export interface UserCredentials {
  */
 export interface User extends UserCredentials {
   dateJoined: Date;
+  email?: string;
   biography?: string;
   githubId?: string;
   totalPoints?: number;
@@ -51,6 +52,7 @@ export interface UserRequest extends Request {
   body: {
     username: string;
     password: string;
+    email?: string;
     biography?: string;
     rememberDevice?: boolean;
     twoFactorCode?: string;
@@ -137,4 +139,19 @@ export interface AvatarUploadResponse {
  */
 export interface AvatarDeleteResponse {
   message: string;
+}
+
+export interface UserSessionInfo {
+  sessionId: string;
+  createdAt: number;
+  lastActiveAt: number;
+  expiresAt: number;
+  ipAddress?: string;
+  userAgent?: string;
+  current: boolean;
+}
+
+export interface UserSessionsResponse {
+  sessions: UserSessionInfo[];
+  recentLogins: UserSessionInfo[];
 }

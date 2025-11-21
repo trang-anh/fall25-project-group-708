@@ -45,6 +45,12 @@ const ProfileSettings: React.FC = () => {
     confirmTwoFactorSetup,
     cancelTwoFactorSetup,
     beginTwoFactorSetup,
+    sessionOverview,
+    sessionsLoading,
+    sessionsError,
+    revokingSessionId,
+    handleRevokeSession,
+    refreshSessions,
   } = useProfileSettings();
 
   const [selectedAvatar, setSelectedAvatar] = React.useState<string | null>(null);
@@ -78,6 +84,14 @@ const ProfileSettings: React.FC = () => {
     if (!isTwoFactorLoading) {
       beginTwoFactorSetup();
     }
+  };
+
+  const formatTimestamp = (timestamp?: number) => {
+    if (!timestamp) {
+      return 'Unknown';
+    }
+
+    return new Date(timestamp).toLocaleString();
   };
 
   // Handle avatar file selection
@@ -396,6 +410,65 @@ const ProfileSettings: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                <div className='sessions-section'>
+                  <div className='sessions-header'>
+                    <p className='twofactor-title'>Active sessions</p>
+                    <button
+                      className='button button-secondary button-small'
+                      onClick={refreshSessions}>
+                      Refresh
+                    </button>
+                  </div>
+                  {sessionsError && <p className='error-message'>{sessionsError}</p>}
+                  {sessionsLoading ? (
+                    <p className='twofactor-description'>Loading sessions…</p>
+                  ) : sessionOverview && sessionOverview.sessions.length > 0 ? (
+                    <ul className='sessions-list'>
+                      {sessionOverview.sessions.map(session => (
+                        <li key={session.sessionId} className='session-item'>
+                          <div className='session-details'>
+                            <p className='session-device'>
+                              {session.current
+                                ? 'This device'
+                                : session.userAgent || 'Unknown device'}
+                            </p>
+                            <p className='session-meta'>
+                              IP: {session.ipAddress || 'Unknown'} · Last active{' '}
+                              {formatTimestamp(session.lastActiveAt)}
+                            </p>
+                            <p className='session-meta'>
+                              Signed in {formatTimestamp(session.createdAt)}
+                            </p>
+                          </div>
+                          <button
+                            className='button button-secondary button-small'
+                            onClick={() => handleRevokeSession(session.sessionId)}
+                            disabled={revokingSessionId === session.sessionId}>
+                            {revokingSessionId === session.sessionId ? 'Revoking…' : 'Revoke'}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className='twofactor-description'>No other active sessions.</p>
+                  )}
+                  {sessionOverview && sessionOverview.recentLogins.length > 0 && (
+                    <div className='recent-logins'>
+                      <p className='twofactor-description'>Recent login activity</p>
+                      <ul>
+                        {sessionOverview.recentLogins.map(session => (
+                          <li key={`recent-${session.sessionId}`} className='session-meta'>
+                            {formatTimestamp(session.createdAt)} ·{' '}
+                            {session.userAgent || 'Unknown device'} · IP{' '}
+                            {session.ipAddress || 'Unknown'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
                 <div className='password-section'>
                   <input
                     className='input-text'

@@ -30,6 +30,7 @@ import {
   createSession,
   deleteSession,
   getSessionTtl,
+  invalidateUserSessions,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
 
@@ -88,12 +89,17 @@ const userController = (socket: FakeSOSocket) => {
         throw Error(user.error);
       }
 
+      invalidateUserSessions(user as SafeDatabaseUser);
+
       const existingSessionId = getSessionIdFromRequest(req);
       if (existingSessionId) {
         deleteSession(existingSessionId);
       }
 
-      const { sessionId } = createSession(user as SafeDatabaseUser);
+      const { sessionId } = createSession(user as SafeDatabaseUser, getSessionTtl(), {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
       const cookieOptions: CookieOptions = {
         httpOnly: true,
         sameSite: 'lax',
