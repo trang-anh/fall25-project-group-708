@@ -371,30 +371,42 @@
 
 /* Leave Group Button */
 .leave-group-btn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   background-color: transparent;
   color: #d32f2f;
-  border: 1px solid #d32f2f;
-  border-radius: 6px;
+  border: 2px solid #d32f2f;
+  border-radius: 8px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .leave-group-btn:hover {
   background-color: #d32f2f;
   color: white;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+  transform: translateY(-1px);
+}
+
+.leave-group-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(211, 47, 47, 0.2);
 }
 
 [data-theme="dark"] .leave-group-btn {
-  color: #fca5a5;
-  border-color: #fca5a5;
+  color: #ff6b6b;
+  border-color: #ff6b6b;
 }
 
 [data-theme="dark"] .leave-group-btn:hover {
-  background-color: #7f1d1d;
-  border-color: #7f1d1d;
+  background-color: #c62828;
+  border-color: #ff6b6b;
+  box-shadow: 0 2px 8px rgba(198, 40, 40, 0.4);
 }
 
 /* Chat messages area */

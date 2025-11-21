@@ -23,7 +23,8 @@ const ChatsListCard = ({
   currentUsername?: string;
   isSelected?: boolean;
 }) => {
-  const isGroupChat = chat.chatType === 'group';
+  // Detect group chat: check chatType first, then fallback to participant count
+  const isGroupChat = chat.chatType === 'group' || (chat.participants?.length ?? 0) > 2;
 
   // For direct chats, get the other participant
   const otherParticipant = !isGroupChat
@@ -33,9 +34,7 @@ const ChatsListCard = ({
   // Get avatar for direct chats
   let avatarUrl: string | undefined;
   if (!isGroupChat && otherParticipant) {
-    const otherParticipantData = chat.participantsData?.find(
-      p => p.username === otherParticipant,
-    );
+    const otherParticipantData = chat.participantsData?.find(p => p.username === otherParticipant);
     avatarUrl = otherParticipantData?.avatarUrl;
 
     // Fallback: search through messages
@@ -73,9 +72,11 @@ const ChatsListCard = ({
 
   const timeDisplay = formatTime(chat.updatedAt);
 
-  // Display name
-  const displayName = isGroupChat 
-    ? (chat.chatName && chat.chatName.trim() ? chat.chatName : `Group (${chat.participants.length})`)
+  // Display name for group or direct chats
+  const displayName = isGroupChat
+    ? chat.chatName && chat.chatName.trim() !== ''
+      ? chat.chatName
+      : `Group (${chat.participants.length} members)`
     : otherParticipant || 'Unknown';
 
   // Participant count for group chats
@@ -84,7 +85,8 @@ const ChatsListCard = ({
   return (
     <div
       onClick={() => handleChatSelect(chat._id)}
-      className={`chats-list-card ${isSelected ? 'selected' : ''}`}>
+      className={`chats-list-card ${isSelected ? 'selected' : ''}`}
+      title={displayName}>
       {isGroupChat ? (
         <div className='group-chat-avatar'>
           <svg viewBox='0 0 24 24' fill='currentColor'>
@@ -96,7 +98,7 @@ const ChatsListCard = ({
       )}
       <div className='chat-info'>
         <div className='chat-main-info'>
-          <p className='chat-name'>{displayName}</p>
+          <p className={`chat-name ${isGroupChat ? 'group-name' : ''}`}>{displayName}</p>
           {isGroupChat && participantCount && (
             <p className='chat-participants'>{participantCount} participants</p>
           )}

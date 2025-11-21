@@ -77,8 +77,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
     if (window.confirm('Are you sure you want to remove this match?')) {
       try {
         await removeMatch(matchId);
-      } catch (err) {
-      }
+      } catch (err) {}
     }
   };
 

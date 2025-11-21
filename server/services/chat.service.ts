@@ -24,14 +24,14 @@ export const saveChat = async (chatPayload: Chat): Promise<ChatResponse> => {
       }),
     );
 
-    // Normalize chatType to uppercase to match schema enum
-    const normalizedChatType = chatPayload.chatType.toUpperCase() as 'DIRECT' | 'GROUP';
+    // Normalize chatType to lowercase to match schema enum
+    const normalizedChatType = chatPayload.chatType.toLowerCase() as 'direct' | 'group';
 
     // Create the chat using participant IDs and saved message IDs
     return await ChatModel.create({
       participants: chatPayload.participants,
       messages: messageIds,
-      chatType: normalizedChatType,  // Use normalized uppercase value
+      chatType: normalizedChatType,  // Use normalized lowercase value
       chatName: chatPayload.chatName,
       chatAdmin: chatPayload.chatAdmin,
     });
@@ -51,14 +51,20 @@ export const removeParticipantFromChat = async (
   userId: string,
 ): Promise<ChatResponse> => {
   try {
+    console.log(`[removeParticipantFromChat] Removing ${userId} from chat ${chatId}`);
+    
     const chat = await ChatModel.findById(chatId);
 
     if (!chat) {
+      console.error(`[removeParticipantFromChat] Chat not found: ${chatId}`);
       throw new Error('Chat not found');
     }
 
+    console.log(`[removeParticipantFromChat] Found chat. Type: ${chat.chatType}, Participants: ${chat.participants.length}`);
+
     // Don't allow removing from direct chats or if only 2 participants left
     if (chat.chatType === 'direct' || chat.participants.length <= 2) {
+      console.error(`[removeParticipantFromChat] Cannot remove from direct chat or insufficient participants`);
       throw new Error('Cannot remove participant from this chat');
     }
 
@@ -69,11 +75,14 @@ export const removeParticipantFromChat = async (
     );
 
     if (!updatedChat) {
+      console.error(`[removeParticipantFromChat] Failed to remove participant`);
       throw new Error('Failed to remove participant');
     }
 
+    console.log(`[removeParticipantFromChat] Successfully removed ${userId}. New participant count: ${updatedChat.participants.length}`);
     return updatedChat;
   } catch (error) {
+    console.error(`[removeParticipantFromChat] Error:`, error);
     return { error: `Error removing participant: ${(error as Error).message}` };
   }
 };

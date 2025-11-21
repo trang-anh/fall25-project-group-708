@@ -32,7 +32,8 @@ const DirectMessage = () => {
     currentUsername,
   } = useDirectMessage();
 
-  const isGroupChat = selectedChat?.chatType === 'group';
+  const isGroupChat =
+    selectedChat?.chatType === 'group' || (selectedChat?.participants?.length ?? 0) > 2;
 
   // Get the other participant's name for direct chats
   const otherParticipant = !isGroupChat
@@ -178,8 +179,10 @@ const DirectMessage = () => {
                   <div className='chat-header-info'>
                     <h2>
                       {!isGroupChat && <span className='status-dot'></span>}
-                      {isGroupChat 
-                        ? (selectedChat.chatName && selectedChat.chatName.trim() ? selectedChat.chatName : `Group (${selectedChat.participants.length})`)
+                      {isGroupChat
+                        ? selectedChat.chatName && selectedChat.chatName.trim() !== ''
+                          ? selectedChat.chatName
+                          : `Group (${selectedChat.participants.length} members)`
                         : otherParticipant}
                     </h2>
                     {isGroupChat && (
@@ -190,7 +193,12 @@ const DirectMessage = () => {
                   </div>
                 </div>
                 {isGroupChat && (
-                  <button className='leave-group-btn' onClick={handleLeaveGroupChat}>
+                  <button
+                    className='leave-group-btn'
+                    onClick={handleLeaveGroupChat}
+                    title='Leave this group chat'
+                    aria-label='Leave group chat'>
+                    <span>✕</span>
                     Leave Group
                   </button>
                 )}
@@ -227,7 +235,12 @@ const DirectMessage = () => {
                 value={newMessage}
                 onChange={e => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder='Type a message...'
+                placeholder={
+                  selectedChat.participants.includes(currentUsername)
+                    ? 'Type a message...'
+                    : 'You are not a participant in this chat'
+                }
+                disabled={!selectedChat.participants.includes(currentUsername)}
               />
             </div>
           </>

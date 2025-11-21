@@ -25,7 +25,7 @@ const chatSchema = new Schema(
     chatType: {
       type: String,
       required: true,
-      enum: ['DIRECT', 'GROUP'],
+      enum: ['direct', 'group'],
     },
     chatName: {
       type: String,

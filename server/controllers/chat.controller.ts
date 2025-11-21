@@ -120,27 +120,33 @@ const chatController = (socket: FakeSOSocket) => {
 
   /**
    * Allows a user to leave a group chat.
-   * @param req The request object containing the chat ID and userId.
+   * @param req The request object containing the chat ID and username.
    * @param res The response object to send the result.
    * @returns {Promise<void>} A promise that resolves when the user is removed.
    * @throws {Error} Throws an error if leaving the chat fails.
    */
   const leaveGroupChatRoute = async (req: LeaveGroupChatRequest, res: Response): Promise<void> => {
     const { chatId } = req.params;
-    const { userId } = req.body;
+    const { username } = req.body;
+
+    console.log(`[leaveGroupChat] Attempting to remove user ${username} from chat ${chatId}`);
 
     try {
-      const updatedChat = await removeParticipantFromChat(chatId, userId);
+      const updatedChat = await removeParticipantFromChat(chatId, username);
 
       if ('error' in updatedChat) {
+        console.error(`[leaveGroupChat] Error removing participant:`, updatedChat.error);
         throw new Error(updatedChat.error);
       }
 
       const populatedChat = await populateDocument(updatedChat._id.toString(), 'chat');
 
       if ('error' in populatedChat) {
+        console.error(`[leaveGroupChat] Error populating chat:`, populatedChat.error);
         throw new Error(populatedChat.error);
       }
+
+      console.log(`[leaveGroupChat] Successfully removed user ${username} from chat ${chatId}`);
 
       socket.emit('chatUpdate', {
         chat: populatedChat as PopulatedDatabaseChat,
@@ -149,6 +155,7 @@ const chatController = (socket: FakeSOSocket) => {
 
       res.json(populatedChat);
     } catch (err: unknown) {
+      console.error(`[leaveGroupChat] Exception:`, err);
       res.status(500).send(`Error leaving chat: ${(err as Error).message}`);
     }
   };
@@ -167,7 +174,23 @@ const chatController = (socket: FakeSOSocket) => {
     const { chatId } = req.params;
     const { msg, msgFrom, msgDateTime } = req.body;
 
+    console.log(`[addMessageToChat] User ${msgFrom} sending message to chat ${chatId}`);
+
     try {
+      // First, get the chat to verify the sender is a participant
+      const chat = await getChat(chatId);
+      
+      if ('error' in chat) {
+        console.error(`[addMessageToChat] Chat not found: ${chatId}`);
+        throw new Error('Chat not found');
+      }
+
+      if (!chat.participants.includes(msgFrom)) {
+        console.error(`[addMessageToChat] User ${msgFrom} is not a participant in chat ${chatId}`);
+        res.status(403).send('You are not a participant in this chat');
+        return;
+      }
+
       const newMessage = await saveMessage({ msg, msgFrom, msgDateTime, type: 'direct' });
 
       if ('error' in newMessage) {
@@ -186,11 +209,14 @@ const chatController = (socket: FakeSOSocket) => {
         throw new Error(populatedChat.error);
       }
 
+      console.log(`[addMessageToChat] Message added successfully`);
+
       socket
         .to(chatId)
         .emit('chatUpdate', { chat: populatedChat as PopulatedDatabaseChat, type: 'newMessage' });
       res.json(populatedChat);
     } catch (err: unknown) {
+      console.error(`[addMessageToChat] Error:`, err);
       res.status(500).send(`Error adding a message to chat: ${(err as Error).message}`);
     }
   };

@@ -126,6 +126,6 @@ export interface LeaveGroupChatRequest extends Request {
     chatId: string;
   };
   body: {
-    userId: string;
+    username: string;
   };
 }

@@ -37,6 +37,18 @@ const useDirectMessage = () => {
   };
 
   const handleSendMessage = async () => {
+    if (!selectedChat) {
+      setError('No chat selected');
+      return;
+    }
+
+    // Verify the current user is still a participant in the chat
+    if (!selectedChat.participants.includes(user.username)) {
+      setError('You are no longer a participant in this chat');
+      setSelectedChat(null);
+      return;
+    }
+
     if (newMessage.trim() && selectedChat?._id) {
       const message: Omit<Message, 'type'> = {
         msg: newMessage,
@@ -44,11 +56,15 @@ const useDirectMessage = () => {
         msgDateTime: new Date(),
       };
 
-      const chat = await sendMessage(message, selectedChat._id);
+      try {
+        const chat = await sendMessage(message, selectedChat._id);
 
-      setSelectedChat(chat);
-      setError(null);
-      setNewMessage('');
+        setSelectedChat(chat);
+        setError(null);
+        setNewMessage('');
+      } catch (err) {
+        setError(`Failed to send message: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
     } else {
       setError('Message cannot be empty');
     }
@@ -115,20 +131,31 @@ const useDirectMessage = () => {
   };
 
   const handleLeaveGroupChat = async () => {
-    if (!selectedChat || selectedChat.chatType !== 'group') {
+    if (!selectedChat) {
+      setError('No chat selected');
+      return;
+    }
+
+    // Check if it's a group chat (using both chatType and participant count as fallback)
+    const isGroupChat =
+      selectedChat.chatType === 'group' || (selectedChat.participants?.length ?? 0) > 2;
+
+    if (!isGroupChat) {
       setError('Can only leave group chats');
       return;
     }
 
     try {
       await leaveGroupChat(selectedChat._id, user.username);
-      
+
       // Remove chat from list and clear selection
       setChats(prev => prev.filter(c => c._id !== selectedChat._id));
       setSelectedChat(null);
       setError(null);
     } catch (err) {
-      setError('Failed to leave group chat');
+      setError(
+        `Failed to leave group chat: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
     }
   };
 

@@ -25,11 +25,7 @@ const MessageCard = ({
     <div
       className={`message ${isOwnMessage ? 'sender' : 'receiver'} ${isGrouped ? 'grouped' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
       {showAvatar ? (
-        <Avatar
-          username={message.msgFrom}
-          avatarUrl={message.user?.avatarUrl}
-          size='small'
-        />
+        <Avatar username={message.msgFrom} avatarUrl={message.user?.avatarUrl} size='small' />
       ) : (
         <div className='message-avatar' /> // Placeholder for consistent spacing
       )}
