@@ -2183,10 +2183,9 @@ components:
           description: location of user
         programmingLanguage:
           type: array
-          description: Array of ObjectIds referencing programming languages known by the user.
+          description: Array of string referencing programming languages known by the user.
           items:
             type: string
-            format: object-id
         level:
           type: string
           enum: 
@@ -2200,10 +2199,9 @@ components:
           properties:
             preferredLanguages:
               type: array
-              description: Array of ObjectIds referencing preferred programming languages.
+              description: Array of strings for preferred programming languages.
               items:
                 type: string
-                format: object-id
             preferredLevel:
               type: string
               enum: 
@@ -2317,10 +2315,9 @@ components:
           description: Updated location or region of the user
         programmingLanguage:
           type: array
-          description: Updated list of programming languages (ObjectIds) for the user
+          description: Updated list of programming languages (String) for the user
           items:
             type: string
-            format: object-id
         level:
           type: string
           enum: 
@@ -2336,7 +2333,6 @@ components:
               type: array
               items:
                 type: string
-                format: object-id
               description: Updated preferred programming languages
             preferredLevel:
               type: string

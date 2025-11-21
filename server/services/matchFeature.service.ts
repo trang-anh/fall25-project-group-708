@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PopulatedDatabaseMatchProfile, ProgrammingLanguage } from '../types/types';
+import { PopulatedDatabaseMatchProfile } from '../types/types';
 /**
  * Extract features from user match profile into a vector of numbers for further processing and score computing for match compability.
  * @param a a user's populated match profle

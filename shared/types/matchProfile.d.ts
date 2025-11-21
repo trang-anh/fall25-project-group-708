@@ -1,6 +1,5 @@
 import { ObjectId } from 'mongodb';
 import { Request } from 'express';
-import { ProgrammingLanguage } from './programmingLanguage';
 
 /**
  * Represents a match profile.
@@ -14,11 +13,11 @@ export interface MatchProfile {
   age: number;
   gender: string;
   location: string;
-  programmingLanguage: ProgrammingLanguage[];
+  programmingLanguage: string[];
   level: string;
 
   preferences: {
-    preferredLanguages: ProgrammingLanguage[];
+    preferredLanguages: string[];
     preferredLevel: string;
   };
 
@@ -46,10 +45,10 @@ export interface DatabaseMatchProfile
   isActive: boolean;
   createdAt: Date;
 
-  programmingLanguage: ProgrammingLanguage[];
+  programmingLanguage: string[];
 
   preferences: {
-    preferredLanguages: ProgrammingLanguage[];
+    preferredLanguages: string[];
     preferredLevel: string;
   };
 }
@@ -65,9 +64,9 @@ export interface PopulatedDatabaseMatchProfile
   isActive: boolean;
   createdAt: Date;
 
-  programmingLanguage: ProgrammingLanguage[];
+  programmingLanguage: string[];
   preferences: {
-    preferredLanguages: ProgrammingLanguage[];
+    preferredLanguages: string[];
     preferredLevel: string;
   };
 }
