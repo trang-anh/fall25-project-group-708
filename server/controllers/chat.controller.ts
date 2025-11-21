@@ -129,24 +129,18 @@ const chatController = (socket: FakeSOSocket) => {
     const { chatId } = req.params;
     const { username } = req.body;
 
-    console.log(`[leaveGroupChat] Attempting to remove user ${username} from chat ${chatId}`);
-
     try {
       const updatedChat = await removeParticipantFromChat(chatId, username);
 
       if ('error' in updatedChat) {
-        console.error(`[leaveGroupChat] Error removing participant:`, updatedChat.error);
         throw new Error(updatedChat.error);
       }
 
       const populatedChat = await populateDocument(updatedChat._id.toString(), 'chat');
 
       if ('error' in populatedChat) {
-        console.error(`[leaveGroupChat] Error populating chat:`, populatedChat.error);
         throw new Error(populatedChat.error);
       }
-
-      console.log(`[leaveGroupChat] Successfully removed user ${username} from chat ${chatId}`);
 
       socket.emit('chatUpdate', {
         chat: populatedChat as PopulatedDatabaseChat,
@@ -155,7 +149,6 @@ const chatController = (socket: FakeSOSocket) => {
 
       res.json(populatedChat);
     } catch (err: unknown) {
-      console.error(`[leaveGroupChat] Exception:`, err);
       res.status(500).send(`Error leaving chat: ${(err as Error).message}`);
     }
   };
@@ -174,19 +167,15 @@ const chatController = (socket: FakeSOSocket) => {
     const { chatId } = req.params;
     const { msg, msgFrom, msgDateTime } = req.body;
 
-    console.log(`[addMessageToChat] User ${msgFrom} sending message to chat ${chatId}`);
-
     try {
       // First, get the chat to verify the sender is a participant
       const chat = await getChat(chatId);
-      
+
       if ('error' in chat) {
-        console.error(`[addMessageToChat] Chat not found: ${chatId}`);
         throw new Error('Chat not found');
       }
 
       if (!chat.participants.includes(msgFrom)) {
-        console.error(`[addMessageToChat] User ${msgFrom} is not a participant in chat ${chatId}`);
         res.status(403).send('You are not a participant in this chat');
         return;
       }
@@ -209,14 +198,11 @@ const chatController = (socket: FakeSOSocket) => {
         throw new Error(populatedChat.error);
       }
 
-      console.log(`[addMessageToChat] Message added successfully`);
-
       socket
         .to(chatId)
         .emit('chatUpdate', { chat: populatedChat as PopulatedDatabaseChat, type: 'newMessage' });
       res.json(populatedChat);
     } catch (err: unknown) {
-      console.error(`[addMessageToChat] Error:`, err);
       res.status(500).send(`Error adding a message to chat: ${(err as Error).message}`);
     }
   };
@@ -333,12 +319,12 @@ const chatController = (socket: FakeSOSocket) => {
   // Route Registration
   // IMPORTANT: Specific routes MUST come before parameterized routes
   // ===================================================================
-  
+
   // Specific routes without dynamic parameters
   router.post('/createChat', createChatRoute);
   router.post('/createGroupChat', createGroupChatRoute);
   router.get('/getChatsByUser/:userId', getChatsByUserRoute);
-  
+
   // Parameterized routes with :chatId
   router.get('/:chatId', getChatRoute);
   router.post('/:chatId/addMessage', addMessageToChatRoute);
