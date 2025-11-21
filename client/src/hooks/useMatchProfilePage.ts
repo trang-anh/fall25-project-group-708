@@ -2,11 +2,9 @@
  * Custom React hooks for managing match profiles and matches
  * Simplified version using backend types directly
  */
-
 import { useState, useEffect, useCallback } from 'react';
 import {
   getMatchProfile,
-  getAllMatchProfiles,
   createMatchProfile,
   updateMatchProfile,
   toggleMatchProfileActive,
@@ -14,7 +12,6 @@ import {
   getUserMatches,
   createMatch,
   deleteMatch,
-  calculateCompatibilityScore,
 } from '../services/matchProfileService';
 import {
   DatabaseMatchProfile,
@@ -22,13 +19,46 @@ import {
   MatchProfile,
   CreateMatchDTO,
 } from '@fake-stack-overflow/shared';
+import { ObjectId } from 'mongodb';
 
 type CreateMatchProfileDTO = Omit<MatchProfile, '_id' | 'createdAt'>;
+
+export interface ProgrammingLanguage {
+  name: string;
+  proficiency?: string;
+}
 
 /**
  * Extended match profile with calculated compatibility score
  */
-export interface MatchProfileWithScore extends DatabaseMatchProfile {
+export interface MatchProfileWithScore {
+  _id: string | ObjectId;
+  userId: string | ObjectId;
+
+  age?: number;
+  gender?: string;
+
+  level: string;
+  programmingLanguage: ProgrammingLanguage[];
+
+  biography?: string;
+  location?: string;
+
+  preferences?: {
+    preferredLanguages?: ProgrammingLanguage[];
+    preferredLevel?: string;
+  };
+
+  onboardingAnswers?: {
+    goals?: string;
+    personality?: string;
+    projectType?: string;
+  };
+
+  isActive?: boolean;
+  profileImageUrl?: string;
+  createdAt?: Date;
+
   compatibilityScore: number;
 }
 
@@ -104,9 +134,9 @@ export const useMatchProfile = (userId: string | null) => {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  // useEffect(() => {
+  //   fetchProfile();
+  // }, [fetchProfile]);
 
   return {
     profile,
@@ -116,73 +146,6 @@ export const useMatchProfile = (userId: string | null) => {
     createProfile,
     updateProfile,
     toggleActive,
-  };
-};
-
-/**
- * Hook for discovering and browsing match profiles
- */
-export const useMatchDiscovery = (currentUserId: string | null) => {
-  const [profiles, setProfiles] = useState<MatchProfileWithScore[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<DatabaseMatchProfile | null>(null);
-
-  const fetchProfiles = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [allProfiles, userProfile] = await Promise.all([
-        getAllMatchProfiles(),
-        currentUserId ? getMatchProfile(currentUserId) : Promise.resolve(null),
-      ]);
-
-      setCurrentUserProfile(userProfile);
-
-      // Filter out current user and inactive profiles
-      const filteredProfiles = allProfiles.filter(
-        (p: DatabaseMatchProfile) => p.userId.toString() !== currentUserId && p.isActive,
-      );
-
-      // Calculate compatibility scores if user has profile
-      if (userProfile) {
-        const profilesWithScores: MatchProfileWithScore[] = filteredProfiles.map(
-          (p: DatabaseMatchProfile) => ({
-            ...p,
-            compatibilityScore: calculateCompatibilityScore(userProfile, p),
-          }),
-        );
-
-        // Sort by compatibility score
-        profilesWithScores.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-        setProfiles(profilesWithScores);
-      } else {
-        // Add 0 score to profiles
-        const profilesWithZeroScore: MatchProfileWithScore[] = filteredProfiles.map(
-          (p: DatabaseMatchProfile) => ({
-            ...p,
-            compatibilityScore: 0,
-          }),
-        );
-        setProfiles(profilesWithZeroScore);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUserId]);
-
-  useEffect(() => {
-    fetchProfiles();
-  }, [fetchProfiles]);
-
-  return {
-    profiles,
-    currentUserProfile,
-    loading,
-    error,
-    refetch: fetchProfiles,
   };
 };
 

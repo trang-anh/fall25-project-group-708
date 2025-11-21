@@ -1,26 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './MatchOnboarding.css';
-
-/**
- * Represents the form data for the onboarding flow.
- */
-interface OnboardingFormData {
-  age: number;
-  gender: string;
-  location: string;
-  programmingLanguage: string[];
-  level: string;
-  preferences: {
-    preferredLanguages: string[];
-    preferredLevel: string;
-  };
-  onboardingAnswers: {
-    goals: string;
-    personality: string;
-    projectType: string;
-  };
-  biography: string;
-}
+import useMatchOnboarding from '../../../hooks/useMatchOnboarding';
+import { OnboardingFormData } from '../../../types/onboardingFormData';
 
 /**
  * Props for the MatchOnboarding component.
@@ -64,153 +45,20 @@ const PROGRAMMING_LANGUAGES = [
  * @returns The onboarding form UI.
  */
 const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ onComplete, onSkip }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<OnboardingFormData>({
-    age: 18,
-    gender: '',
-    location: '',
-    programmingLanguage: [],
-    level: 'BEGINNER',
-    preferences: {
-      preferredLanguages: [],
-      preferredLevel: 'ALL',
-    },
-    onboardingAnswers: {
-      goals: '',
-      personality: '',
-      projectType: '',
-    },
-    biography: '',
-  });
-
-  const totalSteps = 5;
-
-  /**
-   * Updates a top-level field in the onboarding form.
-   * @param field - The field to update.
-   * @param value - The new value.
-   */
-  const updateFormData = <K extends keyof OnboardingFormData>(
-    field: K,
-    value: OnboardingFormData[K],
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  type NestedKeys = {
-    [K in keyof OnboardingFormData]: OnboardingFormData[K] extends object ? K : never;
-  }[keyof OnboardingFormData];
-
-  /**
-   * Updates a nested field (like preferences or onboardingAnswers).
-   * @param parent - The parent object key.
-   * @param field - The nested field to update.
-   * @param value - The new value.
-   */
-  const updateNestedField = <P extends NestedKeys, K extends keyof OnboardingFormData[P]>(
-    parent: P,
-    field: K,
-    value: OnboardingFormData[P][K],
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value,
-      },
-    }));
-  };
-
-  /**
-   * Toggles a programming language in the user's list or preferences.
-   * @param language - The language name.
-   * @param isPreference - Whether it applies to preferences.
-   */
-  const toggleLanguage = (language: string, isPreference: boolean = false) => {
-    if (isPreference) {
-      setFormData(prev => {
-        const current = prev.preferences.preferredLanguages;
-        const updated = current.includes(language)
-          ? current.filter(l => l !== language)
-          : [...current, language];
-        return {
-          ...prev,
-          preferences: { ...prev.preferences, preferredLanguages: updated },
-        };
-      });
-    } else {
-      setFormData(prev => {
-        const updated = prev.programmingLanguage.includes(language)
-          ? prev.programmingLanguage.filter(l => l !== language)
-          : [...prev.programmingLanguage, language];
-        return { ...prev, programmingLanguage: updated };
-      });
-    }
-  };
-
-  /**
-   * Checks if the user can move forward to the next step.
-   * @returns Whether the current step is valid.
-   */
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return formData.age >= 13 && formData.gender && formData.location;
-      case 2:
-        return formData.programmingLanguage.length > 0 && formData.level;
-      case 3:
-        return formData.preferences.preferredLanguages.length > 0;
-      case 4:
-        return (
-          formData.onboardingAnswers.goals &&
-          formData.onboardingAnswers.personality &&
-          formData.onboardingAnswers.projectType
-        );
-      case 5:
-        return formData.biography.length >= 50;
-      default:
-        return false;
-    }
-  };
-
-  /**
-   * Moves to the next onboarding step if valid.
-   */
-  const handleNext = () => {
-    if (canProceed() && currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
-
-  /**
-   * Moves back to the previous step.
-   */
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  /**
-   * Submits the completed form data.
-   * Calls the provided `onComplete` callback.
-   */
-  const handleSubmit = async () => {
-    if (!canProceed()) return;
-
-    setIsSubmitting(true);
-    try {
-      await onComplete(formData);
-    } catch (error) {
-      alert('Failed to save profile. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Extract logic from the hook
+  const {
+    formData,
+    currentStep,
+    isSubmitting,
+    totalSteps,
+    updateFormData,
+    updateNestedField,
+    toggleLanguage,
+    canProceed,
+    handleNext,
+    handleBack,
+    handleSubmit,
+  } = useMatchOnboarding(onComplete);
 
   /**
    * Renders the current step of the onboarding flow.

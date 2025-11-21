@@ -1,119 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { useUserMatches } from '../../../hooks/useMatchProfilePage';
-import { DatabaseMatch } from '@fake-stack-overflow/shared';
-import { getMatchProfile } from '../../../services/matchProfileService';
+import React from 'react';
 import './UserMatches.css';
+import useUserMatchesList from '../../../hooks/useUserMatchesList';
 
 interface UserMatchesProps {
   currentUserId: string;
 }
+const getStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'accepted':
+      return 'status-accepted';
+    case 'pending':
+      return 'status-pending';
+    case 'rejected':
+      return 'status-rejected';
+    default:
+      return 'status-pending';
+  }
+};
 
-// Extended type to properly represent the full profile data
-interface FullMatchProfile {
-  _id: string;
-  userId: string;
-  isActive: boolean;
-  age: number;
-  gender: string;
-  location: string;
-  programmingLanguage: string[];
-  level: string;
-  preferences: {
-    preferredLanguages: string[];
-    preferredLevel: string;
-  };
-  onboardingAnswers?: {
-    goals?: string;
-    personality?: string;
-    projectType?: string;
-  };
-  biography?: string;
-  profileImageUrl?: string;
-  createdAt: Date;
-}
-
-interface PopulatedMatch extends DatabaseMatch {
-  otherUserProfile?: FullMatchProfile | null;
-}
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'accepted':
+      return 'Connected';
+    case 'pending':
+      return 'Pending';
+    case 'rejected':
+      return 'Declined';
+    default:
+      return status;
+  }
+};
 
 const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
-  const { matches, loading, error, removeMatch, refetch } = useUserMatches(currentUserId);
-  const [populatedMatches, setPopulatedMatches] = useState<PopulatedMatch[]>([]);
-  const [loadingProfiles, setLoadingProfiles] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const {
+    matches,
+    filteredMatches,
+    filterStatus,
+    setFilterStatus,
+    loading,
+    error,
+    refetch,
+    handleDeleteMatch,
+  } = useUserMatchesList(currentUserId);
 
-  useEffect(() => {
-    const populateMatches = async () => {
-      if (matches.length === 0) return;
-
-      setLoadingProfiles(true);
-      try {
-        const populated = await Promise.all(
-          matches.map(async match => {
-            const otherUserId =
-              match.userA.toString() === currentUserId
-                ? match.userB.toString()
-                : match.userA.toString();
-
-            try {
-              const profile = await getMatchProfile(otherUserId);
-              return { ...match, otherUserProfile: profile };
-            } catch (err) {
-              return { ...match, otherUserProfile: null };
-            }
-          }),
-        );
-        setPopulatedMatches(populated);
-      } catch (err) {
-      } finally {
-        setLoadingProfiles(false);
-      }
-    };
-
-    populateMatches();
-  }, [matches, currentUserId]);
-
-  const handleDeleteMatch = async (matchId: string) => {
-    if (window.confirm('Are you sure you want to remove this match?')) {
-      try {
-        await removeMatch(matchId);
-      } catch (err) {
-      }
-    }
-  };
-
-  const filteredMatches = populatedMatches.filter(match => {
-    if (filterStatus === 'all') return true;
-    return match.status === filterStatus;
-  });
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return 'status-accepted';
-      case 'pending':
-        return 'status-pending';
-      case 'rejected':
-        return 'status-rejected';
-      default:
-        return 'status-pending';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return 'Connected';
-      case 'pending':
-        return 'Pending';
-      case 'rejected':
-        return 'Declined';
-      default:
-        return status;
-    }
-  };
-
-  if (loading || loadingProfiles) {
+  if (loading) {
     return (
       <div className='user-matches-loading'>
         <div className='spinner'></div>
@@ -201,7 +131,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                       <img src={otherProfile.profileImageUrl} alt='Profile' />
                     ) : (
                       <div className='avatar-placeholder'>
-                        {otherProfile?.userId?.substring(0, 2).toUpperCase() || '??'}
+                        {otherProfile?.userId?.toString().substring(0, 2).toUpperCase() || '??'}
                       </div>
                     )}
                   </div>
@@ -210,7 +140,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                     <div className='info-header'>
                       <h3>
                         {otherProfile
-                          ? `User ${otherProfile.userId.substring(0, 8)}`
+                          ? `User ${otherProfile.userId.toString().substring(0, 8)}`
                           : 'Unknown User'}
                       </h3>
                       <span className={`status-badge ${getStatusBadgeClass(match.status)}`}>
@@ -239,13 +169,11 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
 
                     {otherProfile?.programmingLanguage && (
                       <div className='match-languages'>
-                        {otherProfile.programmingLanguage
-                          .slice(0, 4)
-                          .map((lang: string, idx: number) => (
-                            <span key={idx} className='lang-badge'>
-                              {lang}
-                            </span>
-                          ))}
+                        {otherProfile.programmingLanguage.slice(0, 4).map((lang, idx) => (
+                          <span key={idx} className='lang-badge'>
+                            {lang.name}
+                          </span>
+                        ))}
                       </div>
                     )}
 

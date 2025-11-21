@@ -1,49 +1,47 @@
-import React, { useState } from 'react';
-import { useMatchDiscovery, useUserMatches } from '../../../hooks/useMatchProfilePage';
+import React from 'react';
+import { useUserMatches, MatchProfileWithScore } from '../../../hooks/useMatchProfilePage';
 import MatchProfileCard from './MatchProfileCard';
 import './MatchDiscovery.css';
+import useMatchDiscovery from '../../../hooks/useMatchDiscovery';
 
 interface MatchDiscoveryProps {
   currentUserId: string;
 }
 
 const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
-  const { profiles, currentUserProfile, loading, error, refetch } =
-    useMatchDiscovery(currentUserId);
+  const {
+    filteredProfiles,
+    selectedLevel,
+    selectedLanguage,
+    searchQuery,
+    setSelectedLevel,
+    setSelectedLanguage,
+    setSearchQuery,
+    loading,
+    error,
+    refetch,
+  } = useMatchDiscovery(currentUserId);
+
   const { matches, sendMatchRequest } = useUserMatches(currentUserId);
-  const [selectedLevel, setSelectedLevel] = useState<string>('ALL');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Get existing match user IDs
-  const matchedUserIds = new Set(matches.flatMap(m => [m.userA.toString(), m.userB.toString()]));
+  if (loading) {
+    return (
+      <div className='loading-container'>
+        <div className='spinner' />
+        <p>Loading profiles...</p>
+      </div>
+    );
+  }
 
-  // Filter profiles based on selections
-  const filteredProfiles = profiles.filter(profile => {
-    // Remove already matched users
-    if (matchedUserIds.has(profile.userId)) return false;
-
-    // Filter by level
-    if (selectedLevel !== 'ALL' && profile.level !== selectedLevel) return false;
-
-    // Filter by language
-    if (selectedLanguage !== 'ALL') {
-      const hasLanguage = profile.programmingLanguage.some(
-        (lang: string) => lang === selectedLanguage,
-      );
-      if (!hasLanguage) return false;
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesBio = profile.biography?.toLowerCase().includes(query);
-      const matchesLocation = profile.location?.toLowerCase().includes(query);
-      if (!matchesBio && !matchesLocation) return false;
-    }
-
-    return true;
-  });
+  if (error) {
+    return (
+      <div className='error-state'>
+        <p>Error fetching match profiles.</p>
+        <p className='error-text'>{error}</p>
+        <button onClick={refetch}>Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div className='match-discovery'>
@@ -104,8 +102,14 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
         </div>
       ) : (
         <div className='profiles-grid'>
-          {filteredProfiles.map(profile => (
-            <MatchProfileCard key={profile._id} currentUserId={currentUserId} />
+          {filteredProfiles.map((profile: MatchProfileWithScore) => (
+            <MatchProfileCard
+              key={profile._id.toString()}
+              profile={profile}
+              matches={matches}
+              sendMatchRequest={sendMatchRequest}
+              currentUserId={currentUserId}
+            />
           ))}
         </div>
       )}
