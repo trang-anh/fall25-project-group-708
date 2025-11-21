@@ -77,8 +77,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
     if (window.confirm('Are you sure you want to remove this match?')) {
       try {
         await removeMatch(matchId);
-      } catch (err) {
-      }
+      } catch (err) {}
     }
   };
 
@@ -184,7 +183,6 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
 
       {filteredMatches.length === 0 ? (
         <div className='no-matches'>
-          <div className='no-matches-icon'>🤝</div>
           <h2>No Matches Yet</h2>
           <p>Start discovering coding partners to build your network!</p>
         </div>

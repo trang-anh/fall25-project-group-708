@@ -16,12 +16,7 @@ import {
   deleteMatch,
   calculateCompatibilityScore,
 } from '../services/matchProfileService';
-import {
-  DatabaseMatch,
-  DatabaseMatchProfile,
-  MatchProfile,
-  Match,
-} from '@fake-stack-overflow/shared';
+import { DatabaseMatchProfile } from '@fake-stack-overflow/shared';
 
 /**
  * Extended match profile with calculated compatibility score

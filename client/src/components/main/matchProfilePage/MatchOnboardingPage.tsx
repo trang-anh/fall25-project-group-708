@@ -2,97 +2,154 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useUserContext from '../../../hooks/useUserContext';
 import MatchOnboarding from './MatchOnboarding';
-import { createMatchProfile, getMatchProfile } from '../../../services/matchProfileService';
+import { createMatchProfile, checkOnboardingStatus } from '../../../services/matchProfileService';
+import { MatchProfile } from '@fake-stack-overflow/shared';
 
-/**
- * Wrapper component for MatchOnboarding that handles user context and navigation
- */
+interface OnboardingFormData {
+  age: number;
+  gender: string;
+  location: string;
+  programmingLanguage: string[];
+  level: string;
+  preferences: {
+    preferredLanguages: string[];
+    preferredLevel: string;
+  };
+  onboardingAnswers: {
+    goals: string;
+    personality: string;
+    projectType: string;
+  };
+  biography: string;
+}
+
 const MatchOnboardingPage: React.FC = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
+  // Check onboarding status on mount
   useEffect(() => {
-    // Check if user already has a profile
-    const checkExistingProfile = async () => {
-      if (!user?._id) return;
+    let isMounted = true;
+
+    const checkStatus = async () => {
+      if (!user || !user._id) {
+        if (isMounted) setCheckingStatus(false);
+        return;
+      }
 
       try {
-        const profile = await getMatchProfile(user._id.toString());
-        if (profile) {
-          navigate('/match-discovery');
+        const status = await checkOnboardingStatus(user._id.toString());
+
+        // If user already has a profile, redirect to discovery
+        if (status && status.exists) {
+          navigate('/match-discovery', { replace: true });
+          return;
+        }
+
+        // User not onboarded - show the onboarding form
+        if (isMounted) {
+          setCheckingStatus(false);
         }
       } catch (err) {
-        // Profile doesn't exist, continue with onboarding
+        console.error('Error checking onboarding status:', err);
+        // On error, still show the form to allow retry
+        if (isMounted) {
+          setCheckingStatus(false);
+        }
       }
     };
 
-    checkExistingProfile();
+    checkStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, navigate]);
 
-  const handleOnboardingComplete = async (formData: any) => {
+  const handleOnboardingComplete = async (formData: OnboardingFormData) => {
     if (!user?._id) {
-      setError('User not authenticated');
+      setError('User not authenticated. Please log in and try again.');
       return;
     }
 
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      // Prepare the profile data
-      const profileData = {
+      const profileData: MatchProfile = {
         userId: user._id,
         isActive: true,
         age: formData.age,
         gender: formData.gender,
         location: formData.location,
-        programmingLanguage: formData.programmingLanguage,
+        // Convert string[] to ProgrammingLanguage[] objects with name property
+        programmingLanguage: formData.programmingLanguage.map(lang => ({ name: lang })),
         level: formData.level,
-        preferences: formData.preferences,
-        onboardingAnswers: formData.onboardingAnswers,
+        preferences: {
+          // Convert preferredLanguages string[] to ProgrammingLanguage[] objects
+          preferredLanguages: formData.preferences.preferredLanguages.map(lang => ({ name: lang })),
+          preferredLevel: formData.preferences.preferredLevel,
+        },
+        onboardingAnswers: {
+          goals: formData.onboardingAnswers.goals,
+          personality: formData.onboardingAnswers.personality,
+          projectType: formData.onboardingAnswers.projectType,
+        },
         biography: formData.biography,
-        profileImageUrl: user.avatarUrl || undefined,
+        profileImageUrl: (user as any).avatarUrl || '',
       };
 
-      // Create the match profile
+      console.log('Submitting profile data:', profileData);
       await createMatchProfile(profileData);
 
-      // Navigate to discovery page
       navigate('/match-discovery', {
-        state: { message: 'Profile created successfully! Start discovering partners.' },
+        state: {
+          message: 'Welcome! Your profile has been created. Start discovering coding partners!',
+          showSuccess: true,
+        },
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create match profile:', err);
-      setError(err.message || 'Failed to create profile. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create profile';
+      setError(errorMessage);
+      setIsSubmitting(false);
     }
   };
 
   const handleSkip = () => {
-    // Navigate to main page or show a modal
     navigate('/');
   };
 
+  // Show authentication required if not logged in
   if (!user || !user._id) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          background: 'linear-gradient(135deg, #1a1d29 0%, #252838 100%)',
-          color: '#fff',
-          textAlign: 'center',
-          padding: '2rem',
-        }}>
-        <div>
-          <h2>Please log in to continue</h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-            You need to be logged in to set up your match profile
-          </p>
+      <div className='onboarding-auth-required'>
+        <div className='auth-prompt'>
+          <div className='auth-icon'>🔒</div>
+          <h2>Authentication Required</h2>
+          <p>You need to be logged in to set up your match profile</p>
+          <button onClick={() => navigate('/')} className='back-btn'>
+            Back to Home
+          </button>
         </div>
       </div>
     );
   }
 
+  // Show loading while checking status
+  if (checkingStatus) {
+    return (
+      <div className='loading-overlay'>
+        <div className='loading-spinner'></div>
+        <p>Checking match onboarding status...</p>
+      </div>
+    );
+  }
+
+  // Show the onboarding form
   return (
     <>
       <MatchOnboarding
@@ -100,21 +157,24 @@ const MatchOnboardingPage: React.FC = () => {
         onComplete={handleOnboardingComplete}
         onSkip={handleSkip}
       />
+
       {error && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '2rem',
-            right: '2rem',
-            background: 'rgba(255, 107, 107, 0.2)',
-            border: '1px solid rgba(255, 107, 107, 0.4)',
-            borderRadius: '12px',
-            padding: '1rem 1.5rem',
-            color: '#ff6b6b',
-            maxWidth: '400px',
-            zIndex: 1000,
-          }}>
-          {error}
+        <div className='error-toast'>
+          <div className='toast-icon'>⚠️</div>
+          <div className='toast-content'>
+            <strong>Error</strong>
+            <p>{error}</p>
+          </div>
+          <button className='toast-close' onClick={() => setError(null)} aria-label='Close'>
+            ×
+          </button>
+        </div>
+      )}
+
+      {isSubmitting && (
+        <div className='loading-overlay'>
+          <div className='loading-spinner'></div>
+          <p>Creating your profile...</p>
         </div>
       )}
     </>

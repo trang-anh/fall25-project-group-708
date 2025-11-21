@@ -23,7 +23,10 @@ const SideBarNav = () => {
 
   // Auto-expand partner options if on a matching route
   useEffect(() => {
-    if (location.pathname.startsWith('/matchProfile') || location.pathname.startsWith('/match')) {
+    if (
+      location.pathname.startsWith('/match-discovery') ||
+      location.pathname.startsWith('/match')
+    ) {
       setShowPartnerOptions(true);
     }
   }, [location.pathname]);
@@ -96,7 +99,8 @@ const SideBarNav = () => {
         style={{
           cursor: 'pointer',
           backgroundColor:
-            location.pathname.startsWith('/matchprofile') || location.pathname.startsWith('/match')
+            location.pathname.startsWith('/match-discovery') ||
+            location.pathname.startsWith('/match')
               ? 'rgba(102, 126, 234, 0.1)'
               : 'transparent',
         }}>
@@ -119,7 +123,7 @@ const SideBarNav = () => {
       {showPartnerOptions && (
         <div className='submenu'>
           <NavLink
-            to='/matchprofile'
+            to='/match-discovery'
             className={({ isActive }) =>
               `menu_button menu_button_sub ${isActive ? 'menu_selected' : ''}`
             }>

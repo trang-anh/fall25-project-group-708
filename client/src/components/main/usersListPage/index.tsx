@@ -11,6 +11,7 @@ import { SafeDatabaseUser } from '../../../types/types';
  */
 interface UserListPageProps {
   handleUserSelect?: (user: SafeDatabaseUser) => void;
+  selectedUsers?: string[];
 }
 
 /**
