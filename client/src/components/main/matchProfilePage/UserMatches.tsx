@@ -161,21 +161,18 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                         {match.score > 0 && (
                           <div className='detail-row'>
                             <span className='detail-label'>Compatibility:</span>
-                            <span className='detail-value'>{match.score}%</span>
+                            <span className='detail-value'>{(match.score * 100).toFixed(1)}%</span>
                           </div>
                         )}
                       </div>
                     )}
 
-                    {otherProfile?.programmingLanguage && (
-                      <div className='match-languages'>
-                        {otherProfile.programmingLanguage.slice(0, 4).map((lang, idx) => (
-                          <span key={idx} className='lang-badge'>
-                            {lang.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {Array.isArray(otherProfile?.programmingLanguage) &&
+                      otherProfile.programmingLanguage.slice(0, 4).map((lang, idx) => (
+                        <span key={idx} className='lang-badge'>
+                          {'name' in lang ? lang.name : 'Unknown'}
+                        </span>
+                      ))}
 
                     <div className='match-meta'>
                       <span className='meta-text'>

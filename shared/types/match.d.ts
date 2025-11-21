@@ -70,7 +70,14 @@ export type MatchResponse = DatabaseMatch | { error: string };
  * Represents a response for match generated operations.
  * Either returns a `DatabaseMatch` object or an error message.
  */
-export type GenerateMatchesResponse = { error: string } | { matches: DatabaseMatch[] };
+export interface GenerateMatchesResponse {
+  recommendations?: {
+    userId: string;
+    score: number;
+    profile: PopulatedDatabaseMatchProfile;
+  }[];
+  error?: string;
+}
 
 /**
  * Represents a request to fetch or modify a specific match by ID.

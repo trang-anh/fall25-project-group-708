@@ -1314,6 +1314,59 @@ paths:
                   error:
                     type: string
   
+  /match/recommend/{userId}:
+    get:
+      summary: Generate recommended match profiles for a user
+      description: Computes compatibility scores and returns ML-based recommendations
+      tags:
+        - Match
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: The ID of the user requesting recommendations.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recommendations generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        score:
+                          type: number
+                        profile:
+                          $ref: '#/components/schemas/DatabaseMatchProfile'
+                  message:
+                    type: string
+        '404':
+          description: User's match profile not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Server error during recommendation generation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  
   # --------------------
   # MATCH PROFILE CONTROLLER
   # --------------------

@@ -7,10 +7,102 @@ export interface PopulatedMatch extends DatabaseMatch {
   otherUserProfile?: DatabaseMatchProfile | null;
 }
 
+export interface NormalizedMatchProfile
+  extends Omit<DatabaseMatchProfile, 'userId' | 'programmingLanguage'> {
+  userId: string;
+  programmingLanguage: { name: string }[];
+}
+
+export interface NormalizedMatch
+  extends Omit<DatabaseMatch, 'userA' | 'userB' | '_id' | 'initiatedBy'> {
+  _id: string;
+  userA: string;
+  userB: string;
+  initiatedBy: string;
+  otherUserProfile: NormalizedMatchProfile | null;
+}
+
+// Normalize userId into a safe string
+function normalizeId(id: unknown): string {
+  try {
+    // string
+    if (typeof id === 'string') return id;
+
+    // direct ObjectId
+    if (
+      typeof id === 'object' &&
+      id !== null &&
+      'toHexString' in id &&
+      typeof (id as { toHexString: () => string }).toHexString === 'function'
+    ) {
+      return (id as { toHexString: () => string }).toHexString();
+    }
+
+    // embedded { _id: ObjectId }
+    if (
+      typeof id === 'object' &&
+      id !== null &&
+      '_id' in id &&
+      typeof (id as { _id?: unknown })._id === 'object'
+    ) {
+      const inner = (id as { _id?: unknown })._id;
+      if (
+        inner &&
+        typeof inner === 'object' &&
+        'toHexString' in inner &&
+        typeof (inner as { toHexString: () => string }).toHexString === 'function'
+      ) {
+        return (inner as { toHexString: () => string }).toHexString();
+      }
+    }
+
+    return String(id);
+  } catch {
+    return '??';
+  }
+}
+
+// Normalize programmingLanguage array to always be { name: string }[]
+function normalizeLanguages(raw: unknown): { name: string }[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map(entry => {
+      if (!entry) return null;
+
+      // string → wrap into object
+      if (typeof entry === 'string') {
+        return { name: entry };
+      }
+
+      // { name: string }
+      if (
+        typeof entry === 'object' &&
+        'name' in entry &&
+        typeof (entry as { name?: unknown }).name === 'string'
+      ) {
+        return { name: (entry as { name: string }).name };
+      }
+
+      return null;
+    })
+    .filter((v): v is { name: string } => v !== null);
+}
+
+// Normalize profile fields (id + languages)
+function normalizeProfile(profile: DatabaseMatchProfile | null): NormalizedMatchProfile | null {
+  if (!profile) return null;
+
+  return {
+    ...profile,
+    userId: normalizeId(profile.userId),
+    programmingLanguage: normalizeLanguages(profile.programmingLanguage),
+  };
+}
+
 const useUserMatchesList = (currentUserId: string) => {
   const { matches, loading, error, removeMatch, refetch } = useUserMatches(currentUserId);
-
-  const [populatedMatches, setPopulatedMatches] = useState<PopulatedMatch[]>([]);
+  const [populatedMatches, setPopulatedMatches] = useState<NormalizedMatch[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'accepted' | 'pending' | 'rejected'>(
     'all',
@@ -28,19 +120,32 @@ const useUserMatchesList = (currentUserId: string) => {
     setLoadingProfiles(true);
 
     try {
-      const result = await Promise.all(
+      const result: NormalizedMatch[] = await Promise.all(
         matches.map(async match => {
           const otherUserId =
             match.userA.toString() === currentUserId
               ? match.userB.toString()
               : match.userA.toString();
 
+          let rawProfile: DatabaseMatchProfile | null = null;
+
           try {
-            const profile = await getMatchProfile(otherUserId);
-            return { ...match, otherUserProfile: profile };
-          } catch (err) {
-            return { ...match, otherUserProfile: null };
+            rawProfile = await getMatchProfile(otherUserId);
+          } catch {
+            rawProfile = null;
           }
+
+          const normalizedOther = normalizeProfile(rawProfile);
+
+          return {
+            ...match,
+            _id: normalizeId(match._id),
+            userA: normalizeId(match.userA),
+            userB: normalizeId(match.userB),
+            initiatedBy: normalizeId(match.initiatedBy),
+            createdAt: match.createdAt ? new Date(match.createdAt) : new Date(),
+            otherUserProfile: normalizedOther,
+          } as NormalizedMatch;
         }),
       );
 

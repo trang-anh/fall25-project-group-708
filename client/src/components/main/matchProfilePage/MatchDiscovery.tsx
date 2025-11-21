@@ -3,6 +3,7 @@ import { useUserMatches, MatchProfileWithScore } from '../../../hooks/useMatchPr
 import MatchProfileCard from './MatchProfileCard';
 import './MatchDiscovery.css';
 import useMatchDiscovery from '../../../hooks/useMatchDiscovery';
+import useMatchRecommendation from '../../../hooks/useMatchRecommendation';
 
 interface MatchDiscoveryProps {
   currentUserId: string;
@@ -23,6 +24,18 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
   } = useMatchDiscovery(currentUserId);
 
   const { matches, sendMatchRequest } = useUserMatches(currentUserId);
+  const {
+    recommended,
+    loading: recLoading,
+    error: recError,
+  } = useMatchRecommendation(currentUserId);
+
+  // eslint-disable-next-line no-console
+  console.log('RECOMMENDED:', recommended);
+  // eslint-disable-next-line no-console
+  console.log('REC ERROR:', recError);
+  // eslint-disable-next-line no-console
+  console.log('REC LOADING:', recLoading);
 
   if (loading) {
     return (
@@ -62,6 +75,39 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
           </div>
         </div>
       </header>
+
+      <section className='recommended-section'>
+        <h2 className='recommended-title'>Recommended For You</h2>
+
+        {recLoading && (
+          <div className='loading-container small'>
+            <div className='spinner' />
+            <p>Analyzing your profile...</p>
+          </div>
+        )}
+
+        {!recLoading && recError && (
+          <p className='error-text small'>Failed to load recommendations.</p>
+        )}
+
+        {!recLoading && recommended.length === 0 && !recError && (
+          <p className='empty-text'>No recommendations yet.</p>
+        )}
+
+        {!recLoading && recommended.length > 0 && (
+          <div className='profiles-grid'>
+            {recommended.map((profile: MatchProfileWithScore) => (
+              <MatchProfileCard
+                key={profile._id.toString()}
+                profile={profile}
+                matches={matches}
+                sendMatchRequest={sendMatchRequest}
+                currentUserId={currentUserId}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className='discovery-filters'>
         <input

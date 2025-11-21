@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongoose';
+import mongoose from 'mongoose';
 import { PopulatedDatabaseMatchProfile, ProgrammingLanguage } from '../types/types';
 /**
  * Extract features from user match profile into a vector of numbers for further processing and score computing for match compability.
@@ -28,7 +28,53 @@ export default function extractFeatures(
 }
 
 // ----- helpers -----
-type LanguageEntry = ProgrammingLanguage | ObjectId | { _id?: ObjectId };
+type LanguageEntry =
+  | ProgrammingLanguage
+  | mongoose.Types.ObjectId
+  | { _id?: mongoose.Types.ObjectId };
+
+function getLangId(lang: LanguageEntry): string {
+  if (isProgrammingLanguage(lang)) {
+    return lang.name;
+  }
+
+  if (isObjectId(lang)) {
+    return lang.toHexString(); // ✔ NO eslint warning
+  }
+
+  // Case 3: { _id: ObjectId }
+  if (hasId(lang)) {
+    return lang._id.toHexString(); // ✔ NO eslint warning
+  }
+
+  // If you ever hit this, it's programmer error — NOT implicit stringification
+  throw new Error('Invalid LanguageEntry: missing name or ObjectId');
+}
+
+/** Type guard: { name: string } */
+function isProgrammingLanguage(lang: LanguageEntry): lang is { name: string } {
+  return (
+    typeof lang === 'object' &&
+    lang !== null &&
+    'name' in lang &&
+    typeof (lang as { name: unknown }).name === 'string'
+  );
+}
+
+/** Type guard: direct ObjectId */
+function isObjectId(lang: LanguageEntry): lang is mongoose.Types.ObjectId {
+  return lang instanceof mongoose.Types.ObjectId;
+}
+
+/** Type guard: { _id: ObjectId } */
+function hasId(lang: LanguageEntry): lang is { _id: mongoose.Types.ObjectId } {
+  return (
+    typeof lang === 'object' &&
+    lang !== null &&
+    '_id' in lang &&
+    lang._id instanceof mongoose.Types.ObjectId
+  );
+}
 
 /**
  * Calculates the Jaccard similarity score between two sets of programming languages.
@@ -43,13 +89,21 @@ type LanguageEntry = ProgrammingLanguage | ObjectId | { _id?: ObjectId };
  * @returns A similarity score between 0 and 1.
  */
 function jaccard(a?: LanguageEntry[], b?: LanguageEntry[]): number {
-  // if empty, return 0 as score
   if (!a?.length || !b?.length) return 0;
-  const setA = new Set(a.map(String));
-  const setB = new Set(b.map(String));
-  const inter = [...setA].filter(x => setB.has(x)).length;
-  const union = new Set([...setA, ...setB]).size;
-  return inter / union;
+
+  const setA = new Set(a.map(getLangId));
+  const setB = new Set(b.map(getLangId));
+
+  let intersection = 0;
+
+  for (const value of setA) {
+    if (setB.has(value)) {
+      intersection += 1;
+    }
+  }
+
+  const unionSize = new Set([...setA, ...setB]).size;
+  return unionSize === 0 ? 0 : intersection / unionSize;
 }
 
 /**
@@ -86,8 +140,8 @@ function matchPreferredLang(
   a: PopulatedDatabaseMatchProfile,
   b: PopulatedDatabaseMatchProfile,
 ): number {
-  const userALangs = a.programmingLanguage?.map(String) || [];
-  const prefs = b.preferences?.preferredLanguages?.map(String) || [];
+  const userALangs = a.programmingLanguage?.map(getLangId) || [];
+  const prefs = b.preferences?.preferredLanguages?.map(getLangId) || [];
   return userALangs.some(l => prefs.includes(l)) ? 1 : 0;
 }
 

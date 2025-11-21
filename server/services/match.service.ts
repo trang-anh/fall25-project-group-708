@@ -126,10 +126,10 @@ export const generateMatchesForUser = async (userId: string): Promise<GenerateMa
       .exec();
 
     if (!userProfileDoc) {
-      return { error: 'Active MatchProfile not found for this user' };
+      return { recommendations: [] };
     }
 
-    const userProfile = userProfileDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+    const userProfile = userProfileDoc.toObject() as PopulatedDatabaseMatchProfile;
 
     // 2. Get all other active profiles
     const otherProfilesDocs = await MatchProfileModel.find({
@@ -140,57 +140,34 @@ export const generateMatchesForUser = async (userId: string): Promise<GenerateMa
       .populate('preferences.preferredLanguages')
       .exec();
 
-    const matches: DatabaseMatch[] = [];
+    // 3. Build recommendations (no DB writes)
+    const recommendations = otherProfilesDocs
+      .map(doc => {
+        const profile = doc.toObject() as PopulatedDatabaseMatchProfile;
+        const features = extractFeatures(userProfile, profile);
+        const score = computeScore(features);
+        const [skillOverlap] = features;
 
-    for (const otherDoc of otherProfilesDocs) {
-      const otherProfile = otherDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+        if (skillOverlap === 0) return null; // skip incompatible pairs
 
-      // 3. Extract features between user A and user B
-      const features = extractFeatures(userProfile, otherProfile);
+        return {
+          userId: profile.userId.toString(),
+          score,
+          profile,
+        };
+      })
+      .filter(
+        (
+          rec,
+        ): rec is {
+          userId: string;
+          score: number;
+          profile: PopulatedDatabaseMatchProfile;
+        } => rec !== null,
+      )
+      .sort((a, b) => b.score - a.score);
 
-      const [skillOverlap] = features;
-      // 3.6 Essential: Given User A (Python & Java), don't see User B (C, Assembly)
-      // --> skip pairs with no shared languages
-      if (skillOverlap === 0) {
-        // no overlap in programmingLanguage -> don't create a match
-        continue;
-      }
-
-      // 4. Compute compatibility score (0–1)
-      const score = computeScore(features);
-
-      // 5. Upsert Match document for this pair
-      // We'll store userA as the caller, userB as the other profile.
-      const matchDoc = await MatchModel.findOneAndUpdate(
-        {
-          userA: userProfile._id,
-          userB: otherProfile._id,
-        },
-        {
-          $set: {
-            score,
-            status: 'pending',
-            updatedAt: new Date(),
-          },
-          $setOnInsert: {
-            createdAt: new Date(),
-          },
-        },
-        {
-          new: true,
-          upsert: true,
-        },
-      ).exec();
-
-      if (matchDoc) {
-        matches.push(matchDoc.toObject() as DatabaseMatch);
-      }
-    }
-
-    // 6. Sort matches by score descending
-    matches.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-
-    return { matches };
+    return { recommendations };
   } catch (err) {
     return { error: (err as Error).message };
   }

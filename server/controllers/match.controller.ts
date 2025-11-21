@@ -6,7 +6,6 @@ import {
   FakeSOSocket,
   DeleteMatchRequest,
   MatchProfileRequest,
-  DatabaseMatch,
 } from '../types/types';
 import {
   createMatch,
@@ -58,13 +57,24 @@ const matchController = (socket: FakeSOSocket) => {
   const getUserMatchesRoute = async (req: GetUserMatchesRequest, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
-      const matches = await getUserMatches(userId);
+      const result = await getUserMatches(userId);
 
-      if ('error' in matches) {
-        throw new Error(matches.error);
+      if ('error' in result) {
+        res.status(500).json({ error: result.error });
+        return;
       }
 
-      res.json(matches);
+      // Convert ObjectIds → strings for OpenAPI validation
+      const cleaned = result.map(match => ({
+        ...match,
+        _id: match._id.toString(),
+        userA: match.userA.toString(),
+        userB: match.userB.toString(),
+        initiatedBy: match.initiatedBy?.toString() ?? null,
+      }));
+
+      res.json(cleaned);
+      return;
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving all user matches: ${(err as Error).message}`);
     }
@@ -157,36 +167,131 @@ const matchController = (socket: FakeSOSocket) => {
       const result = await generateMatchesForUser(userId);
 
       if ('error' in result) {
-        if (result.error.includes('not found')) {
-          res.status(404).json({ error: result.error });
+        const msg = result.error ?? 'Unknown error';
+        if (msg.includes('not found')) {
+          res.status(404).json({ error: msg });
         } else {
-          res.status(500).json({ error: result.error });
+          res.status(500).json({ error: msg });
         }
         return;
       }
 
-      // Emit one event per generated match (matches your MatchUpdatePayload)
-      result.matches.forEach((match: DatabaseMatch) => {
-        socket.emit('matchUpdate', {
-          type: 'generated',
-          match,
-        });
+      if (!result.recommendations) {
+        res.json({ recommendations: [], message: 'No recommendations found' });
+        return;
+      }
+
+      const cleaned = result.recommendations.map(rec => ({
+        userId: rec.userId,
+        score: rec.score,
+        profile: {
+          ...rec.profile,
+          _id: rec.profile._id.toString(),
+          userId: rec.profile.userId.toString(),
+
+          // ✔ FIX: programmingLanguage must be ObjectId[] (strings)
+          programmingLanguage: rec.profile.programmingLanguage.map(
+            (lang: { _id: { toString: () => unknown } }) =>
+              typeof lang === 'string' ? lang : lang._id.toString(),
+          ),
+
+          preferences: {
+            ...rec.profile.preferences,
+
+            preferredLanguages: rec.profile.preferences.preferredLanguages.map(
+              (lang: { _id: { toString: () => unknown } }) =>
+                typeof lang === 'string' ? lang : lang._id.toString(),
+            ),
+          },
+        },
+      }));
+
+      res.json({
+        recommendations: cleaned,
+        message: 'Recommendations generated successfully',
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: `Error generating matches: ${(err as Error).message}`,
+      });
+    }
+  };
+
+  const generateMatchRecommendationsRoute = async (
+    req: MatchProfileRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { userId } = req.params;
+
+    try {
+      const result = await generateMatchesForUser(userId);
+
+      if ('error' in result) {
+        res.status(500).json({ error: result.error });
+        return;
+      }
+
+      if (!result.recommendations || result.recommendations.length === 0) {
+        res.json({ recommendations: [], message: 'No recommendations found' });
+        return;
+      }
+
+      const cleaned = result.recommendations.map(rec => ({
+        userId: rec.userId,
+        score: rec.score,
+        profile: {
+          ...rec.profile,
+          _id: rec.profile._id.toString(),
+          userId: rec.profile.userId.toString(),
+
+          programmingLanguage: rec.profile.programmingLanguage.map(
+            (lang: { _id: { toString: () => unknown } }) =>
+              typeof lang === 'string' ? lang : lang._id.toString(),
+          ),
+
+          preferences: {
+            ...rec.profile.preferences,
+            preferredLanguages: rec.profile.preferences.preferredLanguages.map(
+              (lang: { _id: { toString: () => unknown } }) =>
+                typeof lang === 'string' ? lang : lang._id.toString(),
+            ),
+          },
+        },
+      }));
+
+      const mvpFiltered = cleaned.filter(rec => {
+        const userLangs = new Set(rec.profile.programmingLanguage); // string[]
+        const preferredLangs = new Set(rec.profile.preferences.preferredLanguages); // string[]
+
+        for (const lang of preferredLangs) {
+          if (userLangs.has(lang)) return true;
+        }
+        return false;
       });
 
       res.json({
-        matches: result.matches,
-        message: 'Matches generated successfully',
+        recommendations: mvpFiltered,
+        message: 'Recommendations generated successfully',
       });
+
+      // res.json({
+      //   recommendations: cleaned,
+      //   message: 'Recommendations generated successfully',
+      // });
     } catch (err) {
-      res.status(500).json({ error: `Error generating matches: ${(err as Error).message}` });
+      res.status(500).json({
+        error: `Error generating recommendations: ${(err as Error).message}`,
+      });
     }
   };
+
   // Registering routes
   router.get('/getMatch/:matchId', getMatchRoute);
   router.get('/getUserMatches/:userId', getUserMatchesRoute);
   router.post('/create', createMatchRoute);
   router.delete('/delete/:matchId', deleteMatchRoute);
   router.post('/generate/:userId', generateMatchesForUserRoute);
+  router.get('/recommend/:userId', generateMatchRecommendationsRoute);
 
   return router;
 };

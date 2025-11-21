@@ -9,10 +9,8 @@ import {
   updateMatchProfile,
   toggleMatchProfileActive,
   checkOnboardingStatus,
-  getUserMatches,
-  createMatch,
-  deleteMatch,
 } from '../services/matchProfileService';
+import { getUserMatches, createMatch, deleteMatch } from '../services/matchService';
 import {
   DatabaseMatchProfile,
   DatabaseMatch,
