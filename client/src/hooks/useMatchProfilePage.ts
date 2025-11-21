@@ -17,10 +17,7 @@ import {
   calculateCompatibilityScore,
 } from '../services/matchProfileService';
 import {
-  DatabaseMatch,
   DatabaseMatchProfile,
-  MatchProfile,
-  Match,
 } from '@fake-stack-overflow/shared';
 
 /**
