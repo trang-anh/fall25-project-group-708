@@ -5,6 +5,7 @@ import {
   ToggleMatchProfileActiveRequest,
   FakeSOSocket,
   UpdateMatchProfileRequest,
+  DatabaseMatchProfile,
 } from '../types/types';
 import {
   createMatchProfile,
@@ -35,13 +36,15 @@ const matchProfileController = (socket: FakeSOSocket) => {
     const { userId } = req.params;
 
     try {
-      const foundMatchProfile = await getMatchProfile(userId);
+      const foundMatchProfile: DatabaseMatchProfile | { error: string } =
+        await getMatchProfile(userId);
 
       if ('error' in foundMatchProfile) {
         throw new Error(foundMatchProfile.error);
       }
 
-      res.json(foundMatchProfile);
+      const plain = { ...foundMatchProfile, userId: foundMatchProfile.userId.toString() };
+      res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving match profile: ${(err as Error).message}`);
     }
@@ -62,7 +65,11 @@ const matchProfileController = (socket: FakeSOSocket) => {
         throw new Error(matches.error);
       }
 
-      res.json(matches);
+      const plain = matches.map(p => ({
+        ...p,
+        userId: p.userId.toString(),
+      }));
+      res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving all matching profile: ${(err as Error).message}`);
     }
@@ -116,7 +123,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: savedMatchProfile,
       });
 
-      res.json(savedMatchProfile);
+      const plain = { ...savedMatchProfile, userId: savedMatchProfile.userId.toString() };
+      res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error creating a match profile: ${(err as Error).message}`);
     }

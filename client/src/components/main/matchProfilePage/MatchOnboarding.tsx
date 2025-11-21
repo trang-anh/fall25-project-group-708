@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import './MatchOnboarding.css';
 
+/**
+ * Represents the form data for the onboarding flow.
+ */
 interface OnboardingFormData {
   age: number;
   gender: string;
@@ -19,6 +22,13 @@ interface OnboardingFormData {
   biography: string;
 }
 
+/**
+ * Props for the MatchOnboarding component.
+ *
+ * @param currentUserId - The ID of the logged-in user.
+ * @param onComplete - Callback when form submission is complete.
+ * @param onSkip - Optional callback if the user chooses to skip onboarding.
+ */
 interface MatchOnboardingProps {
   currentUserId: string;
   onComplete: (formData: OnboardingFormData) => Promise<void>;
@@ -45,7 +55,15 @@ const PROGRAMMING_LANGUAGES = [
   'HTML/CSS',
 ];
 
-const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComplete, onSkip }) => {
+/**
+ * Main onboarding component that walks users through multiple steps
+ * to complete their match profile.
+ *
+ * @component
+ * @param props - The component props.
+ * @returns The onboarding form UI.
+ */
+const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ onComplete, onSkip }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<OnboardingFormData>({
@@ -68,23 +86,50 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComp
 
   const totalSteps = 5;
 
-  const updateFormData = (field: string, value: any) => {
+  /**
+   * Updates a top-level field in the onboarding form.
+   * @param field - The field to update.
+   * @param value - The new value.
+   */
+  const updateFormData = <K extends keyof OnboardingFormData>(
+    field: K,
+    value: OnboardingFormData[K],
+  ) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const updateNestedField = (parent: string, field: string, value: any) => {
+  type NestedKeys = {
+    [K in keyof OnboardingFormData]: OnboardingFormData[K] extends object ? K : never;
+  }[keyof OnboardingFormData];
+
+  /**
+   * Updates a nested field (like preferences or onboardingAnswers).
+   * @param parent - The parent object key.
+   * @param field - The nested field to update.
+   * @param value - The new value.
+   */
+  const updateNestedField = <P extends NestedKeys, K extends keyof OnboardingFormData[P]>(
+    parent: P,
+    field: K,
+    value: OnboardingFormData[P][K],
+  ) => {
     setFormData(prev => ({
       ...prev,
       [parent]: {
-        ...(prev[parent as keyof OnboardingFormData] as any),
+        ...prev[parent],
         [field]: value,
       },
     }));
   };
 
+  /**
+   * Toggles a programming language in the user's list or preferences.
+   * @param language - The language name.
+   * @param isPreference - Whether it applies to preferences.
+   */
   const toggleLanguage = (language: string, isPreference: boolean = false) => {
     if (isPreference) {
       setFormData(prev => {
@@ -107,6 +152,10 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComp
     }
   };
 
+  /**
+   * Checks if the user can move forward to the next step.
+   * @returns Whether the current step is valid.
+   */
   const canProceed = () => {
     switch (currentStep) {
       case 1:
@@ -128,18 +177,28 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComp
     }
   };
 
+  /**
+   * Moves to the next onboarding step if valid.
+   */
   const handleNext = () => {
     if (canProceed() && currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     }
   };
 
+  /**
+   * Moves back to the previous step.
+   */
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
   };
 
+  /**
+   * Submits the completed form data.
+   * Calls the provided `onComplete` callback.
+   */
   const handleSubmit = async () => {
     if (!canProceed()) return;
 
@@ -153,6 +212,10 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComp
     }
   };
 
+  /**
+   * Renders the current step of the onboarding flow.
+   * @returns {JSX.Element | null} The step content.
+   */
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -184,25 +247,30 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComp
                 onChange={e => updateFormData('gender', e.target.value)}
                 className='form-select'>
                 <option value=''>Select gender</option>
-                <option value='Male'>Male</option>
-                <option value='Female'>Female</option>
-                <option value='Non-binary'>Non-binary</option>
-                <option value='Prefer not to say'>Prefer not to say</option>
-                <option value='Other'>Other</option>
+                <option value='MALE'>Male</option>
+                <option value='FEMALE'>Female</option>
+                <option value='NON-BINARY'>Non-binary</option>
+                <option value='PREFER NOT TO SAY'>Prefer not to say</option>
               </select>
             </div>
 
             <div className='form-group'>
               <label htmlFor='location'>Location</label>
-              <input
+              <select
                 id='location'
-                type='text'
-                placeholder='e.g., Boston, MA'
                 value={formData.location}
                 onChange={e => updateFormData('location', e.target.value)}
-                className='form-input'
-              />
-              <span className='helper-text'>City and state/country</span>
+                className='form-select'>
+                <option value=''>Select your region</option>
+                <option value='NORTH AMERICA'>North America</option>
+                <option value='SOUTH AMERICA'>South America</option>
+                <option value='EUROPE'>Europe</option>
+                <option value='ASIA'>Asia</option>
+                <option value='AFRICA'>Africa</option>
+                <option value='AUSTRALIA'>Australia</option>
+                <option value='ANTARCTICA'>Antarctica</option>
+              </select>
+              <span className='helper-text'>Select your general region</span>
             </div>
           </div>
         );

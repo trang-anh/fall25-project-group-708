@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import programmingLanguageSchema from './programmingLanguage.schema';
 
 /**
  * Mongoose schema for the Match Profile collection.
@@ -24,7 +25,6 @@ const matchProfileSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     isActive: {
       type: Boolean,
@@ -51,12 +51,7 @@ const matchProfileSchema: Schema = new Schema(
         'ANTARCTICA',
       ],
     },
-    programmingLanguage: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'ProgrammingLanguage',
-      },
-    ],
+    programmingLanguage: [programmingLanguageSchema],
     level: {
       type: String,
       enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],
@@ -64,12 +59,7 @@ const matchProfileSchema: Schema = new Schema(
       default: 'BEGINNER',
     },
     preferences: {
-      preferredLanguages: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'ProgrammingLanguage',
-        },
-      ],
+      preferredLanguages: [programmingLanguageSchema],
       preferredLevel: {
         type: String,
         enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],

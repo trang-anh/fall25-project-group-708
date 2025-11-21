@@ -19,8 +19,7 @@ const MatchDiscoveryPage: React.FC = () => {
 
       try {
         const status = await checkOnboardingStatus(user._id.toString());
-        
-        
+
         if (!status.exists) {
           // No profile exists - redirect to opt-in page
           navigate('/match-opt-in', { replace: true });
@@ -41,8 +40,8 @@ const MatchDiscoveryPage: React.FC = () => {
   // Show loading while checking
   if (checking) {
     return (
-      <div className="match-discovery-loading">
-        <div className="spinner"></div>
+      <div className='match-discovery-loading'>
+        <div className='spinner'></div>
         <p>Loading...</p>
       </div>
     );
@@ -51,12 +50,12 @@ const MatchDiscoveryPage: React.FC = () => {
   // Show login prompt if not authenticated
   if (!user || !user._id) {
     return (
-      <div className="match-discovery-auth-required">
-        <div className="auth-prompt">
-          <div className="auth-icon">🔒</div>
+      <div className='match-discovery-auth-required'>
+        <div className='auth-prompt'>
+          <div className='auth-icon'>🔒</div>
           <h2>Authentication Required</h2>
           <p>Please log in to discover coding partners</p>
-          <button onClick={() => navigate('/')} className="back-btn">
+          <button onClick={() => navigate('/')} className='back-btn'>
             Back to Home
           </button>
         </div>

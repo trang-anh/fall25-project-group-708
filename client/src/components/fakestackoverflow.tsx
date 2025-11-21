@@ -30,7 +30,6 @@ import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
 import { getUserByUsername } from '../services/userService';
 import { loadRememberedUser } from '../utils/authStorage';
 import useCheckAuth from '../hooks/useCheckAuth';
-import MatchOnboardingPage from './main/matchProfilePage/MatchOnboardingPage';
 
 const ProtectedRoute = ({
   user,
@@ -161,7 +160,6 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
           <Route path='/match-onboarding' element={<MatchOnboardingPage />} />
           <Route path='/match-discovery' element={<MatchDiscoveryPage />} />
           <Route path='/match' element={<UserMatchesPage />} />
-          
         </Route>
       </Routes>
     </LoginContext.Provider>

@@ -18,7 +18,12 @@ import {
 } from '../services/matchProfileService';
 import {
   DatabaseMatchProfile,
+  DatabaseMatch,
+  MatchProfile,
+  CreateMatchDTO,
 } from '@fake-stack-overflow/shared';
+
+type CreateMatchProfileDTO = Omit<MatchProfile, '_id' | 'createdAt'>;
 
 /**
  * Extended match profile with calculated compatibility score
@@ -31,7 +36,7 @@ export interface MatchProfileWithScore extends DatabaseMatchProfile {
  * Hook for managing current user's match profile
  */
 export const useMatchProfile = (userId: string | null) => {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<DatabaseMatchProfile>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +55,7 @@ export const useMatchProfile = (userId: string | null) => {
     }
   }, [userId]);
 
-  const createProfile = async (profileData: any) => {
+  const createProfile = async (profileData: CreateMatchProfileDTO) => {
     setLoading(true);
     setError(null);
     try {
@@ -65,7 +70,7 @@ export const useMatchProfile = (userId: string | null) => {
     }
   };
 
-  const updateProfile = async (updates: any) => {
+  const updateProfile = async (updates: Partial<MatchProfile>) => {
     if (!userId) return;
 
     setLoading(true);
@@ -118,10 +123,10 @@ export const useMatchProfile = (userId: string | null) => {
  * Hook for discovering and browsing match profiles
  */
 export const useMatchDiscovery = (currentUserId: string | null) => {
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<MatchProfileWithScore[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<DatabaseMatchProfile | null>(null);
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -136,25 +141,29 @@ export const useMatchDiscovery = (currentUserId: string | null) => {
 
       // Filter out current user and inactive profiles
       const filteredProfiles = allProfiles.filter(
-        (p: any) => p.userId !== currentUserId && p.isActive,
+        (p: DatabaseMatchProfile) => p.userId.toString() !== currentUserId && p.isActive,
       );
 
       // Calculate compatibility scores if user has profile
       if (userProfile) {
-        const profilesWithScores = filteredProfiles.map((p: any) => ({
-          ...p,
-          compatibilityScore: calculateCompatibilityScore(userProfile, p),
-        }));
+        const profilesWithScores: MatchProfileWithScore[] = filteredProfiles.map(
+          (p: DatabaseMatchProfile) => ({
+            ...p,
+            compatibilityScore: calculateCompatibilityScore(userProfile, p),
+          }),
+        );
 
         // Sort by compatibility score
-        profilesWithScores.sort((a: any, b: any) => b.compatibilityScore - a.compatibilityScore);
+        profilesWithScores.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
         setProfiles(profilesWithScores);
       } else {
         // Add 0 score to profiles
-        const profilesWithZeroScore = filteredProfiles.map((p: any) => ({
-          ...p,
-          compatibilityScore: 0,
-        }));
+        const profilesWithZeroScore: MatchProfileWithScore[] = filteredProfiles.map(
+          (p: DatabaseMatchProfile) => ({
+            ...p,
+            compatibilityScore: 0,
+          }),
+        );
         setProfiles(profilesWithZeroScore);
       }
     } catch (err) {
@@ -181,7 +190,7 @@ export const useMatchDiscovery = (currentUserId: string | null) => {
  * Hook for managing user matches
  */
 export const useUserMatches = (userId: string | null) => {
-  const [matches, setMatches] = useState<any[]>([]);
+  const [matches, setMatches] = useState<DatabaseMatch[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -207,7 +216,7 @@ export const useUserMatches = (userId: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      const matchData: any = {
+      const matchData: CreateMatchDTO = {
         userA: userId,
         userB: targetUserId,
         status: 'pending',
@@ -233,7 +242,7 @@ export const useUserMatches = (userId: string | null) => {
     setError(null);
     try {
       await deleteMatch(matchId, userId);
-      setMatches(prev => prev.filter((m: any) => String(m._id) !== matchId));
+      setMatches(prev => prev.filter((m: DatabaseMatch) => String(m._id) !== matchId));
     } catch (err) {
       setError((err as Error).message);
       throw err;

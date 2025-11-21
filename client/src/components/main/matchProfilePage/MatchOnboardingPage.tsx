@@ -5,6 +5,10 @@ import MatchOnboarding from './MatchOnboarding';
 import { createMatchProfile, checkOnboardingStatus } from '../../../services/matchProfileService';
 import { MatchProfile } from '@fake-stack-overflow/shared';
 
+/**
+ * Structure of the onboarding form data before it is converted
+ * into a MatchProfile for the backend.
+ */
 interface OnboardingFormData {
   age: number;
   gender: string;
@@ -54,6 +58,7 @@ const MatchOnboardingPage: React.FC = () => {
           setCheckingStatus(false);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Error checking onboarding status:', err);
         // On error, still show the form to allow retry
         if (isMounted) {
@@ -69,6 +74,12 @@ const MatchOnboardingPage: React.FC = () => {
     };
   }, [user, navigate]);
 
+  /**
+   * Handles completing the onboarding form.
+   *
+   * @param formData - Data collected from the onboarding steps.
+   * Converts it into a MatchProfile and sends it to the backend.
+   */
   const handleOnboardingComplete = async (formData: OnboardingFormData) => {
     if (!user?._id) {
       setError('User not authenticated. Please log in and try again.');
@@ -99,26 +110,27 @@ const MatchOnboardingPage: React.FC = () => {
           projectType: formData.onboardingAnswers.projectType,
         },
         biography: formData.biography,
-        profileImageUrl: (user as any).avatarUrl || '',
+        profileImageUrl: user.avatarUrl ?? '',
       };
 
-      console.log('Submitting profile data:', profileData);
       await createMatchProfile(profileData);
 
       navigate('/match-discovery', {
-        state: { 
+        state: {
           message: 'Welcome! Your profile has been created. Start discovering coding partners!',
-          showSuccess: true 
+          showSuccess: true,
         },
       });
     } catch (err) {
-      console.error('Failed to create match profile:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create profile';
       setError(errorMessage);
       setIsSubmitting(false);
     }
   };
 
+  /**
+   * Allows the user to skip onboarding and go back home.
+   */
   const handleSkip = () => {
     navigate('/');
   };
@@ -126,12 +138,12 @@ const MatchOnboardingPage: React.FC = () => {
   // Show authentication required if not logged in
   if (!user || !user._id) {
     return (
-      <div className="onboarding-auth-required">
-        <div className="auth-prompt">
-          <div className="auth-icon">🔒</div>
+      <div className='onboarding-auth-required'>
+        <div className='auth-prompt'>
+          <div className='auth-icon'>🔒</div>
           <h2>Authentication Required</h2>
           <p>You need to be logged in to set up your match profile</p>
-          <button onClick={() => navigate('/')} className="back-btn">
+          <button onClick={() => navigate('/')} className='back-btn'>
             Back to Home
           </button>
         </div>
@@ -142,8 +154,8 @@ const MatchOnboardingPage: React.FC = () => {
   // Show loading while checking status
   if (checkingStatus) {
     return (
-      <div className="loading-overlay">
-        <div className="loading-spinner"></div>
+      <div className='loading-overlay'>
+        <div className='loading-spinner'></div>
         <p>Checking match onboarding status...</p>
       </div>
     );
@@ -157,27 +169,23 @@ const MatchOnboardingPage: React.FC = () => {
         onComplete={handleOnboardingComplete}
         onSkip={handleSkip}
       />
-      
+
       {error && (
-        <div className="error-toast">
-          <div className="toast-icon">⚠️</div>
-          <div className="toast-content">
+        <div className='error-toast'>
+          <div className='toast-icon'>⚠️</div>
+          <div className='toast-content'>
             <strong>Error</strong>
             <p>{error}</p>
           </div>
-          <button 
-            className="toast-close" 
-            onClick={() => setError(null)}
-            aria-label="Close"
-          >
+          <button className='toast-close' onClick={() => setError(null)} aria-label='Close'>
             ×
           </button>
         </div>
       )}
 
       {isSubmitting && (
-        <div className="loading-overlay">
-          <div className="loading-spinner"></div>
+        <div className='loading-overlay'>
+          <div className='loading-spinner'></div>
           <p>Creating your profile...</p>
         </div>
       )}

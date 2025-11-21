@@ -116,6 +116,27 @@ A class diagram for the schema definition is shown below:
 | ------------------------------ | ------ | ---------------------------------- |
 | `/saveNotDuplicateQuestion`    | POST   | Add a new not duplicate question   |
 
+### `/api/matchProfile`
+
+| Endpoint                             | Method | Description                        |
+| -----------------------------------  | ------ | ---------------------------------- |
+| `/getMatchProfile/:userId`           | GET    | Get a specific match profile       |
+| `/getAllMatchProfiles/`              | GET    | Get all match profiles             |
+| `/checkOnboardingStatus/:userId`     | GET    | Check a user's onboarding status   |
+| `/toggleMatchProfileActive/:userId`  | PATCH  | Activate/deactivate a match profile|
+| `/updateMatchProfile/:userId`        | PATCH  | Update a match profile             |
+| `/create`                            | POST   | Create a match profile             |
+
+### `/api/match`
+
+| Endpoint                       | Method | Description                        |
+| -----------------------------  | ------ | ---------------------------------- |
+| `/getMatch/:matchId`           | GET    | Get a specific match               |
+| `/getUserMatches/:userId`      | GET    | Get all users matches              |
+| `/create`                      | POST   | Create a match                     |
+| `/generate/:userId`            | POST   | Generate match's scores            |
+| `/delete/:matchId`             | DELETE | Delete a match                     |
+
 
 ## OpenAPI specification
 

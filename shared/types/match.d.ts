@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { Request } from 'express';
 import { DatabaseMatchProfile } from './matchProfile';
 
@@ -16,11 +15,11 @@ import { DatabaseMatchProfile } from './matchProfile';
  * - `initiatedBy`: The user who initiated the match request.
  */
 export interface Match {
-  userA: ObjectId;
-  userB: ObjectId;
+  userA: string;
+  userB: string;
   status: string;
   score: number;
-  initiatedBy: ObjectId;
+  initiatedBy: string;
 }
 
 /**
@@ -30,11 +29,10 @@ export interface Match {
  * - `updatedAt`: The date the match was last updated.
  */
 export interface DatabaseMatch extends Match {
-  _id: ObjectId;
+  _id: string;
   createdAt: Date;
   updatedAt: Date;
 }
-
 
 /**
  * Represents a populated match record.
@@ -92,4 +90,20 @@ export interface GetUserMatchesRequest extends Request {
   params: {
     userId: string;
   };
+}
+
+/**
+ * Data sent from the client to create a match.
+ * Does NOT include _id, createdAt, or updatedAt.
+ */
+export interface CreateMatchDTO {
+  userA: string;
+  userB: string;
+  status: string;
+  score: number;
+  initiatedBy: string;
+}
+
+export interface CreateMatchDTORequest extends Request {
+  body: CreateMatchDTO;
 }
