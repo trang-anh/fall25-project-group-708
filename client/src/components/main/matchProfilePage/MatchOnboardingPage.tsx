@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useUserContext from '../../../hooks/useUserContext';
 import MatchOnboarding from './MatchOnboarding';
 import { createMatchProfile, checkOnboardingStatus } from '../../../services/matchProfileService';
 import { MatchProfile } from '@fake-stack-overflow/shared';
 
-// Define the onboarding form data type
 interface OnboardingFormData {
   age: number;
   gender: string;
@@ -24,34 +23,51 @@ interface OnboardingFormData {
   biography: string;
 }
 
-// Input type for creating match profile (accepts strings for languages)
-interface CreateMatchProfileInput {
-  userId: string;
-  isActive: boolean;
-  age: number;
-  gender: string;
-  location: string;
-  programmingLanguage: string[];
-  level: string;
-  preferences: {
-    preferredLanguages: string[];
-    preferredLevel: string;
-  };
-  onboardingAnswers: {
-    goals: string;
-    personality: string;
-    projectType: string;
-  };
-  biography: string;
-  profileImageUrl: string;
-}
-
 const MatchOnboardingPage: React.FC = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Check onboarding status on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkStatus = async () => {
+      if (!user || !user._id) {
+        if (isMounted) setCheckingStatus(false);
+        return;
+      }
+
+      try {
+        const status = await checkOnboardingStatus(user._id.toString());
+
+        // If user already has a profile, redirect to discovery
+        if (status && status.exists) {
+          navigate('/match-discovery', { replace: true });
+          return;
+        }
+
+        // User not onboarded - show the onboarding form
+        if (isMounted) {
+          setCheckingStatus(false);
+        }
+      } catch (err) {
+        console.error('Error checking onboarding status:', err);
+        // On error, still show the form to allow retry
+        if (isMounted) {
+          setCheckingStatus(false);
+        }
+      }
+    };
+
+    checkStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, navigate]);
 
   const handleOnboardingComplete = async (formData: OnboardingFormData) => {
     if (!user?._id) {
@@ -63,17 +79,18 @@ const MatchOnboardingPage: React.FC = () => {
     setError(null);
 
     try {
-      // Prepare match profile data with correct format
       const profileData: MatchProfile = {
         userId: user._id,
         isActive: true,
         age: formData.age,
         gender: formData.gender,
         location: formData.location,
-        programmingLanguage: formData.programmingLanguage,
+        // Convert string[] to ProgrammingLanguage[] objects with name property
+        programmingLanguage: formData.programmingLanguage.map(lang => ({ name: lang })),
         level: formData.level,
         preferences: {
-          preferredLanguages: formData.preferences.preferredLanguages,
+          // Convert preferredLanguages string[] to ProgrammingLanguage[] objects
+          preferredLanguages: formData.preferences.preferredLanguages.map(lang => ({ name: lang })),
           preferredLevel: formData.preferences.preferredLevel,
         },
         onboardingAnswers: {
@@ -103,48 +120,10 @@ const MatchOnboardingPage: React.FC = () => {
   };
 
   const handleSkip = () => {
-    navigate('/match-opt-in');
+    navigate('/');
   };
 
-  // On mount: check whether the user already has an onboarding/profile.
-  React.useEffect(() => {
-    let isMounted = true;
-
-    const checkStatus = async () => {
-      if (!user || !user._id) {
-        // no user to check yet
-        if (isMounted) setCheckingStatus(false);
-        return;
-      }
-
-      try {
-        const status = await checkOnboardingStatus(user._id.toString());
-
-        // If user already has a profile, send them to discovery.
-        if (status && status.exists) {
-          navigate('/match-discovery', { replace: true });
-          return;
-        }
-
-        // Not onboarded: send them to the opt-in page so they can start onboarding.
-        navigate('/match-opt-in', { replace: true, state: { from: '/match-onboarding' } });
-      } catch (err) {
-        console.error('Error checking onboarding status', err);
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to check onboarding status');
-        }
-      } finally {
-        if (isMounted) setCheckingStatus(false);
-      }
-    };
-
-    checkStatus();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, navigate]);
-
+  // Show authentication required if not logged in
   if (!user || !user._id) {
     return (
       <div className="onboarding-auth-required">
@@ -160,7 +139,7 @@ const MatchOnboardingPage: React.FC = () => {
     );
   }
 
-  // While we verify onboarding status, show a minimal loading state to avoid flicker.
+  // Show loading while checking status
   if (checkingStatus) {
     return (
       <div className="loading-overlay">
@@ -170,6 +149,7 @@ const MatchOnboardingPage: React.FC = () => {
     );
   }
 
+  // Show the onboarding form
   return (
     <>
       <MatchOnboarding
