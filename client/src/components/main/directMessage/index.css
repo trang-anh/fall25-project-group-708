@@ -162,13 +162,48 @@
   background-color: var(--bg-hover);
 }
 
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px 0 20px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn.active {
+  background-color: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+}
+
+.mode-btn:hover:not(.active) {
+  background-color: var(--bg-hover);
+}
+
+/* Group Name Input */
+.group-name-input {
+  padding: 16px 20px 0 20px;
+}
+
 .panel-error {
   color: #d32f2f;
   background-color: #ffebee;
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 13px;
-  margin: 0 20px 12px 20px;
+  margin: 12px 20px 0 20px;
 }
 
 [data-theme="dark"] .panel-error {
@@ -280,6 +315,12 @@
   gap: 10px;
 }
 
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .chat-header-left h2 {
   margin: 0;
   font-size: 16px;
@@ -288,6 +329,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.group-participants-count {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
 }
 
 .status-dot {
@@ -301,6 +349,52 @@
 
 [data-theme="dark"] .status-dot {
   background-color: #4ade80;
+}
+
+/* Group chat avatar in header */
+.group-chat-header-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-blue-hover) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+}
+
+.group-chat-header-avatar svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Leave Group Button */
+.leave-group-btn {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.leave-group-btn:hover {
+  background-color: #d32f2f;
+  color: white;
+}
+
+[data-theme="dark"] .leave-group-btn {
+  color: #fca5a5;
+  border-color: #fca5a5;
+}
+
+[data-theme="dark"] .leave-group-btn:hover {
+  background-color: #7f1d1d;
+  border-color: #7f1d1d;
 }
 
 /* Chat messages area */

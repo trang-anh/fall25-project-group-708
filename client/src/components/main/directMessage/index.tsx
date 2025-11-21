@@ -6,7 +6,7 @@ import MessageCard from '../messageCard';
 import Avatar from '../../avatar';
 
 /**
- * DirectMessage component renders a page for direct messaging between users.
+ * DirectMessage component renders a page for direct messaging and group chats.
  * It includes a list of users and a chat window to send and receive messages.
  */
 const DirectMessage = () => {
@@ -18,29 +18,35 @@ const DirectMessage = () => {
     setNewMessage,
     showCreatePanel,
     setShowCreatePanel,
+    createMode,
+    toggleCreateMode,
+    selectedUsers,
+    groupChatName,
+    setGroupChatName,
     handleSendMessage,
     handleChatSelect,
     handleUserSelect,
     handleCreateChat,
+    handleLeaveGroupChat,
     error,
     currentUsername,
   } = useDirectMessage();
 
-  // Get the other participant's name for the selected chat
-  const otherParticipant =
-    selectedChat?.participants.find(p => p !== currentUsername) || selectedChat?.participants[0];
+  const isGroupChat = selectedChat?.chatType === 'group';
 
-  // Get avatar from participantData first (most reliable)
+  // Get the other participant's name for direct chats
+  const otherParticipant = !isGroupChat
+    ? selectedChat?.participants.find(p => p !== currentUsername) || selectedChat?.participants[0]
+    : null;
+
+  // Get avatar for direct chats
   let otherParticipantAvatar: string | undefined;
-
-  if (selectedChat && otherParticipant) {
-    // Try participantData first
+  if (!isGroupChat && selectedChat && otherParticipant) {
     const otherParticipantData = selectedChat.participantsData?.find(
       p => p.username === otherParticipant,
     );
     otherParticipantAvatar = otherParticipantData?.avatarUrl;
 
-    // Fallback: search through messages if participantData is not available
     if (!otherParticipantAvatar) {
       for (const message of selectedChat.messages) {
         if (message.msgFrom === otherParticipant && message.user?.avatarUrl) {
@@ -92,38 +98,102 @@ const DirectMessage = () => {
       {showCreatePanel && (
         <div className='create-chat-panel'>
           <div className='create-chat-header'>
-            <h3>New Chat</h3>
+            <h3>New {createMode === 'direct' ? 'Chat' : 'Group Chat'}</h3>
             <button className='close-panel-btn' onClick={() => setShowCreatePanel(false)}>
               ×
             </button>
           </div>
+
+          {/* Mode Toggle */}
+          <div className='mode-toggle'>
+            <button
+              className={`mode-btn ${createMode === 'direct' ? 'active' : ''}`}
+              onClick={() => createMode !== 'direct' && toggleCreateMode()}>
+              Direct
+            </button>
+            <button
+              className={`mode-btn ${createMode === 'group' ? 'active' : ''}`}
+              onClick={() => createMode !== 'group' && toggleCreateMode()}>
+              Group
+            </button>
+          </div>
+
           {error && <div className='panel-error'>{error}</div>}
-          <p className='panel-label'>Selected user: {chatToCreate || 'None'}</p>
-          <button className='panel-button' onClick={handleCreateChat} disabled={!chatToCreate}>
-            Create Chat
-          </button>
+
+          {createMode === 'direct' ? (
+            <>
+              <p className='panel-label'>Selected user: {chatToCreate || 'None'}</p>
+              <button className='panel-button' onClick={handleCreateChat} disabled={!chatToCreate}>
+                Create Chat
+              </button>
+            </>
+          ) : (
+            <>
+              <div className='group-name-input'>
+                <input
+                  type='text'
+                  placeholder='Group name'
+                  value={groupChatName}
+                  onChange={e => setGroupChatName(e.target.value)}
+                  className='custom-input'
+                />
+              </div>
+              <p className='panel-label'>
+                Selected users: {selectedUsers.length > 0 ? selectedUsers.join(', ') : 'None'}
+              </p>
+              <button
+                className='panel-button'
+                onClick={handleCreateChat}
+                disabled={selectedUsers.length < 1 || !groupChatName.trim()}>
+                Create Group
+              </button>
+            </>
+          )}
+
           <div className='users-list-container'>
-            <UsersListPage handleUserSelect={handleUserSelect} />
+            <UsersListPage handleUserSelect={handleUserSelect} selectedUsers={selectedUsers} />
           </div>
         </div>
       )}
 
       <div className='chat-container'>
-        {selectedChat && otherParticipant ? (
+        {selectedChat ? (
           <>
             <div className='chat-header-bar'>
               <div className='chat-header-content'>
                 <div className='chat-header-left'>
-                  <Avatar
-                    username={otherParticipant}
-                    avatarUrl={otherParticipantAvatar}
-                    size='small'
-                  />
-                  <h2>
-                    <span className='status-dot'></span>
-                    {otherParticipant}
-                  </h2>
+                  {isGroupChat ? (
+                    <div className='group-chat-header-avatar'>
+                      <svg viewBox='0 0 24 24' fill='currentColor'>
+                        <path d='M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z' />
+                      </svg>
+                    </div>
+                  ) : (
+                    <Avatar
+                      username={otherParticipant || 'Unknown'}
+                      avatarUrl={otherParticipantAvatar}
+                      size='small'
+                    />
+                  )}
+                  <div className='chat-header-info'>
+                    <h2>
+                      {!isGroupChat && <span className='status-dot'></span>}
+                      {isGroupChat 
+                        ? (selectedChat.chatName && selectedChat.chatName.trim() ? selectedChat.chatName : `Group (${selectedChat.participants.length})`)
+                        : otherParticipant}
+                    </h2>
+                    {isGroupChat && (
+                      <p className='group-participants-count'>
+                        {selectedChat.participants.length} participants
+                      </p>
+                    )}
+                  </div>
                 </div>
+                {isGroupChat && (
+                  <button className='leave-group-btn' onClick={handleLeaveGroupChat}>
+                    Leave Group
+                  </button>
+                )}
               </div>
             </div>
             <div className='chat-messages'>
@@ -134,10 +204,8 @@ const DirectMessage = () => {
                     ? selectedChat.messages[index + 1]
                     : null;
 
-                // Check if this message is grouped with previous message
+                // Messages are grouped if they come from the same sender consecutively
                 const isGrouped = prevMessage?.msgFrom === message.msgFrom;
-
-                // Check if this is the last message in a group
                 const isLastInGroup = nextMessage?.msgFrom !== message.msgFrom;
 
                 return (
@@ -147,6 +215,7 @@ const DirectMessage = () => {
                     currentUsername={currentUsername}
                     isGrouped={isGrouped}
                     isLastInGroup={isLastInGroup}
+                    isGroupChat={isGroupChat}
                   />
                 );
               })}
@@ -163,7 +232,7 @@ const DirectMessage = () => {
             </div>
           </>
         ) : (
-          <h2>Select a user to start chatting</h2>
+          <h2>Select a chat to start messaging</h2>
         )}
       </div>
     </div>

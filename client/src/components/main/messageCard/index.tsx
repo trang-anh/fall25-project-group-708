@@ -1,60 +1,53 @@
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import './index.css';
 import { MessageInChat } from '../../../types/types';
-import { getMetaData } from '../../../tool';
 import Avatar from '../../avatar';
+import './index.css';
 
-/**
- * MessageCard component displays a single message with its sender and timestamp.
- *
- * @param message: The message object to display.
- * @param currentUsername: The current user's username to determine message direction.
- * @param isGrouped: Whether this message is part of a group from the same sender.
- * @param isLastInGroup: Whether this is the last message in a group.
- */
+interface MessageCardProps {
+  message: MessageInChat;
+  currentUsername?: string;
+  isGrouped?: boolean;
+  isLastInGroup?: boolean;
+  isGroupChat?: boolean;
+}
+
 const MessageCard = ({
   message,
   currentUsername,
   isGrouped = false,
   isLastInGroup = false,
-}: {
-  message: MessageInChat;
-  currentUsername?: string;
-  isGrouped?: boolean;
-  isLastInGroup?: boolean;
-}) => {
-  // Determine if this is a sent or received message
-  const isSender = currentUsername && message.msgFrom !== currentUsername;
-  const avatarUrl = message.user?.avatarUrl;
-
-  // Format time
-  const timeDisplay = getMetaData(new Date(message.msgDateTime));
+  isGroupChat = false,
+}: MessageCardProps) => {
+  const isOwnMessage = message.msgFrom === currentUsername;
+  const showAvatar = !isGrouped;
+  const showSenderName = isGroupChat && !isOwnMessage && !isGrouped;
 
   return (
     <div
-      className={`message ${isSender ? 'sender' : 'receiver'} ${isGrouped ? 'grouped' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
-      {!isSender && (
-        <div className='message-avatar'>
-          <Avatar username={message.msgFrom} avatarUrl={avatarUrl} size='small' />
-        </div>
+      className={`message ${isOwnMessage ? 'sender' : 'receiver'} ${isGrouped ? 'grouped' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
+      {showAvatar ? (
+        <Avatar
+          username={message.msgFrom}
+          avatarUrl={message.user?.avatarUrl}
+          size='small'
+        />
+      ) : (
+        <div className='message-avatar' /> // Placeholder for consistent spacing
       )}
+
       <div className='message-content-wrapper'>
-        {!isGrouped && (
-          <div className='message-header'>
-            <span className='message-sender'>{message.msgFrom}</span>
-            <span className='message-time'>{timeDisplay}</span>
+        {showSenderName && <div className='message-header'>{message.msgFrom}</div>}
+
+        <div className='message-body'>{message.msg}</div>
+
+        {isLastInGroup && (
+          <div className='message-time'>
+            {new Date(message.msgDateTime).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
           </div>
         )}
-        <div className='message-body'>
-          <Markdown remarkPlugins={[remarkGfm]}>{message.msg}</Markdown>
-        </div>
       </div>
-      {isSender && (
-        <div className='message-avatar'>
-          <Avatar username={message.msgFrom} avatarUrl={avatarUrl} size='small' />
-        </div>
-      )}
     </div>
   );
 };

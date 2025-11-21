@@ -75,3 +75,50 @@ export const createChat = async (participants: string[]): Promise<PopulatedDatab
 
   return res.data;
 };
+
+/**
+ * Create a new group chat with the specified participants and group name.
+ * 
+ * @param participants - An array of user IDs representing the participants of the group chat.
+ * @param groupName - The name of the group chat.
+ * @returns The newly created group chat data.
+ * @throws Throws an error if the group chat creation fails or if the status code is not 200.
+ */
+export const createGroupChat = async (
+  participants: string[],
+  chatName: string,
+): Promise<PopulatedDatabaseChat> => {
+  const res = await api.post(`${CHAT_API_URL}/createGroupChat`, {
+    participants,
+    messages: [],
+    chatName,
+  });
+  
+  if (res.status !== 200) {
+    throw new Error('Error when creating group chat');
+  }
+
+  return res.data;
+};
+
+/**
+ * Allows a user to leave a group chat.
+ * 
+ * @param chatID - The ID of the group chat to leave.
+ * @param userID - The ID of the user leaving the group chat.
+ * @returns The updated group chat data after the user has left.
+ * @throws Throws an error if the user could not leave the group chat.
+ */
+export const leaveGroupChat = async (
+  chatID: ObjectId,
+  username: string,
+): Promise<PopulatedDatabaseChat> => {
+  const res = await api.post(`${CHAT_API_URL}/${chatID}/leaveGroupChat`, { username });
+
+  if (res.status !== 200) {
+    throw new Error('Error when leaving group chat');
+  }
+
+  return res.data;
+}
+ 
