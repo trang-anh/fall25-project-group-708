@@ -1,9 +1,9 @@
 import { useMemo, useCallback } from 'react';
-import { MatchProfileWithScore } from './useMatchProfilePage';
 import { DatabaseMatch } from '@fake-stack-overflow/shared';
+import { RecommendationProfile } from '../types/recommendationProfile';
 
 interface UseMatchProfileCardParams {
-  profile: MatchProfileWithScore;
+  profile: RecommendationProfile;
   currentUserId: string;
   matches: DatabaseMatch[];
   sendMatchRequest: (targetUserId: string, score: number) => Promise<DatabaseMatch | undefined>;
@@ -15,7 +15,7 @@ const useMatchProfileCard = ({
   matches,
   sendMatchRequest,
 }: UseMatchProfileCardParams) => {
-  const targetId = profile.userId.toString();
+  const targetId = profile.userId._id.toString();
 
   // already matched check
   const alreadyMatched = useMemo(

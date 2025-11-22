@@ -134,7 +134,7 @@ A class diagram for the schema definition is shown below:
 | `/getMatch/:matchId`           | GET    | Get a specific match               |
 | `/getUserMatches/:userId`      | GET    | Get all users matches              |
 | `/create`                      | POST   | Create a match                     |
-| `/generate/:userId`            | POST   | Generate match's scores            |
+| `/recommend/:userId`           | POST   | Recommend matches for users        |
 | `/delete/:matchId`             | DELETE | Delete a match                     |
 
 

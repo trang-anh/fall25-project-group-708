@@ -4,7 +4,7 @@ import useUserContext from './useUserContext';
 import { checkOnboardingStatus, createMatchProfile } from '../services/matchProfileService';
 import { MatchProfile } from '@fake-stack-overflow/shared';
 import { OnboardingFormData } from '../types/onboardingFormData';
-import { generateMatchesForUsers } from '../services/matchService';
+import { generateMatchRecommendation } from '../services/matchService';
 
 const useMatchOnboardingPage = () => {
   const { user } = useUserContext();
@@ -72,7 +72,7 @@ const useMatchOnboardingPage = () => {
 
       await createMatchProfile(profileData);
 
-      await generateMatchesForUsers(user._id.toString());
+      await generateMatchRecommendation(user._id.toString());
 
       navigate('/match-discovery', {
         state: {

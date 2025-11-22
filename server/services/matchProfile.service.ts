@@ -45,13 +45,19 @@ export const createMatchProfile = async (
  */
 export const getMatchProfile = async (userId: string): Promise<MatchProfileResponse> => {
   try {
+    // const matchProfile = await MatchProfileModel.findOne({ userId }).lean();
+    // if (!matchProfile) return { error: 'Match Profile not found' };
+    // return matchProfile;
+
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }
 
     const id = new ObjectId(userId);
 
-    const matchProfile = await MatchProfileModel.findOne({ userId: id });
+    const matchProfile = await MatchProfileModel.findOne({ userId: id })
+      .populate('userId', 'username')
+      .lean();
     if (!matchProfile) {
       return { error: 'Match Profile not found' };
     }
@@ -70,7 +76,7 @@ export const getAllMatchProfiles = async (): Promise<
   DatabaseMatchProfile[] | { error: string }
 > => {
   try {
-    const matchProfiles = await MatchProfileModel.find({});
+    const matchProfiles = await MatchProfileModel.find({}).populate('userId', 'username').lean();
     return matchProfiles;
   } catch (err) {
     return { error: (err as Error).message };
@@ -89,6 +95,15 @@ export const updateMatchProfile = async (
   updates: Partial<MatchProfile>,
 ): Promise<MatchProfileResponse> => {
   try {
+    // const updatedProfile = await MatchProfileModel.findOneAndUpdate(
+    //   { userId },
+    //   { $set: updates },
+    //   { new: true }
+    // );
+
+    // if (!updatedProfile) return { error: 'Error updating match profile' };
+    // return updatedProfile;
+
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }
@@ -137,6 +152,10 @@ export const checkOnboardingStatus = async (
   userId: string,
 ): Promise<{ exists: boolean; isActive: boolean } | { error: string }> => {
   try {
+    // const matchProfile = await MatchProfileModel.findOne({ userId }).lean();
+    // if (!matchProfile) return { exists: false, isActive: false };
+    // return { exists: true, isActive: matchProfile.isActive };
+
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }

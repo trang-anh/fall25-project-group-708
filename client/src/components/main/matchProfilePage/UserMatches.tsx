@@ -168,11 +168,13 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                     )}
 
                     {Array.isArray(otherProfile?.programmingLanguage) &&
-                      otherProfile.programmingLanguage.slice(0, 4).map((lang, idx) => (
-                        <span key={idx} className='lang-badge'>
-                          {'name' in lang ? lang.name : 'Unknown'}
-                        </span>
-                      ))}
+                      otherProfile.programmingLanguage
+                        .slice(0, 4)
+                        .map((lang: string, idx: number) => (
+                          <span key={idx} className='lang-badge'>
+                            {lang}
+                          </span>
+                        ))}
 
                     <div className='match-meta'>
                       <span className='meta-text'>

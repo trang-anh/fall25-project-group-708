@@ -5,7 +5,7 @@ import {
   DatabaseMatch,
   MatchResponse,
   GenerateMatchesResponse,
-  PopulatedDatabaseMatchProfile,
+  MatchProfileWithUser,
 } from '../types/types';
 import extractFeatures from './matchFeature.service';
 import computeScore from './matchMath.service';
@@ -117,53 +117,62 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<Matc
  * - Only considers other active match profiles.
  * - Skips pairs with no language overlap (skillOverlap = 0).
  */
-export const generateMatchesForUser = async (userId: string): Promise<GenerateMatchesResponse> => {
+export const generateMatchRecommendation = async (
+  userId: string,
+): Promise<GenerateMatchesResponse> => {
   try {
     // 1. Get this user's populated match profile
     const userProfileDoc = await MatchProfileModel.findOne({ userId, isActive: true })
-      .populate('programmingLanguage')
-      .populate('preferences.preferredLanguages')
-      .exec();
+      .populate('userId', 'username')
+      .lean();
+    if (!userProfileDoc) return { recommendations: [] };
 
-    if (!userProfileDoc) {
-      return { recommendations: [] };
-    }
-
-    const userProfile = userProfileDoc.toObject() as PopulatedDatabaseMatchProfile;
+    const userProfile = userProfileDoc as unknown as MatchProfileWithUser;
 
     // 2. Get all other active profiles
     const otherProfilesDocs = await MatchProfileModel.find({
       userId: { $ne: userId },
       isActive: true,
     })
-      .populate('programmingLanguage')
-      .populate('preferences.preferredLanguages')
-      .exec();
+      .populate('userId', 'username')
+      .lean();
 
-    // 3. Build recommendations (no DB writes)
+    // 3. Build recommendations
     const recommendations = otherProfilesDocs
       .map(doc => {
-        const profile = doc.toObject() as PopulatedDatabaseMatchProfile;
+        const plainDoc = doc;
+
+        if (!plainDoc.userId || typeof plainDoc.userId === 'string') {
+          throw new Error('Populate failed: userId is still ObjectId/string');
+        }
+
+        const populatedUser = plainDoc.userId as { _id: string; username: string };
+
+        const profile: MatchProfileWithUser = {
+          ...plainDoc,
+          userId: {
+            _id: populatedUser._id.toString(),
+            username: populatedUser.username,
+          },
+        };
+
         const features = extractFeatures(userProfile, profile);
         const score = computeScore(features);
         const [skillOverlap] = features;
 
-        if (skillOverlap === 0) return null; // skip incompatible pairs
+        if (skillOverlap === 0) return null;
+
+        // eslint-disable-next-line no-console
+        console.log('BACKEND PROFILE USER:', profile.userId);
 
         return {
-          userId: profile.userId.toString(),
+          userId: profile.userId._id.toString(),
           score,
           profile,
         };
       })
       .filter(
-        (
-          rec,
-        ): rec is {
-          userId: string;
-          score: number;
-          profile: PopulatedDatabaseMatchProfile;
-        } => rec !== null,
+        (r): r is { userId: string; score: number; profile: MatchProfileWithUser } => r !== null,
       )
       .sort((a, b) => b.score - a.score);
 

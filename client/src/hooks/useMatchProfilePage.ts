@@ -17,48 +17,8 @@ import {
   MatchProfile,
   CreateMatchDTO,
 } from '@fake-stack-overflow/shared';
-import { ObjectId } from 'mongodb';
 
 type CreateMatchProfileDTO = Omit<MatchProfile, '_id' | 'createdAt'>;
-
-// export interface ProgrammingLanguage {
-//   name: string;
-//   proficiency?: string;
-// }
-
-/**
- * Extended match profile with calculated compatibility score
- */
-export interface MatchProfileWithScore {
-  _id: string | ObjectId;
-  userId: string | ObjectId;
-
-  age?: number;
-  gender?: string;
-
-  level: string;
-  programmingLanguage: string[];
-
-  biography?: string;
-  location?: string;
-
-  preferences?: {
-    preferredLanguages?: string[];
-    preferredLevel?: string;
-  };
-
-  onboardingAnswers?: {
-    goals?: string;
-    personality?: string;
-    projectType?: string;
-  };
-
-  isActive?: boolean;
-  profileImageUrl?: string;
-  createdAt?: Date;
-
-  compatibilityScore: number;
-}
 
 /**
  * Hook for managing current user's match profile
@@ -131,10 +91,6 @@ export const useMatchProfile = (userId: string | null) => {
       setLoading(false);
     }
   };
-
-  // useEffect(() => {
-  //   fetchProfile();
-  // }, [fetchProfile]);
 
   return {
     profile,

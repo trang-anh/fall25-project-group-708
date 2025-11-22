@@ -10,7 +10,7 @@ import {
 import {
   createMatch,
   deleteMatch,
-  generateMatchesForUser,
+  generateMatchRecommendation,
   getMatch,
   getUserMatches,
 } from '../services/match.service';
@@ -157,66 +157,6 @@ const matchController = (socket: FakeSOSocket) => {
    * Generates matches for a user, emits matchUpdate events,
    * and returns the list of generated matches.
    */
-  const generateMatchesForUserRoute = async (
-    req: MatchProfileRequest,
-    res: Response,
-  ): Promise<void> => {
-    const { userId } = req.params;
-
-    try {
-      const result = await generateMatchesForUser(userId);
-
-      if ('error' in result) {
-        const msg = result.error ?? 'Unknown error';
-        if (msg.includes('not found')) {
-          res.status(404).json({ error: msg });
-        } else {
-          res.status(500).json({ error: msg });
-        }
-        return;
-      }
-
-      if (!result.recommendations) {
-        res.json({ recommendations: [], message: 'No recommendations found' });
-        return;
-      }
-
-      const cleaned = result.recommendations.map(rec => ({
-        userId: rec.userId,
-        score: rec.score,
-        profile: {
-          ...rec.profile,
-          _id: rec.profile._id.toString(),
-          userId: rec.profile.userId.toString(),
-
-          // ✔ FIX: programmingLanguage must be ObjectId[] (strings)
-          programmingLanguage: rec.profile.programmingLanguage.map(
-            (lang: { _id: { toString: () => unknown } }) =>
-              typeof lang === 'string' ? lang : lang._id.toString(),
-          ),
-
-          preferences: {
-            ...rec.profile.preferences,
-
-            preferredLanguages: rec.profile.preferences.preferredLanguages.map(
-              (lang: { _id: { toString: () => unknown } }) =>
-                typeof lang === 'string' ? lang : lang._id.toString(),
-            ),
-          },
-        },
-      }));
-
-      res.json({
-        recommendations: cleaned,
-        message: 'Recommendations generated successfully',
-      });
-    } catch (err) {
-      res.status(500).json({
-        error: `Error generating matches: ${(err as Error).message}`,
-      });
-    }
-  };
-
   const generateMatchRecommendationsRoute = async (
     req: MatchProfileRequest,
     res: Response,
@@ -224,7 +164,7 @@ const matchController = (socket: FakeSOSocket) => {
     const { userId } = req.params;
 
     try {
-      const result = await generateMatchesForUser(userId);
+      const result = await generateMatchRecommendation(userId);
 
       if ('error' in result) {
         res.status(500).json({ error: result.error });
@@ -244,40 +184,19 @@ const matchController = (socket: FakeSOSocket) => {
           _id: rec.profile._id.toString(),
           userId: rec.profile.userId.toString(),
 
-          programmingLanguage: rec.profile.programmingLanguage.map(
-            (lang: { _id: { toString: () => unknown } }) =>
-              typeof lang === 'string' ? lang : lang._id.toString(),
-          ),
+          programmingLanguage: rec.profile.programmingLanguage,
 
           preferences: {
             ...rec.profile.preferences,
-            preferredLanguages: rec.profile.preferences.preferredLanguages.map(
-              (lang: { _id: { toString: () => unknown } }) =>
-                typeof lang === 'string' ? lang : lang._id.toString(),
-            ),
+            preferredLanguages: rec.profile.preferences.preferredLanguages,
           },
         },
       }));
 
-      const mvpFiltered = cleaned.filter(rec => {
-        const userLangs = new Set(rec.profile.programmingLanguage); // string[]
-        const preferredLangs = new Set(rec.profile.preferences.preferredLanguages); // string[]
-
-        for (const lang of preferredLangs) {
-          if (userLangs.has(lang)) return true;
-        }
-        return false;
-      });
-
       res.json({
-        recommendations: mvpFiltered,
+        recommendations: cleaned,
         message: 'Recommendations generated successfully',
       });
-
-      // res.json({
-      //   recommendations: cleaned,
-      //   message: 'Recommendations generated successfully',
-      // });
     } catch (err) {
       res.status(500).json({
         error: `Error generating recommendations: ${(err as Error).message}`,
@@ -290,7 +209,6 @@ const matchController = (socket: FakeSOSocket) => {
   router.get('/getUserMatches/:userId', getUserMatchesRoute);
   router.post('/create', createMatchRoute);
   router.delete('/delete/:matchId', deleteMatchRoute);
-  router.post('/generate/:userId', generateMatchesForUserRoute);
   router.get('/recommend/:userId', generateMatchRecommendationsRoute);
 
   return router;

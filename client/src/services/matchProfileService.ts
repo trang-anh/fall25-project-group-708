@@ -84,26 +84,3 @@ export const checkOnboardingStatus = async (
   if (!res.ok) throw new Error('Failed to check onboarding status');
   return res.json();
 };
-
-/**
- * Calculate compatibility score between two profiles
- */
-export const calculateCompatibilityScore = (
-  userProfile: DatabaseMatchProfile,
-  otherProfile: DatabaseMatchProfile,
-): number => {
-  let score = 0;
-
-  // Check programming language overlap
-  const userLangs = userProfile.programmingLanguage || [];
-  const otherLangs = otherProfile.programmingLanguage || [];
-  const langOverlap = userLangs.filter(l => otherLangs.includes(l)).length;
-  score += langOverlap * 20;
-
-  // Check if other user matches preferences
-  const preferredLangs = userProfile.preferences?.preferredLanguages || [];
-  const preferredLangMatch = otherLangs.filter(l => preferredLangs.includes(l)).length;
-  score += preferredLangMatch * 15;
-
-  return Math.min(score, 100);
-};

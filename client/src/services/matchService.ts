@@ -51,25 +51,12 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<void
 };
 
 /**
- * Generate a match's compability score
+ * Generate a match's compatibility scores and recommend based on scores
  */
-export const generateMatchesForUsers = async (
-  userId: string,
-): Promise<{ matches: DatabaseMatch[]; message: string }> => {
-  const res = await fetch(`${MATCH_BASE_API}/generate/${userId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId }),
-  });
-  if (!res.ok) throw new Error('Failed to generate match');
-
-  return res.json();
-};
-
-export const getRecommendations = async (userId: string) => {
+export const generateMatchRecommendation = async (userId: string) => {
   const res = await fetch(`${MATCH_BASE_API}/recommend/${userId}`);
 
   if (!res.ok) throw new Error('Failed to load recommendations');
 
-  return res.json(); // { recommendations, message }
+  return res.json();
 };

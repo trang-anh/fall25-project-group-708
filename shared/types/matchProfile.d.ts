@@ -40,8 +40,8 @@ export interface MatchProfile {
  */
 export interface DatabaseMatchProfile
   extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
-  _id: ObjectId;
-  userId: ObjectId;
+  _id: string;
+  userId: string;
   isActive: boolean;
   createdAt: Date;
 
@@ -54,22 +54,36 @@ export interface DatabaseMatchProfile
 }
 
 /**
- * Represents a populated match profile.
- * - Includes full ProgrammingLanguage and User objects.
+ * Represents a populated user profile.
  */
-export interface PopulatedDatabaseMatchProfile
-  extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
-  _id: ObjectId;
-  userId: ObjectId;
-  isActive: boolean;
-  createdAt: Date;
-
-  programmingLanguage: string[];
-  preferences: {
-    preferredLanguages: string[];
-    preferredLevel: string;
-  };
+interface PopulatedUser {
+  _id: string;
+  username: string;
 }
+
+/**
+ * Represents a populated match profile with username.
+ */
+export interface MatchProfileWithUser extends Omit<DatabaseMatchProfile, 'userId'> {
+  userId: PopulatedUser;
+}
+// /**
+//  * Represents a populated match profile.
+//  * - Includes full User objects.
+//  */
+// export interface PopulatedDatabaseMatchProfile
+//   extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
+//   _id: ObjectId;
+//   userId: ObjectId;
+//   isActive: boolean;
+//   createdAt: Date;
+
+//   programmingLanguage: string[];
+//   preferences: {
+//     preferredLanguages: string[];
+//     preferredLevel: string;
+//   };
+// }
 
 /**
  * Type definition for create a match profile request

@@ -72,9 +72,9 @@ export type MatchResponse = DatabaseMatch | { error: string };
  */
 export interface GenerateMatchesResponse {
   recommendations?: {
-    userId: string;
+    userId: PopulatedUser;
     score: number;
-    profile: PopulatedDatabaseMatchProfile;
+    profile: MatchProfileWithUser;
   }[];
   error?: string;
 }

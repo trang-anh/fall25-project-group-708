@@ -7,10 +7,9 @@ export interface PopulatedMatch extends DatabaseMatch {
   otherUserProfile?: DatabaseMatchProfile | null;
 }
 
-export interface NormalizedMatchProfile
-  extends Omit<DatabaseMatchProfile, 'userId' | 'programmingLanguage'> {
+export interface NormalizedMatchProfile extends Omit<DatabaseMatchProfile, 'userId'> {
   userId: string;
-  programmingLanguage: { name: string }[];
+  programmingLanguage: string[];
 }
 
 export interface NormalizedMatch
@@ -62,41 +61,16 @@ function normalizeId(id: unknown): string {
   }
 }
 
-// Normalize programmingLanguage array to always be { name: string }[]
-function normalizeLanguages(raw: unknown): { name: string }[] {
-  if (!Array.isArray(raw)) return [];
-
-  return raw
-    .map(entry => {
-      if (!entry) return null;
-
-      // string → wrap into object
-      if (typeof entry === 'string') {
-        return { name: entry };
-      }
-
-      // { name: string }
-      if (
-        typeof entry === 'object' &&
-        'name' in entry &&
-        typeof (entry as { name?: unknown }).name === 'string'
-      ) {
-        return { name: (entry as { name: string }).name };
-      }
-
-      return null;
-    })
-    .filter((v): v is { name: string } => v !== null);
-}
-
-// Normalize profile fields (id + languages)
+// Normalize profile fields
 function normalizeProfile(profile: DatabaseMatchProfile | null): NormalizedMatchProfile | null {
   if (!profile) return null;
 
   return {
     ...profile,
     userId: normalizeId(profile.userId),
-    programmingLanguage: normalizeLanguages(profile.programmingLanguage),
+    programmingLanguage: Array.isArray(profile.programmingLanguage)
+      ? profile.programmingLanguage
+      : [],
   };
 }
 

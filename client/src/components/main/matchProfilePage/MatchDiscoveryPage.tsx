@@ -1,4 +1,5 @@
 import React from 'react';
+import './MatchDiscovery.css';
 import { useNavigate } from 'react-router-dom';
 import MatchDiscovery from './MatchDiscovery';
 import useMatchDiscoveryPage from '../../../hooks/useMatchDiscoveryPage';

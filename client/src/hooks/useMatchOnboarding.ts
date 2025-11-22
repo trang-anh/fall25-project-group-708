@@ -25,6 +25,7 @@ const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<vo
 
   const totalSteps = 5;
 
+  // update top-level fields (age, gender, level, etc.)
   const updateFormData = <K extends keyof OnboardingFormData>(
     field: K,
     value: OnboardingFormData[K],
@@ -32,10 +33,12 @@ const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<vo
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // generic type that lets us update nested objects
   type NestedKeys = {
     [K in keyof OnboardingFormData]: OnboardingFormData[K] extends object ? K : never;
   }[keyof OnboardingFormData];
 
+  // update fields inside preferences/onboardingAnswers
   const updateNestedField = <P extends NestedKeys, K extends keyof OnboardingFormData[P]>(
     parent: P,
     field: K,
@@ -47,6 +50,11 @@ const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<vo
     }));
   };
 
+  /**
+   * toggleLanguage
+   * - if `isPreference === false` -> updates programmingLanguage list
+   * - if `isPreference === true` -> updates preferredLanguages list
+   */
   const toggleLanguage = (language: string, isPreference = false) => {
     if (isPreference) {
       setFormData(prev => {
@@ -72,6 +80,7 @@ const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<vo
     }
   };
 
+  // simple validation per step
   const canProceed = () => {
     switch (currentStep) {
       case 1:

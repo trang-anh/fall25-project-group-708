@@ -51,7 +51,8 @@ const matchProfileSchema: Schema = new Schema(
       ],
     },
     programmingLanguage: {
-      type: [{ String }],
+      type: [String],
+      default: [],
     },
     level: {
       type: String,
@@ -60,7 +61,10 @@ const matchProfileSchema: Schema = new Schema(
       default: 'BEGINNER',
     },
     preferences: {
-      preferredLanguages: { type: [{ String }] },
+      preferredLanguages: {
+        type: [String],
+        default: [],
+      },
       preferredLevel: {
         type: String,
         enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],

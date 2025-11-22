@@ -1,4 +1,5 @@
 import React from 'react';
+import './MatchOnboarding.css';
 import { useNavigate } from 'react-router-dom';
 import MatchOnboarding from './MatchOnboarding';
 import useMatchOnboardingPage from '../../../hooks/useMatchOnboardingPage';

@@ -1,9 +1,10 @@
 import React from 'react';
-import { useUserMatches, MatchProfileWithScore } from '../../../hooks/useMatchProfilePage';
+import { useUserMatches } from '../../../hooks/useMatchProfilePage';
 import MatchProfileCard from './MatchProfileCard';
 import './MatchDiscovery.css';
 import useMatchDiscovery from '../../../hooks/useMatchDiscovery';
 import useMatchRecommendation from '../../../hooks/useMatchRecommendation';
+import { RecommendationProfile } from '../../../types/recommendationProfile';
 
 interface MatchDiscoveryProps {
   currentUserId: string;
@@ -29,13 +30,6 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
     loading: recLoading,
     error: recError,
   } = useMatchRecommendation(currentUserId);
-
-  // eslint-disable-next-line no-console
-  console.log('RECOMMENDED:', recommended);
-  // eslint-disable-next-line no-console
-  console.log('REC ERROR:', recError);
-  // eslint-disable-next-line no-console
-  console.log('REC LOADING:', recLoading);
 
   if (loading) {
     return (
@@ -96,7 +90,7 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
 
         {!recLoading && recommended.length > 0 && (
           <div className='profiles-grid'>
-            {recommended.map((profile: MatchProfileWithScore) => (
+            {recommended.map((profile: RecommendationProfile) => (
               <MatchProfileCard
                 key={profile._id.toString()}
                 profile={profile}
@@ -148,7 +142,7 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
         </div>
       ) : (
         <div className='profiles-grid'>
-          {filteredProfiles.map((profile: MatchProfileWithScore) => (
+          {filteredProfiles.map((profile: RecommendationProfile) => (
             <MatchProfileCard
               key={profile._id.toString()}
               profile={profile}
