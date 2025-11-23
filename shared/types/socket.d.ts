@@ -56,7 +56,7 @@ export interface VoteUpdatePayload {
  */
 export interface ChatUpdatePayload {
   chat: PopulatedDatabaseChat;
-  type: 'created' | 'newMessage' | 'newParticipant';
+  type: 'created' | 'newMessage' | 'newParticipant' | 'removedParticipant';
 }
 
 /**
@@ -149,7 +149,7 @@ export interface ClientToServerEvents {
  * - `match`: The updated match object.
  */
 export interface MatchUpdatePayload {
-  type: 'created' | 'updated' | 'deleted';
+  type: 'created' | 'updated' | 'deleted' | 'generated';
   match: DatabaseMatch;
 }
 

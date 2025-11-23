@@ -1268,6 +1268,52 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
   
+  /match/generate/{userId}:
+    post:
+      summary: Generate match suggestions for a user
+      description: Computes compatibility scores
+      tags:
+        - Match
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          description: The ID of the user whose matches will be generated.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matches generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseMatch'
+                  message:
+                    type: string
+        '404':
+          description: User's match profile not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Server error during match generation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  
   # --------------------
   # MATCH PROFILE CONTROLLER
   # --------------------

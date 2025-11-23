@@ -40,7 +40,7 @@ export interface MatchProfile {
  * - `preferredLanguage: The preferred programming languages that have been added to the match profile.
  */
 export interface DatabaseMatchProfile
-  extends Omit<MatchProfile, 'programmingLanguages', 'preferences'> {
+  extends Omit<MatchProfile, 'programmingLanguage', 'preferences'> {
   _id: ObjectId;
   userId: ObjectId;
   isActive: boolean;
@@ -57,7 +57,12 @@ export interface DatabaseMatchProfile
  * - Includes full ProgrammingLanguage and User objects.
  */
 export interface PopulatedDatabaseMatchProfile
-  extends Omit<DatabaseMatchProfile, 'programmingLanguages', 'preferences'> {
+  extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
+  _id: ObjectId;
+  userId: ObjectId;
+  isActive: boolean;
+  createdAt: Date;
+
   programmingLanguage: ProgrammingLanguage[];
   preferences: {
     preferredLanguages: ProgrammingLanguage[];

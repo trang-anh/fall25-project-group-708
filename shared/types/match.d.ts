@@ -35,6 +35,7 @@ export interface DatabaseMatch extends Match {
   updatedAt: Date;
 }
 
+
 /**
  * Represents a populated match record.
  * Includes the full `DatabaseMatchProfile` objects for both users,
@@ -66,6 +67,12 @@ export interface DeleteMatchRequest extends Request {
  * Either returns a `DatabaseMatch` object or an error message.
  */
 export type MatchResponse = DatabaseMatch | { error: string };
+
+/**
+ * Represents a response for match generated operations.
+ * Either returns a `DatabaseMatch` object or an error message.
+ */
+export type GenerateMatchesResponse = { error: string } | { matches: DatabaseMatch[] };
 
 /**
  * Represents a request to fetch or modify a specific match by ID.

@@ -5,6 +5,7 @@ import {
   getChat,
   addParticipantToChat,
   getChatsByParticipants,
+  removeParticipantFromChat,
 } from '../services/chat.service';
 import { populateDocument } from '../utils/database.util';
 import {
@@ -14,11 +15,13 @@ import {
   AddParticipantRequest,
   ChatIdRequest,
   GetChatByParticipantsRequest,
+  LeaveGroupChatRequest,
   PopulatedDatabaseChat,
+  CreateGroupChatRequest,
 } from '../types/types';
 import { saveMessage } from '../services/message.service';
 
-/*
+/**
  * This controller handles chat-related routes.
  * @param socket The socket instance to emit events.
  * @returns {express.Router} The router object containing the chat routes.
@@ -28,7 +31,7 @@ const chatController = (socket: FakeSOSocket) => {
   const router = express.Router();
 
   /**
-   * Creates a new chat with the given participants (and optional initial messages).
+   * Creates a new direct chat with the given participants (and optional initial messages).
    * @param req The request object containing the chat data.
    * @param res The response object to send the result.
    * @returns {Promise<void>} A promise that resolves when the chat is created.
@@ -39,13 +42,16 @@ const chatController = (socket: FakeSOSocket) => {
     const formattedMessages = messages.map(m => ({ ...m, type: 'direct' as 'direct' | 'global' }));
 
     try {
-      const savedChat = await saveChat({ participants, messages: formattedMessages });
+      const savedChat = await saveChat({
+        participants,
+        messages: formattedMessages,
+        chatType: 'direct',
+      });
 
       if ('error' in savedChat) {
         throw new Error(savedChat.error);
       }
 
-      // Enrich the newly created chat with message details
       const populatedChat = await populateDocument(savedChat._id.toString(), 'chat');
 
       if ('error' in populatedChat) {
@@ -60,8 +66,96 @@ const chatController = (socket: FakeSOSocket) => {
   };
 
   /**
+   * Creates a group chat with the given participants.
+   * @param req The request object containing the chat data (participants, chatName, chatAdmin).
+   * @param res The response object to send the result.
+   * @returns {Promise<void>} A promise that resolves when the group chat is created.
+   * @throws {Error} Throws an error if the group chat creation fails.
+   */
+  const createGroupChatRoute = async (
+    req: CreateGroupChatRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { participants, messages, chatName, chatAdmin } = req.body;
+
+    // Validate minimum participants for group chat
+    if (participants.length < 2) {
+      res.status(400).send('Group chats require at least 2 participants');
+      return;
+    }
+
+    const formattedMessages = messages.map(m => ({
+      ...m,
+      type: 'direct' as 'direct' | 'global',
+    }));
+
+    try {
+      const savedChat = await saveChat({
+        participants,
+        messages: formattedMessages,
+        chatType: 'group',
+        chatName,
+        chatAdmin,
+      });
+
+      if ('error' in savedChat) {
+        throw new Error(savedChat.error);
+      }
+
+      const populatedChat = await populateDocument(savedChat._id.toString(), 'chat');
+
+      if ('error' in populatedChat) {
+        throw new Error(populatedChat.error);
+      }
+
+      socket.emit('chatUpdate', {
+        chat: populatedChat as PopulatedDatabaseChat,
+        type: 'created',
+      });
+      res.json(populatedChat);
+    } catch (err: unknown) {
+      res.status(500).send(`Error creating group chat: ${(err as Error).message}`);
+    }
+  };
+
+  /**
+   * Allows a user to leave a group chat.
+   * @param req The request object containing the chat ID and username.
+   * @param res The response object to send the result.
+   * @returns {Promise<void>} A promise that resolves when the user is removed.
+   * @throws {Error} Throws an error if leaving the chat fails.
+   */
+  const leaveGroupChatRoute = async (req: LeaveGroupChatRequest, res: Response): Promise<void> => {
+    const { chatId } = req.params;
+    const { username } = req.body;
+
+    try {
+      const updatedChat = await removeParticipantFromChat(chatId, username);
+
+      if ('error' in updatedChat) {
+        throw new Error(updatedChat.error);
+      }
+
+      const populatedChat = await populateDocument(updatedChat._id.toString(), 'chat');
+
+      if ('error' in populatedChat) {
+        throw new Error(populatedChat.error);
+      }
+
+      socket.emit('chatUpdate', {
+        chat: populatedChat as PopulatedDatabaseChat,
+        type: 'removedParticipant',
+      });
+
+      res.json(populatedChat);
+    } catch (err: unknown) {
+      res.status(500).send(`Error leaving chat: ${(err as Error).message}`);
+    }
+  };
+
+  /**
    * Adds a new message to an existing chat.
-   * @param req The request object containing the message data.
+   * @param req The request object containing the chat ID and message data.
    * @param res The response object to send the result.
    * @returns {Promise<void>} A promise that resolves when the message is added.
    * @throws {Error} Throws an error if the message addition fails.
@@ -74,22 +168,35 @@ const chatController = (socket: FakeSOSocket) => {
     const { msg, msgFrom, msgDateTime } = req.body;
 
     try {
-      // Create a new message in the DB
+      // First, get the chat to verify the sender is a participant
+      const chat = await getChat(chatId);
+
+      if ('error' in chat) {
+        throw new Error('Chat not found');
+      }
+
+      if (!chat.participants.includes(msgFrom)) {
+        res.status(403).send('You are not a participant in this chat');
+        return;
+      }
+
       const newMessage = await saveMessage({ msg, msgFrom, msgDateTime, type: 'direct' });
 
       if ('error' in newMessage) {
         throw new Error(newMessage.error);
       }
 
-      // Associate the message with the chat
       const updatedChat = await addMessageToChat(chatId, newMessage._id.toString());
 
       if ('error' in updatedChat) {
         throw new Error(updatedChat.error);
       }
 
-      // Enrich the updated chat for the response
       const populatedChat = await populateDocument(updatedChat._id.toString(), 'chat');
+
+      if ('error' in populatedChat) {
+        throw new Error(populatedChat.error);
+      }
 
       socket
         .to(chatId)
@@ -101,7 +208,7 @@ const chatController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Retrieves a chat by its ID, optionally populating participants and messages.
+   * Retrieves a chat by its ID, with populated participants and messages.
    * @param req The request object containing the chat ID.
    * @param res The response object to send the result.
    * @returns {Promise<void>} A promise that resolves when the chat is retrieved.
@@ -130,8 +237,8 @@ const chatController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Retrieves chats for a user based on their username.
-   * @param req The request object containing the username parameter in `req.params`.
+   * Retrieves all chats for a user based on their user ID.
+   * @param req The request object containing the userId parameter in `req.params`.
    * @param res The response object to send the result, either the populated chats or an error message.
    * @returns {Promise<void>} A promise that resolves when the chats are successfully retrieved and populated.
    */
@@ -139,10 +246,10 @@ const chatController = (socket: FakeSOSocket) => {
     req: GetChatByParticipantsRequest,
     res: Response,
   ): Promise<void> => {
-    const { username } = req.params;
+    const { userId } = req.params;
 
     try {
-      const chats = await getChatsByParticipants([username]);
+      const chats = await getChatsByParticipants([userId]);
 
       const populatedChats = await Promise.all(
         chats.map(chat => populateDocument(chat._id.toString(), 'chat')),
@@ -154,13 +261,13 @@ const chatController = (socket: FakeSOSocket) => {
 
       res.json(populatedChats);
     } catch (err: unknown) {
-      res.status(500).send(`Error retrieving chat: ${(err as Error).message}`);
+      res.status(500).send(`Error retrieving chats: ${(err as Error).message}`);
     }
   };
 
   /**
    * Adds a participant to an existing chat.
-   * @param req The request object containing the participant data.
+   * @param req The request object containing the chat ID and userId to add.
    * @param res The response object to send the result.
    * @returns {Promise<void>} A promise that resolves when the participant is added.
    * @throws {Error} Throws an error if the participant addition fails.
@@ -170,7 +277,7 @@ const chatController = (socket: FakeSOSocket) => {
     res: Response,
   ): Promise<void> => {
     const { chatId } = req.params;
-    const { username: userId } = req.body;
+    const { userId } = req.body;
 
     try {
       const updatedChat = await addParticipantToChat(chatId, userId);
@@ -189,12 +296,13 @@ const chatController = (socket: FakeSOSocket) => {
         chat: populatedChat as PopulatedDatabaseChat,
         type: 'newParticipant',
       });
-      res.json(updatedChat);
+      res.json(populatedChat);
     } catch (err: unknown) {
       res.status(500).send(`Error adding participant to chat: ${(err as Error).message}`);
     }
   };
 
+  // Socket.IO event handlers
   socket.on('connection', conn => {
     conn.on('joinChat', (chatID: string) => {
       conn.join(chatID);
@@ -207,12 +315,21 @@ const chatController = (socket: FakeSOSocket) => {
     });
   });
 
-  // Register the routes
+  // ===================================================================
+  // Route Registration
+  // IMPORTANT: Specific routes MUST come before parameterized routes
+  // ===================================================================
+
+  // Specific routes without dynamic parameters
   router.post('/createChat', createChatRoute);
-  router.post('/:chatId/addMessage', addMessageToChatRoute);
+  router.post('/createGroupChat', createGroupChatRoute);
+  router.get('/getChatsByUser/:userId', getChatsByUserRoute);
+
+  // Parameterized routes with :chatId
   router.get('/:chatId', getChatRoute);
+  router.post('/:chatId/addMessage', addMessageToChatRoute);
   router.post('/:chatId/addParticipant', addParticipantToChatRoute);
-  router.get('/getChatsByUser/:username', getChatsByUserRoute);
+  router.post('/:chatId/leaveChat', leaveGroupChatRoute);
 
   return router;
 };

@@ -135,7 +135,9 @@ describe('populateDocument', () => {
     (ChatModel.findOne as jest.Mock).mockReturnValue({
       populate: jest.fn().mockResolvedValue(mockChat),
     });
-    (UserModel.findOne as jest.Mock).mockResolvedValue(mockUser);
+    (UserModel.findOne as jest.Mock).mockReturnValue({
+      select: jest.fn().mockResolvedValue(mockUser),
+    });
 
     const result = await populateDocument('chatId', 'chat');
 

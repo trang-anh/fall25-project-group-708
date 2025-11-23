@@ -11,7 +11,7 @@ import { DatabaseProgrammingLanguage } from '../types/types';
  *
  * @type {Model<DatabaseProgrammingLanguage>}
  */
-const MessageModel: Model<DatabaseProgrammingLanguage> =
-  mongoose.model<DatabaseProgrammingLanguage>('Message', programmingLanguageSchema);
+const ProgrammingLanguageModel: Model<DatabaseProgrammingLanguage> =
+  mongoose.model<DatabaseProgrammingLanguage>('ProgrammingLanguage', programmingLanguageSchema);
 
-export default MessageModel;
+export default ProgrammingLanguageModel;

@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import { ref } from 'process';
 
 /**
  * Mongoose schema for the Chat collection.
@@ -11,7 +12,7 @@ const chatSchema = new Schema(
   {
     participants: [
       {
-        type: String,
+        type: String,      
         required: true,
       },
     ],
@@ -21,6 +22,19 @@ const chatSchema = new Schema(
         ref: 'Message',
       },
     ],
+    chatType: {
+      type: String,
+      required: true,
+      enum: ['direct', 'group'],
+    },
+    chatName: {
+      type: String,
+      required: false,
+    },
+    chatAdmin: {
+      type: String,
+      required: false,
+    },
   },
   {
     collection: 'Chat',

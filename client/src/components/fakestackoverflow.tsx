@@ -23,6 +23,10 @@ import CommunityPage from './main/communities/communityPage';
 import AllCollectionsPage from './main/collections/allCollectionsPage';
 import CollectionPage from './main/collections/collectionPage';
 import NewCollectionPage from './main/collections/newCollectionPage';
+import MatchOptInPage from './main/matchProfilePage/MatchOptInPage';
+import MatchOnboardingPage from './main/matchProfilePage/MatchOnboardingPage';
+import MatchDiscoveryPage from './main/matchProfilePage/MatchDiscoveryPage';
+import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
 import { getUserByUsername } from '../services/userService';
 import { loadRememberedUser } from '../utils/authStorage';
 import useCheckAuth from '../hooks/useCheckAuth';
@@ -152,6 +156,10 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
           <Route path='/communities' element={<AllCommunitiesPage />} />
           <Route path='/new/community' element={<NewCommunityPage />} />
           <Route path='/communities/:communityID' element={<CommunityPage />} />
+          <Route path='/match-opt-in' element={<MatchOptInPage />} />
+          <Route path='/match-onboarding' element={<MatchOnboardingPage />} />
+          <Route path='/match-discovery' element={<MatchDiscoveryPage />} />
+          <Route path='/match' element={<UserMatchesPage />} />
         </Route>
       </Routes>
     </LoginContext.Provider>

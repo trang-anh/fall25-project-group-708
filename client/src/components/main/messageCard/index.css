@@ -7,12 +7,12 @@
 }
 
 .message.sender {
-  flex-direction: row-reverse;
+  flex-direction: row;
   justify-content: flex-start;
 }
 
 .message.receiver {
-  flex-direction: row;
+  flex-direction: row-reverse;
   justify-content: flex-start;
 }
 
@@ -40,37 +40,26 @@
   align-items: flex-start;
 }
 
-/* Message header (sender name and time) */
+/* Message header (sender name) */
 .message-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 13px;
   color: var(--text-secondary);
-  padding: 0 4px;
+  padding: 0 12px;
+  font-weight: 500;
 }
 
-.message.sender .message-header {
-  flex-direction: row-reverse;
-}
-
-.message-sender {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
+/* Message time */
 .message-time {
   font-size: 12px;
   color: var(--text-secondary);
+  padding: 0 12px;
 }
 
 /* Message bubble */
 .message-body {
-  background-color: var(--button-gray);
   padding: 10px 14px;
   border-radius: 18px;
   font-size: 15px;
-  color: var(--text-primary);
   line-height: 1.4;
   word-wrap: break-word;
   position: relative;
@@ -80,29 +69,29 @@
   margin: 0;
 }
 
-/* Gray bubbles for other person's messages (right-aligned) */
+/* Blue bubbles for sender's messages (left-aligned) */
 .message.sender .message-body {
-  background-color: var(--button-gray);
-  color: var(--text-primary);
+  background-color: #0084ff;
+  color: #ffffff;
   border-bottom-right-radius: 4px;
 }
 
-/* Blue bubbles for current user's messages (left-aligned) */
+/* Gray bubbles for other user's messages (right-aligned) */
 .message.receiver .message-body {
-  background-color: #0084ff;
-  color: #ffffff;
+  background-color: var(--button-gray);
+  color: var(--text-primary);
   border-bottom-left-radius: 4px;
 }
 
-/* Dark mode adjustments - keep the same colors */
+/* Dark mode adjustments */
 [data-theme="dark"] .message.sender .message-body {
-  background-color: var(--button-gray);
-  color: var(--text-primary);
+  background-color: #0084ff;
+  color: #ffffff;
 }
 
 [data-theme="dark"] .message.receiver .message-body {
-  background-color: #0084ff;
-  color: #ffffff;
+  background-color: #353b40;
+  color: #e4e6eb;
 }
 
 /* Hide avatar for consecutive messages from same sender */
@@ -115,15 +104,6 @@
 }
 
 /* Adjust bubble corners for grouped messages */
-.message.receiver.grouped:not(.last-in-group) .message-body {
-  border-bottom-left-radius: 18px;
-  margin-bottom: 2px;
-}
-
-.message.receiver.last-in-group .message-body {
-  border-bottom-left-radius: 4px;
-}
-
 .message.sender.grouped:not(.last-in-group) .message-body {
   border-bottom-right-radius: 18px;
   margin-bottom: 2px;
@@ -131,6 +111,15 @@
 
 .message.sender.last-in-group .message-body {
   border-bottom-right-radius: 4px;
+}
+
+.message.receiver.grouped:not(.last-in-group) .message-body {
+  border-bottom-left-radius: 18px;
+  margin-bottom: 2px;
+}
+
+.message.receiver.last-in-group .message-body {
+  border-bottom-left-radius: 4px;
 }
 
 /* Hide header for grouped messages except first */

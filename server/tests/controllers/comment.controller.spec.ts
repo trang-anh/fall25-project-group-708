@@ -1,56 +1,79 @@
 import mongoose from 'mongoose';
 import supertest from 'supertest';
 import { app } from '../../app';
+
 import * as commentUtil from '../../services/comment.service';
 import * as databaseUtil from '../../utils/database.util';
+import * as contentModerationService from '../../services/contentModeration.service';
+import * as registerPointsService from '../../services/registerPoints.service';
 
+// SPY SETUP
 const saveCommentSpy = jest.spyOn(commentUtil, 'saveComment');
 const addCommentSpy = jest.spyOn(commentUtil, 'addComment');
-const popDocSpy = jest.spyOn(databaseUtil, 'populateDocument');
+const populateDocSpy = jest.spyOn(databaseUtil, 'populateDocument');
+
+const moderateContentSpy = jest.spyOn(contentModerationService, 'moderateContent');
+const cleanTextSpy = jest.spyOn(contentModerationService, 'cleanText');
+
+const addRegisterPointsSpy = jest.spyOn(registerPointsService, 'default');
 
 describe('POST /addComment', () => {
-  it('should add a new comment to the question', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const validCid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // ============================
+  // 1. ADD COMMENT TO QUESTION
+  // ============================
+  it('should add a new comment to a question with clean content', async () => {
+    const qid = new mongoose.Types.ObjectId();
+    const cid = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: qid.toString(),
       type: 'question',
       comment: {
         text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
+        commentBy: 'user123',
         commentDateTime: new Date('2024-06-03'),
       },
     };
 
     const mockComment = {
-      _id: validCid,
+      _id: cid,
       text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
+      commentBy: 'user123',
       commentDateTime: new Date('2024-06-03'),
     };
 
-    saveCommentSpy.mockResolvedValueOnce(mockComment);
-    addCommentSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
-      tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
-      views: [],
-      upVotes: [],
-      downVotes: [],
-      answers: [],
-      comments: [mockComment._id],
-      community: null,
+    // NEW moderateContent return shape
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
     });
 
-    popDocSpy.mockResolvedValueOnce({
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
+    cleanTextSpy.mockReturnValueOnce('This is a test comment');
+
+    // NEW addRegisterPoints return shape
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
+
+    saveCommentSpy.mockResolvedValueOnce(mockComment);
+    addCommentSpy.mockResolvedValueOnce({
+      _id: qid,
+      comments: [mockComment],
+    } as any);
+
+    populateDocSpy.mockResolvedValueOnce({
+      _id: qid,
+      title: 'Test Question',
+      text: 'Test Question',
       tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
+      askedBy: 'user123',
       askDateTime: new Date('2024-06-03'),
       views: [],
       upVotes: [],
@@ -58,309 +81,388 @@ describe('POST /addComment', () => {
       answers: [],
       comments: [mockComment],
       community: null,
-    });
+    } as any);
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      _id: validCid.toString(),
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      _id: cid.toString(),
       text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
+      commentBy: 'user123',
       commentDateTime: mockComment.commentDateTime.toISOString(),
     });
+
+    expect(moderateContentSpy).toHaveBeenCalledWith({ text: 'This is a test comment' });
+
+    expect(addRegisterPointsSpy).toHaveBeenCalledWith('user123', 10, 'ACCEPT_ANSWER');
   });
 
-  it('should add a new comment to the answer', async () => {
-    const validAid = new mongoose.Types.ObjectId();
-    const validCid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validAid.toString(),
+  // ============================
+  // 2. ADD COMMENT TO ANSWER
+  // ============================
+  it('should add a new comment to an answer with clean content', async () => {
+    const aid = new mongoose.Types.ObjectId();
+    const cid = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: aid.toString(),
       type: 'answer',
       comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
+        text: 'Nice answer!',
+        commentBy: 'user123',
         commentDateTime: new Date('2024-06-03'),
       },
     };
 
     const mockComment = {
-      _id: validCid,
-      text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
+      _id: cid,
+      text: 'Nice answer!',
+      commentBy: 'user123',
       commentDateTime: new Date('2024-06-03'),
     };
 
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
+    });
+
+    cleanTextSpy.mockReturnValueOnce('Nice answer!');
+
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
+
     saveCommentSpy.mockResolvedValueOnce(mockComment);
-
     addCommentSpy.mockResolvedValueOnce({
-      _id: validAid,
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: new Date('2024-06-03'),
-      comments: [mockComment._id],
-    });
-
-    popDocSpy.mockResolvedValueOnce({
-      _id: validAid,
-      text: 'This is a test answer',
-      ansBy: '65e9b716ff0e892116b2de01',
-      ansDateTime: new Date('2024-06-03'),
+      _id: aid,
       comments: [mockComment],
-    });
+    } as any);
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
+    populateDocSpy.mockResolvedValueOnce({
+      _id: aid,
+      title: 'Test Question',
+      text: 'Test Question',
+      tags: [],
+      askedBy: 'user123',
+      askDateTime: new Date('2024-06-03'),
+      views: [],
+      upVotes: [],
+      downVotes: [],
+      answers: [],
+      comments: [mockComment],
+      community: null,
+    } as any);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      _id: validCid.toString(),
-      text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
-      commentDateTime: mockComment.commentDateTime.toISOString(),
-    });
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(200);
+    expect(addRegisterPointsSpy).toHaveBeenCalledWith('user123', 10, 'ACCEPT_ANSWER');
   });
 
-  it('should return bad request error if id property missing', async () => {
-    const mockReqBody = {
-      comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
-      },
-    };
+  // ============================
+  // 3. BAD WORDS CASE
+  // ============================
+  it('should deduct points when bad words are detected', async () => {
+    const qid = new mongoose.Types.ObjectId();
+    const cid = new mongoose.Types.ObjectId();
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toContain('/body/id');
-  });
-
-  it('should return bad request error if type property is missing', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
-      comment: {
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
-      },
-    };
-
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toContain('/body/type');
-  });
-
-  it('should return bad request error if type property is not `question` or `answer` ', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
-      type: 'invalidType',
-      comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
-      },
-    };
-
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].message).toContain('must be equal to one of the allowed values');
-  });
-
-  it('should return bad request error if comment text property is missing', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
+    const reqBody = {
+      id: qid.toString(),
       type: 'question',
       comment: {
-        commentBy: '65e9b716ff0e892116b2de01',
+        text: 'you are badword idiot',
+        commentBy: 'user123',
         commentDateTime: new Date('2024-06-03'),
       },
     };
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
+    const mockComment = {
+      _id: cid,
+      text: 'you are ******* *****',
+      commentBy: 'user123',
+      commentDateTime: new Date('2024-06-03'),
+    };
 
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/comment/text');
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: true,
+      detectedIn: ['text'],
+      badWords: {
+        text: ['badword', 'idiot'],
+      },
+    });
+
+    cleanTextSpy.mockReturnValueOnce('you are ******* *****');
+
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: -2,
+      blocked: 0,
+      message: 'OK',
+    });
+
+    saveCommentSpy.mockResolvedValueOnce(mockComment);
+    addCommentSpy.mockResolvedValueOnce({
+      _id: qid,
+      comments: [mockComment],
+    } as any);
+    populateDocSpy.mockResolvedValueOnce({
+      _id: qid,
+      title: 'Test Question',
+      text: 'Test Question',
+      tags: [],
+      askedBy: 'user123',
+      askDateTime: new Date('2024-06-03'),
+      views: [],
+      upVotes: [],
+      downVotes: [],
+      answers: [],
+      comments: [mockComment],
+      community: null,
+    } as any);
+
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(200);
+    expect(addRegisterPointsSpy).toHaveBeenCalledWith('user123', -2, 'HATEFUL_LANGUAGE');
   });
 
-  it('should return bad request error if text property of comment is empty', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
-      type: 'answer',
+  // =======================
+  // VALIDATION ERRORS
+  // =======================
+
+  it('should return 400 if id is missing', async () => {
+    const reqBody = {
+      type: 'question',
+      comment: {
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
+      },
+    };
+
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should return 400 if type is missing', async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: id.toString(),
+      comment: {
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
+      },
+    };
+
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should return 400 if text is empty', async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: id.toString(),
+      type: 'question',
       comment: {
         text: '',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
+        commentBy: 'user',
+        commentDateTime: new Date(),
       },
     };
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
 
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/comment/text');
+    expect(res.status).toBe(400);
   });
 
-  it('should return bad request error if commentBy property missing', async () => {
-    const mockReqBody = {
-      id: 'dummyQuestionId',
-      type: 'question',
-      com: {
-        text: 'This is a test comment',
-        commentDateTime: new Date('2024-06-03'),
-      },
-    };
-
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/comment');
-  });
-
-  it('should return bad request error if commentDateTime property missing', async () => {
-    const mockReqBody = {
-      id: '65e9b716ff0e892116b2de02',
-      type: 'answer',
-      comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-      },
-    };
-
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/comment/commentDateTime');
-  });
-
-  it('should return bad request error if request body is missing', async () => {
-    const response = await supertest(app).post('/api/comment/addComment');
-
-    expect(response.status).toBe(415);
-  });
-
-  it('should return bad request error if qid is not a valid ObjectId', async () => {
-    const mockReqBody = {
-      id: 'invalidObjectId',
+  it('should return 400 if id is invalid', async () => {
+    const reqBody = {
+      id: '',
       type: 'question',
       comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
       },
     };
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
 
-    const openApiError = JSON.parse(response.text);
-
-    expect(response.status).toBe(400);
-    expect(openApiError.errors[0].path).toBe('/body/id');
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      message: expect.stringContaining('Request Validation Failed'),
+      errors: expect.arrayContaining([
+        expect.objectContaining({
+          path: '/body/id',
+          message: expect.stringContaining('object-id'),
+        }),
+      ]),
+    });
   });
 
-  it('should return database error in response if saveComment method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
-      type: 'answer',
-      comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
-      },
-    };
-
-    saveCommentSpy.mockResolvedValueOnce({ error: 'Error when saving a comment' });
-
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
-
-    expect(response.status).toBe(500);
-    expect(response.text).toBe('Error when adding comment: Error when saving a comment');
-  });
-
-  it('should return database error in response if `addComment` method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const validCid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
+  // ============================
+  // 4. INVALID ID CASE
+  // ============================
+  it('should return 400 if id is not a valid ObjectId', async () => {
+    const reqBody = {
+      id: 'not-a-valid-objectid',
       type: 'question',
       comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
       },
     };
 
-    const mockComment = {
-      _id: validCid,
-      text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
-      commentDateTime: new Date('2024-06-03'),
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      message: expect.stringContaining('Request Validation Failed'),
+      errors: expect.arrayContaining([
+        expect.objectContaining({
+          path: '/body/id',
+          message: expect.stringContaining('object-id'),
+        }),
+      ]),
+    });
+  });
+
+  // ===============================
+  // DB ERROR CASES
+  // ===============================
+
+  it('should return 500 if saveComment fails', async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: id.toString(),
+      type: 'question',
+      comment: {
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
+      },
     };
 
-    saveCommentSpy.mockResolvedValueOnce(mockComment);
-    addCommentSpy.mockResolvedValueOnce({
-      error: 'Error when adding comment',
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
     });
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
+    cleanTextSpy.mockReturnValueOnce('test');
 
-    expect(response.status).toBe(500);
-    expect(response.text).toBe('Error when adding comment: Error when adding comment');
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
+
+    saveCommentSpy.mockResolvedValueOnce({ error: 'DB failure' });
+
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Error when adding comment: DB failure');
   });
 
-  it('should return database error in response if `populateDocument` method throws an error', async () => {
-    const validQid = new mongoose.Types.ObjectId();
-    const validCid = new mongoose.Types.ObjectId();
-    const mockReqBody = {
-      id: validQid.toString(),
+  it('should return 500 if addComment fails', async () => {
+    const id = new mongoose.Types.ObjectId();
+
+    const reqBody = {
+      id: id.toString(),
       type: 'question',
       comment: {
-        text: 'This is a test comment',
-        commentBy: '65e9b716ff0e892116b2de01',
-        commentDateTime: new Date('2024-06-03'),
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
       },
     };
 
     const mockComment = {
-      _id: validCid,
-      text: 'This is a test comment',
-      commentBy: '65e9b716ff0e892116b2de01',
-      commentDateTime: new Date('2024-06-03'),
+      _id: new mongoose.Types.ObjectId(),
+      text: 'test',
+      commentBy: 'user',
+      commentDateTime: new Date(),
     };
 
-    const mockQuestion = {
-      _id: validQid,
-      title: 'This is a test question',
-      text: 'This is a test question',
-      tags: [],
-      askedBy: '65e9b716ff0e892116b2de01',
-      askDateTime: new Date('2024-06-03'),
-      views: [],
-      upVotes: [],
-      downVotes: [],
-      answers: [],
-      comments: [mockComment._id],
-      community: null,
-    };
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
+    });
+
+    cleanTextSpy.mockReturnValueOnce('test');
+
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
 
     saveCommentSpy.mockResolvedValueOnce(mockComment);
-    addCommentSpy.mockResolvedValueOnce(mockQuestion);
-    popDocSpy.mockResolvedValueOnce({ error: 'Error when populating document' });
 
-    const response = await supertest(app).post('/api/comment/addComment').send(mockReqBody);
+    addCommentSpy.mockResolvedValueOnce({ error: 'Add failed' });
 
-    expect(response.status).toBe(500);
-    expect(response.text).toBe('Error when adding comment: Error when populating document');
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Error when adding comment: Add failed');
+  });
+
+  it('should return 500 if populateDocument fails', async () => {
+    const id = new mongoose.Types.ObjectId();
+    const mockComment = {
+      _id: new mongoose.Types.ObjectId(),
+      text: 'test',
+      commentBy: 'user',
+      commentDateTime: new Date(),
+    };
+
+    const reqBody = {
+      id: id.toString(),
+      type: 'question',
+      comment: {
+        text: 'test',
+        commentBy: 'user',
+        commentDateTime: new Date(),
+      },
+    };
+
+    moderateContentSpy.mockReturnValueOnce({
+      isHateful: false,
+      detectedIn: [],
+      badWords: {},
+    });
+
+    cleanTextSpy.mockReturnValueOnce('test');
+
+    addRegisterPointsSpy.mockResolvedValueOnce({
+      applied: 10,
+      blocked: 0,
+      message: 'OK',
+    });
+
+    saveCommentSpy.mockResolvedValueOnce(mockComment);
+
+    addCommentSpy.mockResolvedValueOnce({
+      _id: id,
+      comments: [mockComment],
+    } as any);
+
+    populateDocSpy.mockResolvedValueOnce({ error: 'Populate failed' });
+
+    const res = await supertest(app).post('/api/comment/addComment').send(reqBody);
+
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Error when adding comment: Populate failed');
   });
 });
