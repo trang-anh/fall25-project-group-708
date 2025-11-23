@@ -41,6 +41,8 @@ const ProfileSettings: React.FC = () => {
     twoFactorDevCode,
     isTwoFactorLoading,
     showTwoFactorSetup,
+    twoFactorEmail,
+    setTwoFactorEmail,
     handleTwoFactorToggle,
     confirmTwoFactorSetup,
     cancelTwoFactorSetup,
@@ -78,6 +80,10 @@ const ProfileSettings: React.FC = () => {
   const handleTwoFactorInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 6);
     setTwoFactorCodeInput(digitsOnly);
+  };
+
+  const handleTwoFactorEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTwoFactorEmail(event.target.value);
   };
 
   const handleResendTwoFactorCode = () => {
@@ -371,6 +377,20 @@ const ProfileSettings: React.FC = () => {
                       className={`twofactor-status ${twoFactorEnabled ? 'enabled' : 'disabled'}`}>
                       {twoFactorEnabled ? 'Enabled' : 'Disabled'}
                     </span>
+                  )}
+
+                  {canEditProfile && (
+                    <div className='twofactor-email-field'>
+                      <label htmlFor='twofactor-email-input'>Verification email</label>
+                      <input
+                        id='twofactor-email-input'
+                        type='email'
+                        className='input-text'
+                        placeholder='name@example.com'
+                        value={twoFactorEmail}
+                        onChange={handleTwoFactorEmailChange}
+                      />
+                    </div>
                   )}
 
                   {showTwoFactorSetup && (

@@ -240,10 +240,14 @@ const userController = (socket: FakeSOSocket) => {
    * @param req The request containing username as a route parameter.
    * @param res The response, either returning the code or an error.
    */
-  const generate2FA = async (req: UserByUsernameRequest, res: Response): Promise<void> => {
+  const generate2FA = async (
+    req: Request<{ username: string }, unknown, { email?: string }>,
+    res: Response,
+  ): Promise<void> => {
     try {
       const { username } = req.params;
-      const result = await generate2FACode(username);
+      const { email } = req.body || {};
+      const result = await generate2FACode(username, email);
 
       if ('error' in result) {
         res.status(400).json(result);

@@ -36,6 +36,7 @@ const useProfileSettings = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorEmail, setTwoFactorEmail] = useState('');
   const [twoFactorCodeInput, setTwoFactorCodeInput] = useState('');
   const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
   const [isTwoFactorLoading, setIsTwoFactorLoading] = useState(false);
@@ -79,6 +80,7 @@ const useProfileSettings = () => {
         setLoading(true);
         const data = await getUserByUsername(username);
         setUserData(data);
+        setTwoFactorEmail(data.email || '');
       } catch (error) {
         setErrorMessage('Error fetching user profile');
         setUserData(null);
@@ -116,6 +118,9 @@ const useProfileSettings = () => {
   const updateUserData = (updatedUser: SafeDatabaseUser) => {
     // Update local userData state (for this profile page)
     setUserData(updatedUser);
+    if (updatedUser.email) {
+      setTwoFactorEmail(updatedUser.email);
+    }
 
     // If viewing own profile, also update the global currentUser in LoginContext
     if (loginContextValue && currentUser.username === updatedUser.username) {
@@ -142,11 +147,20 @@ const useProfileSettings = () => {
     setShowPassword(prevState => !prevState);
   };
 
+  const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
   const beginTwoFactorSetup = async () => {
     if (!username) return;
+    const emailForCode = twoFactorEmail.trim();
+    if (!emailForCode || !isValidEmail(emailForCode)) {
+      setErrorMessage('Enter a valid email address to receive verification codes.');
+      setSuccessMessage(null);
+      return;
+    }
+
     setIsTwoFactorLoading(true);
     try {
-      const response = await requestTwoFactorCode(username);
+      const response = await requestTwoFactorCode(username, emailForCode);
       setShowTwoFactorSetup(true);
       setTwoFactorCodeInput('');
       setTwoFactorDevCode(response.code ?? null);
@@ -346,6 +360,8 @@ const useProfileSettings = () => {
     twoFactorDevCode,
     isTwoFactorLoading,
     showTwoFactorSetup,
+    twoFactorEmail,
+    setTwoFactorEmail,
     handleTwoFactorToggle,
     confirmTwoFactorSetup,
     cancelTwoFactorSetup,

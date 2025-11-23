@@ -98,13 +98,22 @@ const loginUser = async (
  * Requests that the server generate a new 2FA code for the given username.
  * The server responds with the code only for testing purposes.
  */
-const requestTwoFactorCode = async (username: string): Promise<{ code?: string }> => {
+const requestTwoFactorCode = async (
+  username: string,
+  email: string,
+): Promise<{ code?: string }> => {
   if (!username) {
     throw new Error('Username is required to request a verification code');
   }
 
+  if (!email) {
+    throw new Error('Email is required to request a verification code');
+  }
+
   try {
-    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`);
+    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`, {
+      email,
+    });
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
