@@ -6,6 +6,7 @@ import {
   FakeSOSocket,
   UpdateMatchProfileRequest,
   DatabaseMatchProfile,
+  PopulatedUser,
 } from '../types/types';
 import {
   createMatchProfile,
@@ -15,6 +16,16 @@ import {
   checkOnboardingStatus,
   getAllMatchProfiles,
 } from '../services/matchProfile.service';
+
+/**
+ * HELPER: Checks if the given userId is a populated user object instead of just a string.
+ *
+ * @param userId - Either the userId string or a populated user object.
+ * @returns True if userId is an object with an _id field.
+ */
+function isPopulatedUserId(userId: string | PopulatedUser): userId is PopulatedUser {
+  return typeof userId === 'object' && userId !== null && '_id' in userId;
+}
 
 /**
  * This controller handles match profile-related routes.
@@ -43,7 +54,12 @@ const matchProfileController = (socket: FakeSOSocket) => {
         throw new Error(foundMatchProfile.error);
       }
 
-      const plain = { ...foundMatchProfile, userId: foundMatchProfile.userId.toString() };
+      const plain = {
+        ...foundMatchProfile,
+        userId: isPopulatedUserId(foundMatchProfile.userId)
+          ? foundMatchProfile.userId._id.toString()
+          : foundMatchProfile.userId,
+      };
       res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving match profile: ${(err as Error).message}`);
@@ -67,7 +83,7 @@ const matchProfileController = (socket: FakeSOSocket) => {
 
       const plain = matches.map(p => ({
         ...p,
-        userId: p.userId.toString(),
+        userId: isPopulatedUserId(p.userId) ? p.userId._id.toString() : p.userId,
       }));
       res.json(plain);
     } catch (err: unknown) {

@@ -8,9 +8,8 @@ import {
 } from '../types/types';
 import { Types } from 'mongoose';
 
-// helpers
 /**
- * Checks if the given userId is a populated user object instead of just a string.
+ * HELPER: Checks if the given userId is a populated user object instead of just a string.
  *
  * @param userId - Either the userId string or a populated user object.
  * @returns True if userId is an object with an _id field.
