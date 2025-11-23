@@ -2207,6 +2207,8 @@ components:
           type: string
           description: Unique identifier for the match profile
           minLength: 1
+        isActive:
+          type: boolean
         gender:
           type: string
           enum: 
@@ -2223,6 +2225,34 @@ components:
           - INTERMEDIATE
           - ADVANCED
           description: user's self-assessed programming level
+        age:
+          type: integer
+          minimum: 1
+        location:
+          type: string
+        programmingLanguage:
+          type: array
+          items:
+            type: string
+        preferences:
+          type: object
+          properties:
+            preferredLanguages:
+              type: array
+              items:
+                type: string
+            preferredLevel:
+              type: string
+        onboardingAnswers:
+          type: object
+          properties:
+            goals: string 
+            personality: string 
+            projectType: string
+        biography:
+          type: string
+        profileImageUrl:
+          type: string
     
     ToggleMatchProfileActiveBody:
       type: object

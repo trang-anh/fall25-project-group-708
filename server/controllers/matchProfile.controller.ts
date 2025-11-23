@@ -123,8 +123,12 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: savedMatchProfile,
       });
 
-      const plain = { ...savedMatchProfile, userId: savedMatchProfile.userId.toString() };
-      res.json(plain);
+      // eslint-disable-next-line no-console
+      console.log('CREATE PROFILE RESPONSE (FINAL):', JSON.stringify(savedMatchProfile, null, 2));
+      // const plain = { ...savedMatchProfile, userId: savedMatchProfile.userId.toString() };
+      // res.json(plain);
+
+      res.json(savedMatchProfile);
     } catch (err: unknown) {
       res.status(500).send(`Error creating a match profile: ${(err as Error).message}`);
     }

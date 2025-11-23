@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+// import { ObjectId } from 'mongodb';
 import { Request } from 'express';
 
 /**
@@ -8,7 +8,8 @@ import { Request } from 'express';
  * - `questions`: The questions that have been added to the collection.
  */
 export interface MatchProfile {
-  userId: ObjectId;
+  // userId: ObjectId;
+  userId: string;
   isActive: boolean;
   age: number;
   gender: string;
@@ -41,7 +42,7 @@ export interface MatchProfile {
 export interface DatabaseMatchProfile
   extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
   _id: string;
-  userId: string;
+  userId: string | PopulatedUser;
   isActive: boolean;
   createdAt: Date;
 

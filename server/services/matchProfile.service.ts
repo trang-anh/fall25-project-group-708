@@ -1,14 +1,29 @@
 import { ObjectId } from 'mongodb';
 import MatchProfileModel from '../models/matchProfiles.model';
-import { MatchProfile, MatchProfileResponse, DatabaseMatchProfile } from '../types/types';
+import {
+  MatchProfile,
+  MatchProfileResponse,
+  DatabaseMatchProfile,
+  PopulatedUser,
+} from '../types/types';
 import { Types } from 'mongoose';
 
+// helpers
 /**
- * Creates a new community with the provided data.
- * The admin user is automatically added to the participants list if not already included.
+ * Checks if the given userId is a populated user object instead of just a string.
  *
- * @param communityData - Object containing community details including name, description, visibility, admin, and participants
- * @returns A Promise resolving to the newly created community document or an error object
+ * @param userId - Either the userId string or a populated user object.
+ * @returns True if userId is an object with an _id field.
+ */
+function isPopulatedUserId(userId: string | PopulatedUser): userId is PopulatedUser {
+  return typeof userId === 'object' && userId !== null && '_id' in userId;
+}
+
+/**
+ * Creates a new match profile with the provided data.
+ *
+ * @param matchProfileData - Object containing match profile details including userid, active status, age, gender, location etc.
+ * @returns A Promise resolving to the newly created match profile document or an error object
  */
 export const createMatchProfile = async (
   matchProfileData: MatchProfile,
@@ -31,7 +46,15 @@ export const createMatchProfile = async (
     });
 
     const savedMatchProfile = await newMatchProfile.save();
-    return savedMatchProfile;
+    const populated = await savedMatchProfile.populate('userId', 'username');
+    const obj = populated.toObject();
+
+    // userId can be string OR populated object
+    if (isPopulatedUserId(obj.userId)) {
+      obj.userId._id = obj.userId._id.toString();
+    }
+
+    return obj;
   } catch (err) {
     return { error: (err as Error).message };
   }
@@ -45,10 +68,6 @@ export const createMatchProfile = async (
  */
 export const getMatchProfile = async (userId: string): Promise<MatchProfileResponse> => {
   try {
-    // const matchProfile = await MatchProfileModel.findOne({ userId }).lean();
-    // if (!matchProfile) return { error: 'Match Profile not found' };
-    // return matchProfile;
-
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }
@@ -95,15 +114,6 @@ export const updateMatchProfile = async (
   updates: Partial<MatchProfile>,
 ): Promise<MatchProfileResponse> => {
   try {
-    // const updatedProfile = await MatchProfileModel.findOneAndUpdate(
-    //   { userId },
-    //   { $set: updates },
-    //   { new: true }
-    // );
-
-    // if (!updatedProfile) return { error: 'Error updating match profile' };
-    // return updatedProfile;
-
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }
