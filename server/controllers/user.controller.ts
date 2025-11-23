@@ -30,6 +30,7 @@ import {
   createSession,
   deleteSession,
   getSessionTtl,
+  invalidateUserSessions,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
 
@@ -88,12 +89,17 @@ const userController = (socket: FakeSOSocket) => {
         throw Error(user.error);
       }
 
+      invalidateUserSessions(user as SafeDatabaseUser);
+
       const existingSessionId = getSessionIdFromRequest(req);
       if (existingSessionId) {
         deleteSession(existingSessionId);
       }
 
-      const { sessionId } = createSession(user as SafeDatabaseUser);
+      const { sessionId } = createSession(user as SafeDatabaseUser, getSessionTtl(), {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
       const cookieOptions: CookieOptions = {
         httpOnly: true,
         sameSite: 'lax',
@@ -234,10 +240,14 @@ const userController = (socket: FakeSOSocket) => {
    * @param req The request containing username as a route parameter.
    * @param res The response, either returning the code or an error.
    */
-  const generate2FA = async (req: UserByUsernameRequest, res: Response): Promise<void> => {
+  const generate2FA = async (
+    req: Request<{ username: string }, unknown, { email?: string }>,
+    res: Response,
+  ): Promise<void> => {
     try {
       const { username } = req.params;
-      const result = await generate2FACode(username);
+      const { email } = req.body || {};
+      const result = await generate2FACode(username, email);
 
       if ('error' in result) {
         res.status(400).json(result);

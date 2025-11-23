@@ -9,12 +9,16 @@ import {
   SESSION_COOKIE_NAME,
   createSession,
   deleteSession,
+  deleteSessionForUser,
   getSessionTtl,
   getSessionUser,
+  invalidateUserSessions,
+  listSessionsForUser,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:4530';
+const RECENT_LOGIN_LIMIT = 5;
 
 const authController = (): Router => {
   const router = express.Router();
@@ -51,7 +55,12 @@ const authController = (): Router => {
         return res.status(500).json({ error: user.error });
       }
 
-      const { sessionId } = createSession(user);
+      invalidateUserSessions(user);
+
+      const { sessionId } = createSession(user, getSessionTtl(), {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
 
       res.cookie(SESSION_COOKIE_NAME, sessionId, {
         httpOnly: true,
@@ -94,6 +103,63 @@ const authController = (): Router => {
     });
 
     return res.status(200).json({ message: 'Logged out' });
+  });
+
+  router.get('/sessions', (req: Request, res: Response) => {
+    const sessionId = getSessionIdFromRequest(req);
+    const user = getSessionUser(sessionId);
+
+    if (!sessionId || !user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const summaries = listSessionsForUser(user)
+      .map(session => ({
+        sessionId: session.sessionId,
+        createdAt: session.createdAt,
+        lastActiveAt: session.lastActiveAt,
+        expiresAt: session.expiresAt,
+        ipAddress: session.metadata.ipAddress,
+        userAgent: session.metadata.userAgent,
+        current: session.sessionId === sessionId,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    return res.status(200).json({
+      sessions: summaries,
+      recentLogins: summaries.slice(0, RECENT_LOGIN_LIMIT),
+    });
+  });
+
+  router.delete('/sessions/:sessionId', (req: Request, res: Response) => {
+    const currentSessionId = getSessionIdFromRequest(req);
+    const user = getSessionUser(currentSessionId);
+
+    if (!currentSessionId || !user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const targetSessionId = req.params.sessionId;
+    const deleted = deleteSessionForUser(user, targetSessionId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    const currentSessionRevoked = targetSessionId === currentSessionId;
+
+    if (currentSessionRevoked) {
+      res.clearCookie(SESSION_COOKIE_NAME, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Session revoked',
+      currentSessionRevoked,
+    });
   });
 
   return router;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UserCredentials, SafeDatabaseUser } from '../types/types';
+import { UserCredentials, SafeDatabaseUser, UserSessionsResponse } from '../types/types';
 import api from './config';
 
 const USER_API_URL = `/api/user`;
@@ -98,13 +98,22 @@ const loginUser = async (
  * Requests that the server generate a new 2FA code for the given username.
  * The server responds with the code only for testing purposes.
  */
-const requestTwoFactorCode = async (username: string): Promise<{ code?: string }> => {
+const requestTwoFactorCode = async (
+  username: string,
+  email: string,
+): Promise<{ code?: string }> => {
   if (!username) {
     throw new Error('Username is required to request a verification code');
   }
 
+  if (!email) {
+    throw new Error('Email is required to request a verification code');
+  }
+
   try {
-    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`);
+    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`, {
+      email,
+    });
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -282,6 +291,22 @@ const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> 
   }
 };
 
+const getActiveSessions = async (): Promise<UserSessionsResponse> => {
+  const res = await api.get(`${AUTH_API_URL}/sessions`);
+  if (res.status !== 200) {
+    throw new Error('Failed to fetch sessions');
+  }
+  return res.data;
+};
+
+const revokeSession = async (sessionId: string): Promise<{ currentSessionRevoked: boolean }> => {
+  const res = await api.delete(`${AUTH_API_URL}/sessions/${sessionId}`);
+  if (res.status !== 200) {
+    throw new Error('Failed to revoke session');
+  }
+  return res.data;
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -298,4 +323,6 @@ export {
   getTwoFactorStatus,
   enableTwoFactor,
   disableTwoFactor,
+  getActiveSessions,
+  revokeSession,
 };

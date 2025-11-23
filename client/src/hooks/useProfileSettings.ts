@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getUserByUsername,
@@ -9,8 +9,10 @@ import {
   requestTwoFactorCode,
   enableTwoFactor,
   disableTwoFactor,
+  getActiveSessions,
+  revokeSession,
 } from '../services/userService';
-import { SafeDatabaseUser } from '../types/types';
+import { SafeDatabaseUser, UserSessionsResponse } from '../types/types';
 import useUserContext from './useUserContext';
 import LoginContext from '../contexts/LoginContext';
 import { rememberedUserMatches, saveRememberedUser } from '../utils/authStorage';
@@ -34,10 +36,15 @@ const useProfileSettings = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorEmail, setTwoFactorEmail] = useState('');
   const [twoFactorCodeInput, setTwoFactorCodeInput] = useState('');
   const [twoFactorDevCode, setTwoFactorDevCode] = useState<string | null>(null);
   const [isTwoFactorLoading, setIsTwoFactorLoading] = useState(false);
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [sessionOverview, setSessionOverview] = useState<UserSessionsResponse | null>(null);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
 
   // For delete-user confirmation modal
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -47,6 +54,24 @@ const useProfileSettings = () => {
   const canEditProfile =
     currentUser.username && userData?.username ? currentUser.username === userData.username : false;
 
+  const fetchSessions = useCallback(async () => {
+    if (!canEditProfile) {
+      setSessionOverview(null);
+      return;
+    }
+
+    setSessionsLoading(true);
+    try {
+      const data = await getActiveSessions();
+      setSessionOverview(data);
+      setSessionsError(null);
+    } catch (error) {
+      setSessionsError(error instanceof Error ? error.message : 'Failed to load active sessions.');
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [canEditProfile]);
+
   useEffect(() => {
     if (!username) return;
 
@@ -55,6 +80,7 @@ const useProfileSettings = () => {
         setLoading(true);
         const data = await getUserByUsername(username);
         setUserData(data);
+        setTwoFactorEmail(data.email || '');
       } catch (error) {
         setErrorMessage('Error fetching user profile');
         setUserData(null);
@@ -81,6 +107,10 @@ const useProfileSettings = () => {
     fetchTwoFactorStatus();
   }, [username]);
 
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
   /**
    * Update user data properly for avatar and other profile changes
    * This keeps all user fields intact and updates both local and global state
@@ -88,6 +118,9 @@ const useProfileSettings = () => {
   const updateUserData = (updatedUser: SafeDatabaseUser) => {
     // Update local userData state (for this profile page)
     setUserData(updatedUser);
+    if (updatedUser.email) {
+      setTwoFactorEmail(updatedUser.email);
+    }
 
     // If viewing own profile, also update the global currentUser in LoginContext
     if (loginContextValue && currentUser.username === updatedUser.username) {
@@ -114,11 +147,20 @@ const useProfileSettings = () => {
     setShowPassword(prevState => !prevState);
   };
 
+  const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
   const beginTwoFactorSetup = async () => {
     if (!username) return;
+    const emailForCode = twoFactorEmail.trim();
+    if (!emailForCode || !isValidEmail(emailForCode)) {
+      setErrorMessage('Enter a valid email address to receive verification codes.');
+      setSuccessMessage(null);
+      return;
+    }
+
     setIsTwoFactorLoading(true);
     try {
-      const response = await requestTwoFactorCode(username);
+      const response = await requestTwoFactorCode(username, emailForCode);
       setShowTwoFactorSetup(true);
       setTwoFactorCodeInput('');
       setTwoFactorDevCode(response.code ?? null);
@@ -270,6 +312,24 @@ const useProfileSettings = () => {
     return;
   };
 
+  const handleRevokeSession = async (sessionId: string) => {
+    if (!canEditProfile) return;
+
+    setRevokingSessionId(sessionId);
+    try {
+      const result = await revokeSession(sessionId);
+      await fetchSessions();
+
+      if (result.currentSessionRevoked) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      setSessionsError(error instanceof Error ? error.message : 'Failed to revoke session.');
+    } finally {
+      setRevokingSessionId(null);
+    }
+  };
+
   return {
     userData,
     newPassword,
@@ -300,11 +360,19 @@ const useProfileSettings = () => {
     twoFactorDevCode,
     isTwoFactorLoading,
     showTwoFactorSetup,
+    twoFactorEmail,
+    setTwoFactorEmail,
     handleTwoFactorToggle,
     confirmTwoFactorSetup,
     cancelTwoFactorSetup,
     beginTwoFactorSetup,
     updateUserData,
+    sessionOverview,
+    sessionsLoading,
+    sessionsError,
+    revokingSessionId,
+    handleRevokeSession,
+    refreshSessions: fetchSessions,
   };
 };
 
