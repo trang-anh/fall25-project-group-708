@@ -17,10 +17,10 @@ const useMatchProfileCard = ({
 }: UseMatchProfileCardParams) => {
   const targetId = profile.userId._id.toString();
 
-  // already matched check
-  const alreadyMatched = useMemo(
+  // check if a match exists between the two users
+  const matchBetweenUsers = useMemo(
     () =>
-      matches.some(
+      matches.find(
         m =>
           (m.userA.toString() === currentUserId && m.userB.toString() === targetId) ||
           (m.userB.toString() === currentUserId && m.userA.toString() === targetId),
@@ -28,17 +28,11 @@ const useMatchProfileCard = ({
     [matches, currentUserId, targetId],
   );
 
-  // pending match check
-  const pendingMatch = useMemo(
-    () =>
-      matches.some(
-        m =>
-          ((m.userA.toString() === currentUserId && m.userB.toString() === targetId) ||
-            (m.userB.toString() === currentUserId && m.userA.toString() === targetId)) &&
-          m.status === 'pending',
-      ),
-    [matches, currentUserId, targetId],
-  );
+  // pending if found + status === pending
+  const pendingMatch = matchBetweenUsers?.status === 'pending';
+
+  // fully matched only if found + NOT pending
+  const alreadyMatched = matchBetweenUsers !== undefined && matchBetweenUsers.status !== 'pending';
 
   // send match request
   const handleMatch = useCallback(async () => {

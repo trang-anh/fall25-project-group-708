@@ -154,10 +154,6 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                           <span className='detail-label'>Level:</span>
                           <span className='detail-value'>{otherProfile.level}</span>
                         </div>
-                        <div className='detail-row'>
-                          <span className='detail-label'>Location:</span>
-                          <span className='detail-value'>{otherProfile.location}</span>
-                        </div>
                         {match.score > 0 && (
                           <div className='detail-row'>
                             <span className='detail-label'>Compatibility:</span>

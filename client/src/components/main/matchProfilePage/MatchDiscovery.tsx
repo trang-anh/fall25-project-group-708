@@ -11,18 +11,7 @@ interface MatchDiscoveryProps {
 }
 
 const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
-  const {
-    filteredProfiles,
-    selectedLevel,
-    selectedLanguage,
-    searchQuery,
-    setSelectedLevel,
-    setSelectedLanguage,
-    setSearchQuery,
-    loading,
-    error,
-    refetch,
-  } = useMatchDiscovery(currentUserId);
+  const { profiles, loading, error, refetch } = useMatchDiscovery(currentUserId);
 
   const { matches, sendMatchRequest } = useUserMatches(currentUserId);
   const {
@@ -60,12 +49,12 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
 
         <div className='profile-stats'>
           <div className='stat'>
-            <span className='stat-value'>{filteredProfiles.length}</span>
-            <span className='stat-label'>Available</span>
+            <span className='stat-value'>{profiles.length}</span>
+            <span className='stat-label'> Available</span>
           </div>
           <div className='stat'>
             <span className='stat-value'>{matches.length}</span>
-            <span className='stat-label'>Matches</span>
+            <span className='stat-label'> Matches</span>
           </div>
         </div>
       </header>
@@ -102,57 +91,6 @@ const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
           </div>
         )}
       </section>
-
-      <div className='discovery-filters'>
-        <input
-          type='text'
-          placeholder='Search by bio or location...'
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className='search-input'
-        />
-
-        <select
-          value={selectedLevel}
-          onChange={e => setSelectedLevel(e.target.value)}
-          className='filter-select'>
-          <option value='ALL'>All Levels</option>
-          <option value='BEGINNER'>Beginner</option>
-          <option value='INTERMEDIATE'>Intermediate</option>
-          <option value='ADVANCED'>Advanced</option>
-        </select>
-
-        <select
-          value={selectedLanguage}
-          onChange={e => setSelectedLanguage(e.target.value)}
-          className='filter-select'>
-          <option value='ALL'>All Languages</option>
-          {/* Add language options dynamically based on available languages */}
-        </select>
-
-        <button onClick={refetch} className='refresh-btn'>
-          <span className='refresh-icon'>↻</span>
-          Refresh
-        </button>
-      </div>
-
-      {filteredProfiles.length === 0 ? (
-        <div className='no-profiles'>
-          <p>No profiles match your filters. Try adjusting your search criteria.</p>
-        </div>
-      ) : (
-        <div className='profiles-grid'>
-          {filteredProfiles.map((profile: RecommendationProfile) => (
-            <MatchProfileCard
-              key={profile._id.toString()}
-              profile={profile}
-              matches={matches}
-              sendMatchRequest={sendMatchRequest}
-              currentUserId={currentUserId}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 };

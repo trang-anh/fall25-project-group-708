@@ -31,7 +31,15 @@ export const createMatch = async (matchData: Match): Promise<MatchResponse> => {
     });
 
     const savedMatch = await newMatch.save();
-    return savedMatch.toObject() as DatabaseMatch;
+    const plain = savedMatch.toObject();
+
+    return {
+      ...plain,
+      _id: plain._id.toString(),
+      userA: plain.userA.toString(),
+      userB: plain.userB.toString(),
+      initiatedBy: plain.initiatedBy.toString(),
+    } as DatabaseMatch;
   } catch (err) {
     return { error: (err as Error).message };
   }
