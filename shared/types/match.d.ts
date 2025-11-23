@@ -114,3 +114,17 @@ export interface CreateMatchDTO {
 export interface CreateMatchDTORequest extends Request {
   body: CreateMatchDTO;
 }
+
+/**
+ * Request type for updating a match status (accept or decline).
+ * Sent to /match/updateStatus/:matchId
+ */
+export interface UpdateMatchStatusRequest extends express.Request {
+  params: {
+    matchId: string;
+  };
+  body: {
+    userId: string;
+    status: 'accepted' | 'rejected';
+  };
+}

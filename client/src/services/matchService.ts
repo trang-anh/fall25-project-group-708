@@ -51,6 +51,31 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<void
 };
 
 /**
+ * Updates the status of an existing match (accept / reject).
+ *
+ * @param matchId - the ID of the match document
+ * @param userId - the ID of the user performing the action
+ * @param status - new status of the match ("accepted" | "rejected")
+ */
+export async function updateMatchStatus(
+  matchId: string,
+  userId: string,
+  status: 'accepted' | 'rejected',
+) {
+  const res = await fetch(`${MATCH_BASE_API}/updateStatus/${matchId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, status }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to update match: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
  * Generate a match's compatibility scores and recommend based on scores
  */
 export const generateMatchRecommendation = async (userId: string) => {

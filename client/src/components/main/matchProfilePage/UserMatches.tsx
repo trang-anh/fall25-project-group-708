@@ -41,6 +41,8 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
     error,
     refetch,
     handleDeleteMatch,
+    handleAcceptMatch,
+    handleDeclineMatch,
   } = useUserMatchesList(currentUserId);
 
   if (loading) {
@@ -131,18 +133,14 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                       <img src={otherProfile.profileImageUrl} alt='Profile' />
                     ) : (
                       <div className='avatar-placeholder'>
-                        {otherProfile?.userId?.toString().substring(0, 2).toUpperCase() || '??'}
+                        {(otherProfile?.username ?? '??').substring(0, 2).toUpperCase()}
                       </div>
                     )}
                   </div>
 
                   <div className='match-info'>
                     <div className='info-header'>
-                      <h3>
-                        {otherProfile
-                          ? `User ${otherProfile.userId.toString().substring(0, 8)}`
-                          : 'Unknown User'}
-                      </h3>
+                      <h3>{otherProfile ? `${otherProfile.username}` : 'Unknown User'}</h3>
                       <span className={`status-badge ${getStatusBadgeClass(match.status)}`}>
                         {getStatusLabel(match.status)}
                       </span>
@@ -186,8 +184,16 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                 <div className='match-actions'>
                   {match.status === 'pending' && !initiatedByCurrentUser && (
                     <>
-                      <button className='action-btn accept-btn'>Accept</button>
-                      <button className='action-btn decline-btn'>Decline</button>
+                      <button
+                        className='action-btn accept-btn'
+                        onClick={() => handleAcceptMatch(match._id)}>
+                        Accept
+                      </button>
+                      <button
+                        className='action-btn decline-btn'
+                        onClick={() => handleDeclineMatch(match._id)}>
+                        Decline
+                      </button>
                     </>
                   )}
 

@@ -78,7 +78,44 @@ export const getUserMatches = async (
     })
       .lean<DatabaseMatch[]>()
       .exec();
-    return matches;
+
+    // Build otherUserProfile for each match
+    const enriched = await Promise.all(
+      matches.map(async match => {
+        const otherUserId =
+          match.userA.toString() === userId ? match.userB.toString() : match.userA.toString();
+
+        const otherProfile = await MatchProfileModel.findOne({ userId: otherUserId })
+          .populate('userId', 'username')
+          .lean()
+          .exec();
+
+        return {
+          ...match,
+          _id: match._id.toString(),
+          userA: match.userA.toString(),
+          userB: match.userB.toString(),
+          initiatedBy: match.initiatedBy?.toString() ?? null,
+          otherUserProfile: otherProfile
+            ? {
+                ...otherProfile,
+                userId:
+                  typeof otherProfile.userId === 'object'
+                    ? {
+                        _id: otherProfile.userId._id.toString(),
+                        username: otherProfile.userId.username,
+                      }
+                    : {
+                        _id: otherProfile.userId.toString(),
+                        username: 'Unknown',
+                      },
+              }
+            : null,
+        };
+      }),
+    );
+    // return matches;
+    return enriched;
   } catch (err) {
     return { error: (err as Error).message };
   }
@@ -113,6 +150,39 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<Matc
     }
 
     return deletedMatch;
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+};
+
+export const updateMatchStatus = async (
+  matchId: string,
+  userId: string,
+  newStatus: 'accepted' | 'rejected',
+): Promise<MatchResponse> => {
+  try {
+    const match = await MatchModel.findById(matchId);
+
+    if (!match) {
+      return { error: 'Match not found' };
+    }
+
+    // Only participants can update the match
+    if (match.userA.toString() !== userId && match.userB.toString() !== userId) {
+      return { error: 'Unauthorized: Only participants can update this match' };
+    }
+
+    match.status = newStatus;
+    match.updatedAt = new Date();
+
+    const saved = await match.save();
+    return {
+      ...saved.toObject(),
+      _id: saved._id.toString(),
+      userA: saved.userA.toString(),
+      userB: saved.userB.toString(),
+      initiatedBy: saved.initiatedBy?.toString() ?? null,
+    };
   } catch (err) {
     return { error: (err as Error).message };
   }
@@ -169,9 +239,6 @@ export const generateMatchRecommendation = async (
         const [skillOverlap] = features;
 
         if (skillOverlap === 0) return null;
-
-        // eslint-disable-next-line no-console
-        console.log('BACKEND PROFILE USER:', profile.userId);
 
         return {
           userId: profile.userId._id.toString(),

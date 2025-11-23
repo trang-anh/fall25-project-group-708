@@ -57,8 +57,14 @@ const matchProfileController = (socket: FakeSOSocket) => {
       const plain = {
         ...foundMatchProfile,
         userId: isPopulatedUserId(foundMatchProfile.userId)
-          ? foundMatchProfile.userId._id.toString()
-          : foundMatchProfile.userId,
+          ? {
+              _id: foundMatchProfile.userId._id.toString(),
+              username: foundMatchProfile.userId.username,
+            }
+          : {
+              _id: foundMatchProfile.userId.toString(),
+              username: 'Unknown',
+            },
       };
       res.json(plain);
     } catch (err: unknown) {

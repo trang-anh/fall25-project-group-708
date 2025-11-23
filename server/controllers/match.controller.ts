@@ -6,6 +6,7 @@ import {
   FakeSOSocket,
   DeleteMatchRequest,
   MatchProfileRequest,
+  UpdateMatchStatusRequest,
 } from '../types/types';
 import {
   createMatch,
@@ -13,6 +14,7 @@ import {
   generateMatchRecommendation,
   getMatch,
   getUserMatches,
+  updateMatchStatus,
 } from '../services/match.service';
 
 /**
@@ -151,6 +153,47 @@ const matchController = (socket: FakeSOSocket) => {
   };
 
   /**
+   * Updates the status of an existing match (accept or decline).
+   *
+   * @param req - The request containing matchId in params and userId/status in body
+   * @param res - The response object used to send back the result
+   * @returns {Promise<void>}
+   */
+  const updateMatchStatusRoute = async (
+    req: UpdateMatchStatusRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { matchId } = req.params;
+    const { userId, status } = req.body;
+
+    try {
+      const updated = await updateMatchStatus(matchId, userId, status);
+
+      if ('error' in updated) {
+        if (updated.error.includes('Unauthorized')) {
+          res.status(403).json({ error: updated.error });
+        } else if (updated.error.includes('not found')) {
+          res.status(404).json({ error: updated.error });
+        } else {
+          res.status(500).json({ error: updated.error });
+        }
+        return;
+      }
+
+      socket.emit('matchUpdate', {
+        type: 'updated',
+        match: updated,
+      });
+
+      res.json(updated);
+    } catch (err: unknown) {
+      res.status(500).json({
+        error: `Error updating match status: ${(err as Error).message}`,
+      });
+    }
+  };
+
+  /**
    * Generates matches for a user and emits matchUpdate events for each match.
    */
   /**
@@ -209,6 +252,7 @@ const matchController = (socket: FakeSOSocket) => {
   router.get('/getMatch/:matchId', getMatchRoute);
   router.get('/getUserMatches/:userId', getUserMatchesRoute);
   router.post('/create', createMatchRoute);
+  router.patch('/updateStatus/:matchId', updateMatchStatusRoute);
   router.delete('/delete/:matchId', deleteMatchRoute);
   router.get('/recommend/:userId', generateMatchRecommendationsRoute);
 

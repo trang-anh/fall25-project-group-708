@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DatabaseMatch, DatabaseMatchProfile } from '@fake-stack-overflow/shared';
 import { useUserMatches } from './useMatchProfilePage';
 import { getMatchProfile } from '../services/matchProfileService';
+import { updateMatchStatus } from '../services/matchService';
 
 export interface PopulatedMatch extends DatabaseMatch {
   otherUserProfile?: DatabaseMatchProfile | null;
@@ -9,6 +10,7 @@ export interface PopulatedMatch extends DatabaseMatch {
 
 export interface NormalizedMatchProfile extends Omit<DatabaseMatchProfile, 'userId'> {
   userId: string;
+  username?: string;
   programmingLanguage: string[];
 }
 
@@ -61,13 +63,31 @@ function normalizeId(id: unknown): string {
   }
 }
 
+function isPopulatedUser(value: unknown): value is { _id: unknown; username: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '_id' in value &&
+    'username' in value &&
+    typeof (value as { username: unknown }).username === 'string'
+  );
+}
+
 // Normalize profile fields
 function normalizeProfile(profile: DatabaseMatchProfile | null): NormalizedMatchProfile | null {
   if (!profile) return null;
 
+  let username: string | undefined = undefined;
+
+  // If backend returned userId as an object, extract username
+  if (isPopulatedUser(profile.userId)) {
+    username = profile.userId.username;
+  }
+
   return {
     ...profile,
     userId: normalizeId(profile.userId),
+    username,
     programmingLanguage: Array.isArray(profile.programmingLanguage)
       ? profile.programmingLanguage
       : [],
@@ -142,6 +162,28 @@ const useUserMatchesList = (currentUserId: string) => {
   }, [filterStatus, populatedMatches]);
 
   /**
+   * Accept a match request
+   */
+  const handleAcceptMatch = useCallback(
+    async (matchId: string) => {
+      await updateMatchStatus(matchId, currentUserId, 'accepted');
+      await refetch();
+    },
+    [currentUserId, refetch],
+  );
+
+  /**
+   * Decline a match request
+   */
+  const handleDeclineMatch = useCallback(
+    async (matchId: string) => {
+      await updateMatchStatus(matchId, currentUserId, 'rejected');
+      await refetch();
+    },
+    [currentUserId, refetch],
+  );
+
+  /**
    * Handle deleting a match
    */
   const handleDeleteMatch = useCallback(
@@ -161,6 +203,8 @@ const useUserMatchesList = (currentUserId: string) => {
     filterStatus,
     setFilterStatus,
     handleDeleteMatch,
+    handleAcceptMatch,
+    handleDeclineMatch,
   };
 };
 
