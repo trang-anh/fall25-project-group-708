@@ -115,7 +115,6 @@ export const leaveGroupChat = async (
 ): Promise<PopulatedDatabaseChat> => {
   const res = await api.post(`${CHAT_API_URL}/${chatID}/leaveChat`, { username });
 
-
   if (res.status !== 200) {
     throw new Error('Error when leaving group chat');
   }
