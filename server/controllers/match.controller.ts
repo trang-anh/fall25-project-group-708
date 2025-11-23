@@ -182,10 +182,11 @@ const matchController = (socket: FakeSOSocket) => {
         profile: {
           ...rec.profile,
           _id: rec.profile._id.toString(),
-          userId: rec.profile.userId.toString(),
-
+          userId: {
+            _id: rec.profile.userId._id.toString(),
+            username: rec.profile.userId.username,
+          },
           programmingLanguage: rec.profile.programmingLanguage,
-
           preferences: {
             ...rec.profile.preferences,
             preferredLanguages: rec.profile.preferences.preferredLanguages,

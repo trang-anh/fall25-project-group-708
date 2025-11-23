@@ -2108,8 +2108,13 @@ components:
       type: object
       properties:
         userId:
-          type: string
+          type: object
           description: Unique identifier for the match profile
+          properties:
+            _id:
+              type: string
+            username:
+              type: string
         isActive:
           type: boolean
           description: Boolean indicicating active in service or not

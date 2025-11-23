@@ -168,7 +168,13 @@ export const generateMatchRecommendation = async (
         return {
           userId: profile.userId._id.toString(),
           score,
-          profile,
+          profile: {
+            ...profile,
+            userId: {
+              _id: profile.userId._id.toString(),
+              username: profile.userId.username,
+            },
+          },
         };
       })
       .filter(
