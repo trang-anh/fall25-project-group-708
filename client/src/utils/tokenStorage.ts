@@ -18,6 +18,7 @@ const readTokenFromCookie = (): string | null => {
 // Store token in localStorage or sessionStorage
 export const storeAuthToken = (token: string, persist = true): void => {
   if (!IS_BROWSER || !token) return;
+  // Persisted tokens live in localStorage (remember device); transient tokens use sessionStorage.
   const storage = persist ? window.localStorage : window.sessionStorage;
   storage.setItem(TOKEN_STORAGE_KEY, token);
 };
