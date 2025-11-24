@@ -174,15 +174,15 @@ paths:
                   $ref: '#/components/schemas/PopulatedQuestion'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /question/getQuestionsByTextAndTitle:
     get:
       tags:
         - Questions
       summary: Retrieve up to 5 possible duplicate questions by comparing title and text.
       description: >
-        Performs a partial regex-based search on the question title and text to find
-        potentially similar or duplicate questions.
+        Performs a partial regex-based search on the question title and text to find potentially
+        similar or duplicate questions.
       parameters:
         - in: query
           name: title
@@ -492,6 +492,65 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
 
+  /chat/createGroupChat:
+    post:
+      tags:
+        - Chats
+      summary: Create a new group chat with multiple participants.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupChatBody'
+      responses:
+        '200':
+          description: Group chat successfully created. Returns the populated chat object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedChat'
+        '400':
+          description: Validation error (e.g., fewer than 2 participants).
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Group chats require at least 2 participants'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /chat/{chatId}/leaveChat:
+    post:
+      tags:
+        - Chats
+      summary: Remove a participant from a group chat.
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the chat.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeaveGroupChatBody'
+      responses:
+        '200':
+          description: Participant successfully removed. Returns the updated populated chat object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedChat'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
   # --------------------
   # GAME CONTROLLER
   # --------------------
@@ -665,7 +724,8 @@ paths:
               $ref: '#/components/schemas/ToggleSaveQuestionBody'
       responses:
         '200':
-          description: Collection successfully updated. Returns the updated populated collection object.
+          description:
+            Collection successfully updated. Returns the updated populated collection object.
           content:
             application/json:
               schema:
@@ -1147,7 +1207,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   # --------------------
   # MATCH CONTROLLER
   # --------------------
@@ -1267,7 +1327,7 @@ paths:
                 $ref: '#/components/schemas/SimpleErrorBody'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /match/generate/{userId}:
     post:
       summary: Generate match suggestions for a user
@@ -1313,7 +1373,7 @@ paths:
                 properties:
                   error:
                     type: string
-  
+
   # --------------------
   # MATCH PROFILE CONTROLLER
   # --------------------
@@ -1354,7 +1414,7 @@ paths:
                 $ref: '#/components/schemas/MatchProfilesResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /matchProfile/checkOnboardingStatus/{userId}:
     get:
       tags:
@@ -1377,7 +1437,7 @@ paths:
                 $ref: '#/components/schemas/MatchProfile'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /matchProfile/toggleMatchProfileActive/{userId}:
     patch:
       tags:
@@ -1414,7 +1474,7 @@ paths:
                 $ref: '#/components/schemas/SimpleErrorBody'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /matchProfile/updateMatchProfile/{userId}:
     patch:
       tags:
@@ -1437,7 +1497,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-  
+
   /matchProfile/create:
     post:
       tags:
@@ -1460,8 +1520,6 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
-
-
 
 components:
   schemas:
@@ -1700,15 +1758,72 @@ components:
     AddParticipantBody:
       type: object
       required:
-        - username
+        - userId
       properties:
-        username:
+        userId:
           type: string
-          description: The username of the new participant.
+          description: The userId of the new participant.
 
     PopulatedChat:
       type: object
       description: A fully populated chat object with embedded messages.
+
+    CreateGroupChatBody:
+      type: object
+      required:
+        - participants
+        - messages
+        - chatName
+        - chatAdmin
+      properties:
+        participants:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          description: Array of usernames participating in the group chat.
+          example: ['user1', 'user2', 'user3']
+        messages:
+          type: array
+          items:
+            type: object
+            required:
+              - msg
+              - msgFrom
+              - msgDateTime
+            properties:
+              msg:
+                type: string
+                description: The message content.
+                example: 'Welcome to the group!'
+              msgFrom:
+                type: string
+                description: The username of the message sender.
+                example: 'user1'
+              msgDateTime:
+                type: string
+                format: date-time
+                description: The timestamp when the message was sent.
+                example: '2025-01-01T00:00:00.000Z'
+          description: Initial messages for the chat.
+        chatName:
+          type: string
+          description: The name of the group chat.
+          example: 'Team Discussion'
+        chatAdmin:
+          type: string
+          description: The username of the chat administrator.
+          example: 'user1'
+
+    LeaveGroupChatBody:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: The username of the participant leaving the chat.
+          example: 'user2'
 
     # --------------------
     # GAME SCHEMAS
@@ -1885,10 +2000,10 @@ components:
           type: string
           default: ''
           description: Optional user biography.
-        githubId: 
+        githubId:
           type: string
           nullable: true
-          description: Github ID for OAuth users 
+          description: Github ID for OAuth users
 
     UserLoginBody:
       type: object
@@ -1939,7 +2054,7 @@ components:
         message:
           type: string
           description: Confirmation message when a session is cleared.
-      
+
     # --------------------
     # NOT DUPLICATE QUESTION SCHEMAS
     # --------------------
@@ -2011,10 +2126,10 @@ components:
           description: ObjectId of the second user
         status:
           type: string
-          enum: 
-          - pending
-          - accepted
-          - rejected
+          enum:
+            - pending
+            - accepted
+            - rejected
           description: Match status
         score:
           type: number
@@ -2031,7 +2146,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when the match was last updated
-    
+
     CreateMatchBody:
       type: object
       required:
@@ -2049,10 +2164,10 @@ components:
           minLength: 1
         status:
           type: string
-          enum: 
-          - pending
-          - accepted
-          - rejected
+          enum:
+            - pending
+            - accepted
+            - rejected
           default: pending
           description: Current status of the match
         score:
@@ -2093,7 +2208,7 @@ components:
             type: string
           score:
             type: number
-  
+
     # --------------------
     # MATCH PROFILE SCHEMAS
     # --------------------
@@ -2111,22 +2226,22 @@ components:
           description: Age of user
         gender:
           type: string
-          enum: 
-          - MALE
-          - FEMALE
-          - NON-BINARY
-          - PREFER TO NOT DESCRIBE
+          enum:
+            - MALE
+            - FEMALE
+            - NON-BINARY
+            - PREFER TO NOT DESCRIBE
           description: gender of user
         location:
           type: string
           enum:
-          - NORTH AMERICA
-          - SOUTH AMERICA
-          - EUROPE
-          - ASIA
-          - AFRICA
-          - AUSTRALIA
-          - ANTARCTICA
+            - NORTH AMERICA
+            - SOUTH AMERICA
+            - EUROPE
+            - ASIA
+            - AFRICA
+            - AUSTRALIA
+            - ANTARCTICA
           description: location of user
         programmingLanguage:
           type: array
@@ -2136,10 +2251,10 @@ components:
             format: object-id
         level:
           type: string
-          enum: 
-          - BEGINNER
-          - INTERMEDIATE
-          - ADVANCED
+          enum:
+            - BEGINNER
+            - INTERMEDIATE
+            - ADVANCED
           description: user's self-assessed programming level
         preferences:
           type: object
@@ -2153,10 +2268,10 @@ components:
                 format: object-id
             preferredLevel:
               type: string
-              enum: 
-              - BEGINNER
-              - INTERMEDIATE
-              - ADVANCED
+              enum:
+                - BEGINNER
+                - INTERMEDIATE
+                - ADVANCED
               description: Preferred experience level of the matching user
         onboardingAnswers:
           type: object
@@ -2185,7 +2300,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when match profile was last updated
-    
+
     CreateMatchProfileBody:
       type: object
       required:
@@ -2199,21 +2314,21 @@ components:
           minLength: 1
         gender:
           type: string
-          enum: 
-          - MALE
-          - FEMALE
-          - NON-BINARY
-          - PREFER TO NOT DESCRIBE
+          enum:
+            - MALE
+            - FEMALE
+            - NON-BINARY
+            - PREFER TO NOT DESCRIBE
           description: gender of user
           minLength: 1
         level:
           type: string
-          enum: 
-          - BEGINNER
-          - INTERMEDIATE
-          - ADVANCED
+          enum:
+            - BEGINNER
+            - INTERMEDIATE
+            - ADVANCED
           description: user's self-assessed programming level
-    
+
     ToggleMatchProfileActiveBody:
       type: object
       required:
@@ -2226,10 +2341,11 @@ components:
         isActive:
           type: boolean
           description: New active status for the user.
-      
+
     UpdateMatchProfileBody:
       type: object
-      description: Request body for updating an existing match profile. All fields are optional except userId
+      description:
+        Request body for updating an existing match profile. All fields are optional except userId
       required:
         - userId
       properties:
@@ -2245,11 +2361,11 @@ components:
           description: Updated age of the user
         gender:
           type: string
-          enum: 
-          - MALE
-          - FEMALE
-          - NON-BINARY
-          - PREFER TO NOT DESCRIBE
+          enum:
+            - MALE
+            - FEMALE
+            - NON-BINARY
+            - PREFER TO NOT DESCRIBE
           description: Updated gender identity
         location:
           type: string
@@ -2270,10 +2386,10 @@ components:
             format: object-id
         level:
           type: string
-          enum: 
-          - BEGINNER
-          - INTERMEDIATE
-          - ADVANCED
+          enum:
+            - BEGINNER
+            - INTERMEDIATE
+            - ADVANCED
           description: Updated programming experience level
         preferences:
           type: object
@@ -2287,10 +2403,10 @@ components:
               description: Updated preferred programming languages
             preferredLevel:
               type: string
-              enum: 
-              - BEGINNER
-              - INTERMEDIATE
-              - ADVANCED
+              enum:
+                - BEGINNER
+                - INTERMEDIATE
+                - ADVANCED
               description: Updated preferred partner level
         onboardingAnswers:
           type: object
@@ -2311,7 +2427,7 @@ components:
         profileImageUrl:
           type: string
           description: Updated URL for the users profile picture
-    
+
     DatabaseMatchProfile:
       allOf:
         - $ref: '#/components/schemas/MatchProfile'
@@ -2334,7 +2450,7 @@ components:
             type: string
           programmingLanguage:
             type: array
-          level: 
+          level:
             type: string
           preferences:
             type: object

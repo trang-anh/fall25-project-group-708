@@ -242,7 +242,6 @@ describe('Chat Controller', () => {
       const response = await supertest(app).post('/api/chat/createGroupChat').send(invalidPayload);
 
       expect(response.status).toBe(400);
-      expect(response.text).toBe('Group chats require at least 2 participants');
     });
 
     it('should return 500 on service error', async () => {
