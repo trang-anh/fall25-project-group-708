@@ -3,6 +3,7 @@ import { DatabaseMatch, DatabaseMatchProfile } from '@fake-stack-overflow/shared
 import { useUserMatches } from './useMatchProfilePage';
 import { getMatchProfile } from '../services/matchProfileService';
 import { updateMatchStatus } from '../services/matchService';
+import { useNavigate } from 'react-router-dom';
 
 export interface PopulatedMatch extends DatabaseMatch {
   otherUserProfile?: DatabaseMatchProfile | null;
@@ -102,6 +103,8 @@ const useUserMatchesList = (currentUserId: string) => {
     'all',
   );
 
+  const navigate = useNavigate();
+
   /**
    * Populate matches with the other user's profile
    */
@@ -173,6 +176,18 @@ const useUserMatchesList = (currentUserId: string) => {
   );
 
   /**
+   * Handle message click event
+   */
+  const handleMessageClick = useCallback(
+    (other: NormalizedMatchProfile | null) => {
+      if (!other?.username) return;
+
+      navigate(`/messaging/direct-message?user=${encodeURIComponent(other.username)}`);
+    },
+    [navigate],
+  );
+
+  /**
    * Decline a match request
    */
   const handleDeclineMatch = useCallback(
@@ -205,6 +220,7 @@ const useUserMatchesList = (currentUserId: string) => {
     handleDeleteMatch,
     handleAcceptMatch,
     handleDeclineMatch,
+    handleMessageClick,
   };
 };
 

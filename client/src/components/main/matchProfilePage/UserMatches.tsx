@@ -43,6 +43,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
     handleDeleteMatch,
     handleAcceptMatch,
     handleDeclineMatch,
+    handleMessageClick,
   } = useUserMatchesList(currentUserId);
 
   if (loading) {
@@ -209,7 +210,11 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                   {/* Accepted match -> show both Message + Remove */}
                   {match.status === 'accepted' && (
                     <>
-                      <button className='action-btn message-btn'>Message</button>
+                      <button
+                        className='action-btn message-btn'
+                        onClick={() => handleMessageClick(otherProfile)}>
+                        Message
+                      </button>
 
                       <button
                         className='action-btn remove-btn'
