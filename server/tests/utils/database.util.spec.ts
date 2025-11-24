@@ -106,37 +106,42 @@ describe('populateDocument', () => {
   it('should fetch and populate a chat document', async () => {
     const mockChat = {
       _id: 'chatId',
+      participants: ['user1'],
       messages: [
         {
           _id: 'messageId',
           msg: 'Hello',
           msgFrom: 'user1',
           msgDateTime: new Date(),
-          type: 'text',
+          type: 'direct' as const,
         },
       ],
       toObject: jest.fn().mockReturnValue({
         _id: 'chatId',
+        participants: ['user1'],
         messages: [
           {
             _id: 'messageId',
             msg: 'Hello',
             msgFrom: 'user1',
             msgDateTime: new Date(),
-            type: 'text',
+            type: 'direct' as const,
           },
         ],
+        chatType: 'direct' as const,
       }),
+      chatType: 'direct' as const,
     };
     const mockUser = {
       _id: 'userId',
       username: 'user1',
+      avatarUrl: '',
     };
     (ChatModel.findOne as jest.Mock).mockReturnValue({
       populate: jest.fn().mockResolvedValue(mockChat),
     });
-    (UserModel.findOne as jest.Mock).mockReturnValue({
-      select: jest.fn().mockResolvedValue(mockUser),
+    (UserModel.find as jest.Mock).mockReturnValue({
+      select: jest.fn().mockResolvedValue([mockUser]),
     });
 
     const result = await populateDocument('chatId', 'chat');
@@ -150,11 +155,19 @@ describe('populateDocument', () => {
           msg: 'Hello',
           msgFrom: 'user1',
           msgDateTime: mockChat.messages[0].msgDateTime,
-          type: 'text',
+          type: 'direct',
           user: {
             _id: 'userId',
             username: 'user1',
+            avatarUrl: '',
           },
+        },
+      ],
+      participantsData: [
+        {
+          _id: 'userId',
+          username: 'user1',
+          avatarUrl: '',
         },
       ],
     });
