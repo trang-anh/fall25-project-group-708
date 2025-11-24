@@ -1,5 +1,5 @@
 import './index.css';
-import FakeStackOverflowLogo from './FakeStackOverflowLogo';
+import FakeStackOverflowLogo from './Code2Date';
 import { Link } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import DarkModeToggle from '../../darkModeToggle/DarkModeToggle';
