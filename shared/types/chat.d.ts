@@ -101,7 +101,7 @@ export interface AddMessageRequestToChat extends ChatIdRequest {
  */
 export interface AddParticipantRequest extends ChatIdRequest {
   body: {
-    username: string;
+    userId: string;
   };
 }
 
@@ -111,7 +111,7 @@ export interface AddParticipantRequest extends ChatIdRequest {
  */
 export interface GetChatByParticipantsRequest extends Request {
   params: {
-    username: string;
+    userId: string;
   };
 }
 
@@ -120,3 +120,12 @@ export interface GetChatByParticipantsRequest extends Request {
  * - Either a `DatabaseChat` object or an error message.
  */
 export type ChatResponse = DatabaseChat | { error: string };
+
+export interface LeaveGroupChatRequest extends Request {
+  params: {
+    chatId: string;
+  };
+  body: {
+    username: string;
+  };
+}

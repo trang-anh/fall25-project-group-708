@@ -10,6 +10,7 @@ export interface UserDocument extends User, Document {
   _id: mongoose.Types.ObjectId;
   username: string;
   password: string;
+  email?: string;
   dateJoined: Date;
   biography?: string;
   githubId?: string;

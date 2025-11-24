@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PopulatedDatabaseQuestion } from '@fake-stack-overflow/shared';
 import './index.css';
 
@@ -17,6 +18,7 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   loading,
   show,
 }) => {
+  const navigate = useNavigate();
   if (!show) {
     return null;
   }
@@ -44,14 +46,14 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   };
 
   const handleQuestionClick = (questionId: string) => {
-    window.open(`/question/${questionId}`, '_blank');
+    navigate(`/question/${questionId}`);
   };
 
   return (
     <div className='similar_posts_section'>
       <div className='similar_posts_header'>
         <div className='similar_posts_title'>Posts that may be similar</div>
-        <div className='similar_posts_subtitle'>clicking opens the post in a new tab</div>
+        <div className='similar_posts_subtitle'>click to view the full question</div>
       </div>
 
       <div className='similar_posts_list'>
@@ -59,8 +61,6 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
           <div key={question._id.toString()} className='similar_post_item'>
             <a
               href={`/question/${question._id.toString()}`}
-              target='_blank'
-              rel='noopener noreferrer'
               className='similar_post_link'
               onClick={e => {
                 e.preventDefault();

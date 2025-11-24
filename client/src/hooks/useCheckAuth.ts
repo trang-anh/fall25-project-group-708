@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useLoginContext from './useLoginContext';
 import { getCurrentUser } from '../services/userService';
 import { clearRememberedUser } from '../utils/authStorage';
+import { clearAuthToken } from '../utils/tokenStorage';
 
 /**
  * Custom hook to check authentication status on app mount.
@@ -32,6 +33,7 @@ const useCheckAuth = () => {
       } catch (error) {
         setUser(null);
         clearRememberedUser();
+        clearAuthToken();
       }
     };
 

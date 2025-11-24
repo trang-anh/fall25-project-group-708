@@ -11,14 +11,16 @@ import { createChat, getChatById, getChatsByUser, sendMessage } from '../service
 // import { useSearchParams } from 'react-router-dom';
 
 /**
- * useDirectMessage is a custom hook that provides state and functions for direct messaging between users.
- * It includes a selected user, messages, and a new message state.
+ * useDirectMessage is a custom hook that provides state and functions for direct messaging and group chats.
+ * It includes a selected chat, messages, and functions for creating both direct and group chats.
  */
-
 const useDirectMessage = () => {
   const { user, socket } = useUserContext();
   const [showCreatePanel, setShowCreatePanel] = useState<boolean>(false);
+  const [createMode, setCreateMode] = useState<'direct' | 'group'>('direct');
   const [chatToCreate, setChatToCreate] = useState<string>('');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [groupChatName, setGroupChatName] = useState<string>('');
   const [selectedChat, setSelectedChat] = useState<PopulatedDatabaseChat | null>(null);
   const [chats, setChats] = useState<PopulatedDatabaseChat[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -32,6 +34,18 @@ const useDirectMessage = () => {
   };
 
   const handleSendMessage = async () => {
+    if (!selectedChat) {
+      setError('No chat selected');
+      return;
+    }
+
+    // Verify the current user is still a participant in the chat
+    if (!selectedChat.participants.includes(user.username)) {
+      setError('You are no longer a participant in this chat');
+      setSelectedChat(null);
+      return;
+    }
+
     if (newMessage.trim() && selectedChat?._id) {
       const message: Omit<Message, 'type'> = {
         msg: newMessage,
@@ -39,11 +53,15 @@ const useDirectMessage = () => {
         msgDateTime: new Date(),
       };
 
-      const chat = await sendMessage(message, selectedChat._id);
+      try {
+        const chat = await sendMessage(message, selectedChat._id);
 
-      setSelectedChat(chat);
-      setError(null);
-      setNewMessage('');
+        setSelectedChat(chat);
+        setError(null);
+        setNewMessage('');
+      } catch (err) {
+        setError(`Failed to send message: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
     } else {
       setError('Message cannot be empty');
     }
@@ -61,19 +79,89 @@ const useDirectMessage = () => {
   };
 
   const handleUserSelect = (selectedUser: SafeDatabaseUser) => {
-    setChatToCreate(selectedUser.username);
+    if (createMode === 'direct') {
+      setChatToCreate(selectedUser.username);
+    } else {
+      // For group chat, toggle user selection
+      setSelectedUsers(prev => {
+        if (prev.includes(selectedUser.username)) {
+          return prev.filter(u => u !== selectedUser.username);
+        }
+        return [...prev, selectedUser.username];
+      });
+    }
   };
 
   const handleCreateChat = async () => {
-    if (!chatToCreate) {
-      setError('Please select a user to chat with');
+    if (createMode === 'direct') {
+      if (!chatToCreate) {
+        setError('Please select a user to chat with');
+        return;
+      }
+
+      const chat = await createChat([user.username, chatToCreate]);
+      setSelectedChat(chat);
+      handleJoinChat(chat._id);
+      setShowCreatePanel(false);
+      setChatToCreate('');
+    } else {
+      // Group chat creation
+      if (selectedUsers.length < 1) {
+        setError('Please select at least 1 other user for the group chat');
+        return;
+      }
+
+      if (!groupChatName.trim()) {
+        setError('Please enter a group chat name');
+        return;
+      }
+
+      const participants = [user.username, ...selectedUsers];
+      const chat = await createGroupChat(participants, groupChatName.trim());
+      setSelectedChat(chat);
+      handleJoinChat(chat._id);
+      setShowCreatePanel(false);
+      setSelectedUsers([]);
+      setGroupChatName('');
+      setError(null);
+    }
+  };
+
+  const handleLeaveGroupChat = async () => {
+    if (!selectedChat) {
+      setError('No chat selected');
       return;
     }
 
-    const chat = await createChat([user.username, chatToCreate]);
-    setSelectedChat(chat);
-    handleJoinChat(chat._id);
-    setShowCreatePanel(false);
+    // Check if it's a group chat (using both chatType and participant count as fallback)
+    const isGroupChat =
+      selectedChat.chatType === 'group' || (selectedChat.participants?.length ?? 0) > 2;
+
+    if (!isGroupChat) {
+      setError('Can only leave group chats');
+      return;
+    }
+
+    try {
+      await leaveGroupChat(selectedChat._id, user.username);
+
+      // Remove chat from list and clear selection
+      setChats(prev => prev.filter(c => c._id !== selectedChat._id));
+      setSelectedChat(null);
+      setError(null);
+    } catch (err) {
+      setError(
+        `Failed to leave group chat: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
+    }
+  };
+
+  const toggleCreateMode = () => {
+    setCreateMode(prev => (prev === 'direct' ? 'group' : 'direct'));
+    setChatToCreate('');
+    setSelectedUsers([]);
+    setGroupChatName('');
+    setError(null);
   };
 
   useEffect(() => {
@@ -94,6 +182,15 @@ const useDirectMessage = () => {
         }
         case 'newMessage': {
           setSelectedChat(chat);
+          setChats(prevChats => {
+            const existingIndex = prevChats.findIndex(c => c._id === chat._id);
+            if (existingIndex >= 0) {
+              const updated = [...prevChats];
+              updated[existingIndex] = chat;
+              return updated;
+            }
+            return prevChats;
+          });
           return;
         }
         case 'newParticipant': {
@@ -104,6 +201,23 @@ const useDirectMessage = () => {
               }
               return [chat, ...prevChats];
             });
+          }
+          return;
+        }
+        case 'removedParticipant': {
+          // If current user was removed or chat was updated
+          if (!chat.participants.includes(user.username)) {
+            // User was removed, remove chat from list
+            setChats(prev => prev.filter(c => c._id !== chat._id));
+            if (selectedChat?._id === chat._id) {
+              setSelectedChat(null);
+            }
+          } else {
+            // Someone else left, update the chat
+            setChats(prevChats => prevChats.map(c => (c._id === chat._id ? chat : c)));
+            if (selectedChat?._id === chat._id) {
+              setSelectedChat(chat);
+            }
           }
           return;
         }
@@ -158,10 +272,16 @@ const useDirectMessage = () => {
     setNewMessage,
     showCreatePanel,
     setShowCreatePanel,
+    createMode,
+    toggleCreateMode,
+    selectedUsers,
+    groupChatName,
+    setGroupChatName,
     handleSendMessage,
     handleChatSelect,
     handleUserSelect,
     handleCreateChat,
+    handleLeaveGroupChat,
     error,
     currentUsername: user.username,
   };
