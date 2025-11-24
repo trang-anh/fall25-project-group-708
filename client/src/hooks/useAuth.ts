@@ -45,26 +45,50 @@ const useAuth = (authType: 'login' | 'signup') => {
     setShowPassword(prevState => !prevState);
   };
 
-  /**
-   * Handles changes in input fields and updates the corresponding state.
-   *
-   * @param e - The input change event.
-   * @param field - The field being updated ('username', 'password', or 'confirmPassword').
-   */
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     field: 'username' | 'password' | 'confirmPassword' | 'twoFactor',
   ) => {
-    const fieldText = e.target.value.trim();
+    const value = e.target.value;
 
     if (field === 'username') {
-      setUsername(fieldText);
-    } else if (field === 'password') {
-      setPassword(fieldText);
-    } else if (field === 'confirmPassword') {
-      setPasswordConfirmation(fieldText);
-    } else if (field === 'twoFactor') {
-      const digitsOnly = fieldText.replace(/\D/g, '').slice(0, 6);
+      setUsername(value.trim());
+      return;
+    }
+
+    if (field === 'password') {
+      setPassword(value);
+
+      // Validate password only on signup
+      if (authType === 'signup') {
+        const isValid = value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+
+        if (!isValid) {
+          setErr('Password must be at least 8 characters and contain a letter and number');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'confirmPassword') {
+      setPasswordConfirmation(value);
+
+      if (authType === 'signup') {
+        if (value !== password) {
+          setErr('Passwords do not match');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'twoFactor') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
       setTwoFactorCode(digitsOnly);
     }
   };

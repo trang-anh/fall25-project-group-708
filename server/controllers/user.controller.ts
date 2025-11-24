@@ -334,8 +334,8 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/getUsers', getUsers);
   router.delete('/deleteUser/:username', deleteUser);
   router.patch('/updateBiography', updateBiography);
-  router.post('/avatar', avatarUpload.single('avatar'), uploadAvatar);
-  router.delete('/avatar', deleteAvatar);
+  router.post('/uploadAvatar', avatarUpload.single('avatar'), uploadAvatar);
+  router.delete('/deleteAvatar', deleteAvatar);
   router.post('/2fa/generate/:username', generate2FA);
   router.post('/2fa/enable', enable2FA);
   router.post('/2fa/disable', disable2FAHandler);

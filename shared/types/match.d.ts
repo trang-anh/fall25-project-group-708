@@ -35,7 +35,6 @@ export interface DatabaseMatch extends Match {
   updatedAt: Date;
 }
 
-
 /**
  * Represents a populated match record.
  * Includes the full `DatabaseMatchProfile` objects for both users,
