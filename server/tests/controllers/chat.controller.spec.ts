@@ -45,7 +45,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       const populatedChatResponse: PopulatedDatabaseChat = {
@@ -68,7 +67,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       saveChatSpy.mockResolvedValue(chatResponse);
@@ -102,7 +100,6 @@ describe('Chat Controller', () => {
             expect.objectContaining({
               msg: 'Hello!',
               msgFrom: 'user1',
-              type: 'direct',
             }),
           ]),
         }),
@@ -150,7 +147,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       saveChatSpy.mockResolvedValue(chatResponse);
@@ -413,7 +409,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01'),
-        chatType: 'direct',
       };
 
       const populatedChatResponse: PopulatedDatabaseChat = {
@@ -423,7 +418,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01'),
-        chatType: 'direct',
       };
 
       getChatSpy.mockResolvedValue(chatResponse);
@@ -596,14 +590,6 @@ describe('Chat Controller', () => {
 
       getChatSpy.mockResolvedValue(chatResponse);
       saveMessageSpy.mockResolvedValue({ error: 'Error saving message' });
-      getChatSpy.mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(),
-        participants: ['User1'],
-        messages: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        chatType: 'direct',
-      });
 
       const response = await supertest(app)
         .post(`/api/chat/${chatId}/addMessage`)
@@ -662,7 +648,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       getChatSpy.mockResolvedValue(chatResponse);
@@ -688,7 +673,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       const mockPopulatedChat: PopulatedDatabaseChat = {
@@ -711,7 +695,6 @@ describe('Chat Controller', () => {
         chatType: 'direct',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       getChatSpy.mockResolvedValue(mockFoundChat);
@@ -786,7 +769,6 @@ describe('Chat Controller', () => {
         chatType: 'group',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       const populatedUpdatedChat: PopulatedDatabaseChat = {
@@ -796,7 +778,6 @@ describe('Chat Controller', () => {
         chatType: 'group',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       addParticipantSpy.mockResolvedValue(updatedChat);
@@ -853,7 +834,6 @@ describe('Chat Controller', () => {
         chatType: 'group',
         createdAt: new Date(),
         updatedAt: new Date(),
-        chatType: 'direct',
       };
 
       addParticipantSpy.mockResolvedValue(updatedChat);
@@ -880,7 +860,6 @@ describe('Chat Controller', () => {
           chatType: 'direct',
           createdAt: new Date(),
           updatedAt: new Date(),
-          chatType: 'direct',
         },
       ];
 
@@ -892,7 +871,6 @@ describe('Chat Controller', () => {
           chatType: 'direct',
           createdAt: new Date(),
           updatedAt: new Date(),
-          chatType: 'direct',
         },
       ];
 
@@ -925,7 +903,6 @@ describe('Chat Controller', () => {
           chatType: 'direct',
           createdAt: new Date(),
           updatedAt: new Date(),
-          chatType: 'direct',
         },
       ];
 

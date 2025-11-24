@@ -157,6 +157,7 @@ describe('populateDocument', () => {
     expect(result).toEqual({
       _id: 'chatId',
       participants: ['user1'],
+      chatType: 'direct',
       messages: [
         {
           _id: 'messageId',
