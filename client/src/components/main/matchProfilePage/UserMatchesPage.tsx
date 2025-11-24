@@ -4,7 +4,6 @@ import UserMatches from './UserMatches';
 
 /**
  * Wrapper component for UserMatches that provides user context
- * Place this in: src/components/main/matching/UserMatchesPage.tsx
  */
 const UserMatchesPage: React.FC = () => {
   const { user } = useUserContext();

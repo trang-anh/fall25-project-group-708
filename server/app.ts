@@ -65,11 +65,13 @@ process.on('SIGINT', async () => {
   });
 });
 
-// Add CORS middleware 
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:4530',
-  credentials: true,
-}));
+// Add CORS middleware
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:4530',
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 

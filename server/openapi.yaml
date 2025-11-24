@@ -1219,6 +1219,54 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+  
+  /match/updateStatus/{matchId}:
+    patch:
+      tags:
+        - Match
+      summary: Update the status of a match (accept or decline)
+      parameters:
+        - in: path
+          name: matchId
+          schema:
+            type: string
+            format: object-id
+          required: true
+          description: The unique ID of the match to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMatchBody'
+      responses:
+        '200':
+          description: Match successfully updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  community:
+                    $ref: '#/components/schemas/DatabaseMatch'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '404':
+          description: Match not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
 
   /match/delete/{matchId}:
     delete:
@@ -1268,31 +1316,38 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorResponse'
   
-  /match/generate/{userId}:
-    post:
-      summary: Generate match suggestions for a user
-      description: Computes compatibility scores
+  /match/recommend/{userId}:
+    get:
+      summary: Generate recommended match profiles for a user
+      description: Computes compatibility scores and returns ML-based recommendations
       tags:
         - Match
       parameters:
         - in: path
           name: userId
           required: true
-          description: The ID of the user whose matches will be generated.
+          description: The ID of the user requesting recommendations.
           schema:
             type: string
       responses:
         '200':
-          description: Matches generated successfully
+          description: Recommendations generated successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  matches:
+                  recommendations:
                     type: array
                     items:
-                      $ref: '#/components/schemas/DatabaseMatch'
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        score:
+                          type: number
+                        profile:
+                          $ref: '#/components/schemas/DatabaseMatchProfile'
                   message:
                     type: string
         '404':
@@ -1305,7 +1360,7 @@ paths:
                   error:
                     type: string
         '500':
-          description: Server error during match generation
+          description: Server error during recommendation generation
           content:
             application/json:
               schema:
@@ -2072,6 +2127,24 @@ components:
           type: string
           minLength: 1
           description: The user id of the user performing the deletion.
+    
+    UpdateMatchBody:
+      type: object
+      description: Data required to update a match status
+      properties:
+        userId:
+          type: string
+          format: object-id
+          description: ID of the user performing the update
+        status:
+          type: string
+          enum:
+            - accepted
+            - rejected
+          description: New status for the match
+      required:
+        - userId
+        - status
 
     DatabaseMatch:
       allOf:
@@ -2101,8 +2174,13 @@ components:
       type: object
       properties:
         userId:
-          type: string
+          type: object
           description: Unique identifier for the match profile
+          properties:
+            _id:
+              type: string
+            username:
+              type: string
         isActive:
           type: boolean
           description: Boolean indicicating active in service or not
@@ -2130,10 +2208,9 @@ components:
           description: location of user
         programmingLanguage:
           type: array
-          description: Array of ObjectIds referencing programming languages known by the user.
+          description: Array of string referencing programming languages known by the user.
           items:
             type: string
-            format: object-id
         level:
           type: string
           enum: 
@@ -2147,10 +2224,9 @@ components:
           properties:
             preferredLanguages:
               type: array
-              description: Array of ObjectIds referencing preferred programming languages.
+              description: Array of strings for preferred programming languages.
               items:
                 type: string
-                format: object-id
             preferredLevel:
               type: string
               enum: 
@@ -2197,6 +2273,8 @@ components:
           type: string
           description: Unique identifier for the match profile
           minLength: 1
+        isActive:
+          type: boolean
         gender:
           type: string
           enum: 
@@ -2213,6 +2291,34 @@ components:
           - INTERMEDIATE
           - ADVANCED
           description: user's self-assessed programming level
+        age:
+          type: integer
+          minimum: 1
+        location:
+          type: string
+        programmingLanguage:
+          type: array
+          items:
+            type: string
+        preferences:
+          type: object
+          properties:
+            preferredLanguages:
+              type: array
+              items:
+                type: string
+            preferredLevel:
+              type: string
+        onboardingAnswers:
+          type: object
+          properties:
+            goals: string 
+            personality: string 
+            projectType: string
+        biography:
+          type: string
+        profileImageUrl:
+          type: string
     
     ToggleMatchProfileActiveBody:
       type: object
@@ -2264,10 +2370,9 @@ components:
           description: Updated location or region of the user
         programmingLanguage:
           type: array
-          description: Updated list of programming languages (ObjectIds) for the user
+          description: Updated list of programming languages (String) for the user
           items:
             type: string
-            format: object-id
         level:
           type: string
           enum: 
@@ -2283,7 +2388,6 @@ components:
               type: array
               items:
                 type: string
-                format: object-id
               description: Updated preferred programming languages
             preferredLevel:
               type: string

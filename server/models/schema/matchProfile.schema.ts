@@ -24,7 +24,6 @@ const matchProfileSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     isActive: {
       type: Boolean,
@@ -51,12 +50,10 @@ const matchProfileSchema: Schema = new Schema(
         'ANTARCTICA',
       ],
     },
-    programmingLanguage: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'ProgrammingLanguage',
-      },
-    ],
+    programmingLanguage: {
+      type: [String],
+      default: [],
+    },
     level: {
       type: String,
       enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],
@@ -64,12 +61,10 @@ const matchProfileSchema: Schema = new Schema(
       default: 'BEGINNER',
     },
     preferences: {
-      preferredLanguages: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'ProgrammingLanguage',
-        },
-      ],
+      preferredLanguages: {
+        type: [String],
+        default: [],
+      },
       preferredLevel: {
         type: String,
         enum: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'],

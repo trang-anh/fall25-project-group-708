@@ -5,6 +5,8 @@ import {
   ToggleMatchProfileActiveRequest,
   FakeSOSocket,
   UpdateMatchProfileRequest,
+  DatabaseMatchProfile,
+  PopulatedUser,
 } from '../types/types';
 import {
   createMatchProfile,
@@ -14,6 +16,41 @@ import {
   checkOnboardingStatus,
   getAllMatchProfiles,
 } from '../services/matchProfile.service';
+
+/**
+ * HELPER: Checks if the given userId is a populated user object instead of just a string.
+ *
+ * @param userId - Either the userId string or a populated user object.
+ * @returns True if userId is an object with an _id field.
+ */
+function isPopulatedUserId(userId: string | PopulatedUser): userId is PopulatedUser {
+  return typeof userId === 'object' && userId !== null && '_id' in userId;
+}
+
+/**
+ * HELPER: Ensures the returned match profile has `userId: string`.
+ * REQUIRED because OpenAPI won't accept an object.
+ */
+function normalizeProfileForResponse(
+  profile: DatabaseMatchProfile,
+): DatabaseMatchProfile & { userId: { _id: string; username: string } } {
+  const rawUser = profile.userId;
+
+  const userObj = isPopulatedUserId(rawUser)
+    ? {
+        _id: rawUser._id.toString(),
+        username: rawUser.username,
+      }
+    : {
+        _id: rawUser.toString(),
+        username: 'Unknown',
+      };
+
+  return {
+    ...profile,
+    userId: userObj,
+  };
+}
 
 /**
  * This controller handles match profile-related routes.
@@ -35,13 +72,26 @@ const matchProfileController = (socket: FakeSOSocket) => {
     const { userId } = req.params;
 
     try {
-      const foundMatchProfile = await getMatchProfile(userId);
+      const foundMatchProfile: DatabaseMatchProfile | { error: string } =
+        await getMatchProfile(userId);
 
       if ('error' in foundMatchProfile) {
         throw new Error(foundMatchProfile.error);
       }
 
-      res.json(foundMatchProfile);
+      const plain = {
+        ...foundMatchProfile,
+        userId: isPopulatedUserId(foundMatchProfile.userId)
+          ? {
+              _id: foundMatchProfile.userId._id.toString(),
+              username: foundMatchProfile.userId.username,
+            }
+          : {
+              _id: foundMatchProfile.userId.toString(),
+              username: 'Unknown',
+            },
+      };
+      res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving match profile: ${(err as Error).message}`);
     }
@@ -62,7 +112,11 @@ const matchProfileController = (socket: FakeSOSocket) => {
         throw new Error(matches.error);
       }
 
-      res.json(matches);
+      const plain = matches.map(p => ({
+        ...p,
+        userId: isPopulatedUserId(p.userId) ? p.userId._id.toString() : p.userId,
+      }));
+      res.json(plain);
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving all matching profile: ${(err as Error).message}`);
     }
@@ -154,7 +208,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: result,
       });
 
-      res.json(result);
+      const clean = normalizeProfileForResponse(result);
+      res.json(clean);
     } catch (err: unknown) {
       res
         .status(500)
@@ -189,7 +244,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: updatedProfile,
       });
 
-      res.json(updatedProfile);
+      const clean = normalizeProfileForResponse(updatedProfile);
+      res.json(clean);
     } catch (err: unknown) {
       res.status(500).json({
         error: `Error updating match profile: ${(err as Error).message}`,

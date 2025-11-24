@@ -1,19 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import useUserContext from '../../../hooks/useUserContext';
 import './MatchOptInPage.css';
+import useMatchOptIn from '../../../hooks/useMatchOptInPage';
 
+/**
+ * Structure of the match opt in page so users can decide whether
+ * to opt in to the feature. If no, redirect them.
+ */
 const MatchOptInPage: React.FC = () => {
-  const { user } = useUserContext();
-  const navigate = useNavigate();
-
-  const handleJoinClick = () => {
-    navigate('/match-onboarding');
-  };
-
-  const handleMaybeLaterClick = () => {
-    navigate('/');
-  };
+  const { user, handleJoinClick, handleMaybeLaterClick } = useMatchOptIn();
 
   if (!user || !user._id) {
     return (

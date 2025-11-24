@@ -145,7 +145,7 @@ export interface ClientToServerEvents {
 
 /**
  * Interface representing the payload for a match update event.
- * - `type`: The type of update (`'created'`, `'updated'`, or `'deleted'`).
+ * - `type`: The type of update (`'created'`, `'updated'`, `generated`, or `'deleted'`).
  * - `match`: The updated match object.
  */
 export interface MatchUpdatePayload {
@@ -178,6 +178,7 @@ export interface MatchProfileUpdatePayload {
  * - `communityUpdate`: Server sends updated community.
  * - `collectionUpdate`: Server sends updated collection.
  * - `matchUpdate`: Server sends updated match.
+ * - `matchProfileUpdate`: Server sends updated match profile.
  * - `collectionUpdate`: Server sends updated match.
  */
 export interface ServerToClientEvents {

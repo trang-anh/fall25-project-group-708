@@ -1,5 +1,5 @@
-import { ObjectId } from 'mongoose';
-import { PopulatedDatabaseMatchProfile, ProgrammingLanguage } from '../types/types';
+import { MatchProfileWithUser } from '../types/types';
+
 /**
  * Extract features from user match profile into a vector of numbers for further processing and score computing for match compability.
  * @param a a user's populated match profle
@@ -7,8 +7,8 @@ import { PopulatedDatabaseMatchProfile, ProgrammingLanguage } from '../types/typ
  * @returns a vector of features scores
  */
 export default function extractFeatures(
-  a: PopulatedDatabaseMatchProfile,
-  b: PopulatedDatabaseMatchProfile,
+  a: MatchProfileWithUser,
+  b: MatchProfileWithUser,
 ): number[] {
   // compute jaccard score for programming lang overlaps
   const skillOverlap = jaccard(a.programmingLanguage, b.programmingLanguage);
@@ -27,9 +27,6 @@ export default function extractFeatures(
   return [skillOverlap, levelSim, preferredLangMatch, goalSim, personalitySim, projectSim];
 }
 
-// ----- helpers -----
-type LanguageEntry = ProgrammingLanguage | ObjectId | { _id?: ObjectId };
-
 /**
  * Calculates the Jaccard similarity score between two sets of programming languages.
  *
@@ -42,14 +39,22 @@ type LanguageEntry = ProgrammingLanguage | ObjectId | { _id?: ObjectId };
  * @param b - The second user's list of programming languages.
  * @returns A similarity score between 0 and 1.
  */
-function jaccard(a?: LanguageEntry[], b?: LanguageEntry[]): number {
-  // if empty, return 0 as score
+function jaccard(a?: string[], b?: string[]): number {
   if (!a?.length || !b?.length) return 0;
-  const setA = new Set(a.map(String));
-  const setB = new Set(b.map(String));
-  const inter = [...setA].filter(x => setB.has(x)).length;
-  const union = new Set([...setA, ...setB]).size;
-  return inter / union;
+
+  const setA = new Set(a);
+  const setB = new Set(b);
+
+  let intersection = 0;
+
+  for (const value of setA) {
+    if (setB.has(value)) {
+      intersection += 1;
+    }
+  }
+
+  const unionSize = new Set([...setA, ...setB]).size;
+  return unionSize === 0 ? 0 : intersection / unionSize;
 }
 
 /**
@@ -67,8 +72,10 @@ function jaccard(a?: LanguageEntry[], b?: LanguageEntry[]): number {
  */
 function levelSimilarity(a?: string, b?: string): number {
   if (!a || !b) return 0.5;
+
   const levels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
   const diff = Math.abs(levels.indexOf(a) - levels.indexOf(b));
+
   return 1 - diff / 2;
 }
 
@@ -82,13 +89,11 @@ function levelSimilarity(a?: string, b?: string): number {
  * @param b - The second user's populated match profile.
  * @returns 1 if there is a language match, otherwise 0.
  */
-function matchPreferredLang(
-  a: PopulatedDatabaseMatchProfile,
-  b: PopulatedDatabaseMatchProfile,
-): number {
-  const userALangs = a.programmingLanguage?.map(String) || [];
-  const prefs = b.preferences?.preferredLanguages?.map(String) || [];
-  return userALangs.some(l => prefs.includes(l)) ? 1 : 0;
+function matchPreferredLang(a: MatchProfileWithUser, b: MatchProfileWithUser): number {
+  const userALangs = a.programmingLanguage || [];
+  const prefs = b.preferences?.preferredLanguages || [];
+
+  return userALangs.some(lang => prefs.includes(lang)) ? 1 : 0;
 }
 
 /**
@@ -105,8 +110,11 @@ function matchPreferredLang(
  */
 function textSimilarity(a?: string, b?: string): number {
   if (!a || !b) return 0;
-  const tA = new Set(a.toLowerCase().split(/\W+/));
-  const tB = new Set(b.toLowerCase().split(/\W+/));
-  const overlap = [...tA].filter(x => tB.has(x)).length;
-  return overlap / Math.max(tA.size, tB.size);
+
+  const tokensA = new Set(a.toLowerCase().split(/\W+/));
+  const tokensB = new Set(b.toLowerCase().split(/\W+/));
+
+  const overlap = [...tokensA].filter(t => tokensB.has(t)).length;
+
+  return overlap / Math.max(tokensA.size, tokensB.size);
 }

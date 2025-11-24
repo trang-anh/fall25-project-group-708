@@ -6,14 +6,15 @@ import {
   FakeSOSocket,
   DeleteMatchRequest,
   MatchProfileRequest,
-  DatabaseMatch,
+  UpdateMatchStatusRequest,
 } from '../types/types';
 import {
   createMatch,
   deleteMatch,
-  generateMatchesForUser,
+  generateMatchRecommendation,
   getMatch,
   getUserMatches,
+  updateMatchStatus,
 } from '../services/match.service';
 
 /**
@@ -58,13 +59,24 @@ const matchController = (socket: FakeSOSocket) => {
   const getUserMatchesRoute = async (req: GetUserMatchesRequest, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
-      const matches = await getUserMatches(userId);
+      const result = await getUserMatches(userId);
 
-      if ('error' in matches) {
-        throw new Error(matches.error);
+      if ('error' in result) {
+        res.status(500).json({ error: result.error });
+        return;
       }
 
-      res.json(matches);
+      // Convert ObjectIds → strings for OpenAPI validation
+      const cleaned = result.map(match => ({
+        ...match,
+        _id: match._id.toString(),
+        userA: match.userA.toString(),
+        userB: match.userB.toString(),
+        initiatedBy: match.initiatedBy?.toString() ?? null,
+      }));
+
+      res.json(cleaned);
+      return;
     } catch (err: unknown) {
       res.status(500).send(`Error retrieving all user matches: ${(err as Error).message}`);
     }
@@ -141,52 +153,108 @@ const matchController = (socket: FakeSOSocket) => {
   };
 
   /**
+   * Updates the status of an existing match (accept or decline).
+   *
+   * @param req - The request containing matchId in params and userId/status in body
+   * @param res - The response object used to send back the result
+   * @returns {Promise<void>}
+   */
+  const updateMatchStatusRoute = async (
+    req: UpdateMatchStatusRequest,
+    res: Response,
+  ): Promise<void> => {
+    const { matchId } = req.params;
+    const { userId, status } = req.body;
+
+    try {
+      const updated = await updateMatchStatus(matchId, userId, status);
+
+      if ('error' in updated) {
+        if (updated.error.includes('Unauthorized')) {
+          res.status(403).json({ error: updated.error });
+        } else if (updated.error.includes('not found')) {
+          res.status(404).json({ error: updated.error });
+        } else {
+          res.status(500).json({ error: updated.error });
+        }
+        return;
+      }
+
+      socket.emit('matchUpdate', {
+        type: 'updated',
+        match: updated,
+      });
+
+      res.json(updated);
+    } catch (err: unknown) {
+      res.status(500).json({
+        error: `Error updating match status: ${(err as Error).message}`,
+      });
+    }
+  };
+
+  /**
    * Generates matches for a user and emits matchUpdate events for each match.
    */
   /**
    * Generates matches for a user, emits matchUpdate events,
    * and returns the list of generated matches.
    */
-  const generateMatchesForUserRoute = async (
+  const generateMatchRecommendationsRoute = async (
     req: MatchProfileRequest,
     res: Response,
   ): Promise<void> => {
     const { userId } = req.params;
 
     try {
-      const result = await generateMatchesForUser(userId);
+      const result = await generateMatchRecommendation(userId);
 
       if ('error' in result) {
-        if (result.error.includes('not found')) {
-          res.status(404).json({ error: result.error });
-        } else {
-          res.status(500).json({ error: result.error });
-        }
+        res.status(500).json({ error: result.error });
         return;
       }
 
-      // Emit one event per generated match (matches your MatchUpdatePayload)
-      result.matches.forEach((match: DatabaseMatch) => {
-        socket.emit('matchUpdate', {
-          type: 'generated',
-          match,
-        });
-      });
+      if (!result.recommendations || result.recommendations.length === 0) {
+        res.json({ recommendations: [], message: 'No recommendations found' });
+        return;
+      }
+
+      const cleaned = result.recommendations.map(rec => ({
+        userId: rec.userId,
+        score: rec.score,
+        profile: {
+          ...rec.profile,
+          _id: rec.profile._id.toString(),
+          userId: {
+            _id: rec.profile.userId._id.toString(),
+            username: rec.profile.userId.username,
+          },
+          programmingLanguage: rec.profile.programmingLanguage,
+          preferences: {
+            ...rec.profile.preferences,
+            preferredLanguages: rec.profile.preferences.preferredLanguages,
+          },
+        },
+      }));
 
       res.json({
-        matches: result.matches,
-        message: 'Matches generated successfully',
+        recommendations: cleaned,
+        message: 'Recommendations generated successfully',
       });
     } catch (err) {
-      res.status(500).json({ error: `Error generating matches: ${(err as Error).message}` });
+      res.status(500).json({
+        error: `Error generating recommendations: ${(err as Error).message}`,
+      });
     }
   };
+
   // Registering routes
   router.get('/getMatch/:matchId', getMatchRoute);
   router.get('/getUserMatches/:userId', getUserMatchesRoute);
   router.post('/create', createMatchRoute);
+  router.patch('/updateStatus/:matchId', updateMatchStatusRoute);
   router.delete('/delete/:matchId', deleteMatchRoute);
-  router.post('/generate/:userId', generateMatchesForUserRoute);
+  router.get('/recommend/:userId', generateMatchRecommendationsRoute);
 
   return router;
 };
