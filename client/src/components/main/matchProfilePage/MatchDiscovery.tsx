@@ -6,10 +6,18 @@ import useMatchDiscovery from '../../../hooks/useMatchDiscovery';
 import useMatchRecommendation from '../../../hooks/useMatchRecommendation';
 import { RecommendationProfile } from '../../../types/recommendationProfile';
 
+/**
+ * Props for the MatchDiscovery page.
+ * `currentUserId` is the logged-in user's id.
+ */
 interface MatchDiscoveryProps {
   currentUserId: string;
 }
 
+/**
+ * Match discovery page.
+ * Shows available developers + recommended profiles based on compatibility.
+ */
 const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
   const { profiles, loading, error, refetch } = useMatchDiscovery(currentUserId);
 

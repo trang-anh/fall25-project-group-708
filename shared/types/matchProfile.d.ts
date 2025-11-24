@@ -1,4 +1,3 @@
-// import { ObjectId } from 'mongodb';
 import { Request } from 'express';
 
 /**
@@ -8,7 +7,6 @@ import { Request } from 'express';
  * - `questions`: The questions that have been added to the collection.
  */
 export interface MatchProfile {
-  // userId: ObjectId;
   userId: string;
   isActive: boolean;
   age: number;
@@ -68,23 +66,6 @@ interface PopulatedUser {
 export interface MatchProfileWithUser extends Omit<DatabaseMatchProfile, 'userId'> {
   userId: PopulatedUser;
 }
-// /**
-//  * Represents a populated match profile.
-//  * - Includes full User objects.
-//  */
-// export interface PopulatedDatabaseMatchProfile
-//   extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
-//   _id: ObjectId;
-//   userId: ObjectId;
-//   isActive: boolean;
-//   createdAt: Date;
-
-//   programmingLanguage: string[];
-//   preferences: {
-//     preferredLanguages: string[];
-//     preferredLevel: string;
-//   };
-// }
 
 /**
  * Type definition for create a match profile request

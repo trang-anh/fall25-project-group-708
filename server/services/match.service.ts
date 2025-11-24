@@ -11,15 +11,13 @@ import extractFeatures from './matchFeature.service';
 import computeScore from './matchMath.service';
 
 /**
- * Creates a new community with the provided data.
- * The admin user is automatically added to the participants list if not already included.
+ * Creates a new match record between two users.
  *
- * @param communityData - Object containing community details including name, description, visibility, admin, and participants
- * @returns A Promise resolving to the newly created community document or an error object
+ * @param matchData - The match information including userA, userB, status, score, and who initiated it.
+ * @returns A Promise resolving to the newly created match document (normalized) or an error object.
  */
 export const createMatch = async (matchData: Match): Promise<MatchResponse> => {
   try {
-    // Ensure admin is included in the participants list
     const newMatch = new MatchModel({
       userA: matchData.userA,
       userB: matchData.userB,
@@ -155,6 +153,14 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<Matc
   }
 };
 
+/**
+ * Updates the status of a match (accepted or rejected).
+ *
+ * @param matchId - The ID of the match being updated.
+ * @param userId - The ID of the user performing the update.
+ * @param newStatus - The new status to set.
+ * @returns A Promise resolving to the updated match document or an error object.
+ */
 export const updateMatchStatus = async (
   matchId: string,
   userId: string,
@@ -189,11 +195,14 @@ export const updateMatchStatus = async (
 };
 
 /**
- * Generates or updates matches for a given user based on their match profile
- * and returns the list of match documents sorted by descending score.
+ * Generates match recommendations for a user based on similarity scoring.
  *
- * - Only considers other active match profiles.
- * - Skips pairs with no language overlap (skillOverlap = 0).
+ * - Only considers active match profiles.
+ * - Uses extracted feature vectors to compute a compatibility score.
+ * - Skips recommendations with no language overlap.
+ *
+ * @param userId - The ID of the user requesting recommendations.
+ * @returns A Promise resolving to an ordered list of recommended matches or an error object.
  */
 export const generateMatchRecommendation = async (
   userId: string,

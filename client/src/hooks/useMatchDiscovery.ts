@@ -3,6 +3,10 @@ import { useMemo } from 'react';
 import { useUserMatches } from './useMatchProfilePage';
 import { RecommendationProfile } from '../types/recommendationProfile';
 
+/**
+ * Hook for getting match recommendations for the current user.
+ * Filters out users who are already matched with the current user.
+ */
 const useMatchDiscovery = (currentUserId: string | null) => {
   const { recommended, loading, error, refetch } = useMatchRecommendation(currentUserId);
   const { matches } = useUserMatches(currentUserId);
@@ -13,7 +17,7 @@ const useMatchDiscovery = (currentUserId: string | null) => {
     [matches],
   );
 
-  // Just remove already matched users — no filters
+  // Just remove already matched users
   const profiles = useMemo(() => {
     return recommended.filter((p: RecommendationProfile) => {
       const id = p.userId._id.toString();

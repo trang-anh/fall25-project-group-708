@@ -2,6 +2,13 @@ import { useMemo, useCallback } from 'react';
 import { DatabaseMatch } from '@fake-stack-overflow/shared';
 import { RecommendationProfile } from '../types/recommendationProfile';
 
+/**
+ * Params for the match profile card hook.
+ * - profile: the recommended user being shown
+ * - currentUserId: id of the logged-in user
+ * - matches: all existing matches involving the user
+ * - sendMatchRequest: function to send a new match request
+ */
 interface UseMatchProfileCardParams {
   profile: RecommendationProfile;
   currentUserId: string;
@@ -9,6 +16,10 @@ interface UseMatchProfileCardParams {
   sendMatchRequest: (targetUserId: string, score: number) => Promise<DatabaseMatch | undefined>;
 }
 
+/**
+ * Hook for a single match profile card.
+ * Checks match status with the target user and exposes an action to send a match request.
+ */
 const useMatchProfileCard = ({
   profile,
   currentUserId,

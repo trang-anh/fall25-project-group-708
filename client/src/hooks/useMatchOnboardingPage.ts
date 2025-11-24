@@ -6,6 +6,11 @@ import { MatchProfile } from '@fake-stack-overflow/shared';
 import { OnboardingFormData } from '../types/onboardingFormData';
 import { generateMatchRecommendation } from '../services/matchService';
 
+/**
+ * Hook for the match onboarding page.
+ * Checks if the user already has a match profile, and handles creating one
+ * when onboarding is completed.
+ */
 const useMatchOnboardingPage = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
@@ -17,6 +22,10 @@ const useMatchOnboardingPage = () => {
   useEffect(() => {
     let isMounted = true;
 
+    /**
+     * Checks if the current user already completed onboarding.
+     * If yes, redirect to discovery page.
+     */
     const checkStatus = async () => {
       if (!user || !user._id) {
         if (isMounted) setCheckingStatus(false);
@@ -43,6 +52,10 @@ const useMatchOnboardingPage = () => {
     };
   }, [user, navigate]);
 
+  /**
+   * Called when the onboarding form finishes.
+   * Creates the user's match profile and triggers first-time recommendations.
+   */
   const handleOnboardingComplete = async (formData: OnboardingFormData) => {
     if (!user?._id) {
       setError('User not authenticated. Please log in and try again.');
@@ -87,6 +100,7 @@ const useMatchOnboardingPage = () => {
     }
   };
 
+  /** Skip onboarding and leave the page */
   const handleSkip = () => navigate('/');
 
   return {

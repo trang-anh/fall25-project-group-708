@@ -1,6 +1,10 @@
 import React from 'react';
 import './ConfirmationModal.css';
 
+/**
+ * Props for a simple confirmation modal.
+ * `open` controls visibility, and confirm/cancel trigger callbacks.
+ */
 interface ConfirmationModalProps {
   open: boolean;
   title: string;
@@ -9,6 +13,10 @@ interface ConfirmationModalProps {
   onCancel: () => void;
 }
 
+/**
+ * Reusable confirmation modal component.
+ * Renders only when `open` is true.
+ */
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   open,
   title,

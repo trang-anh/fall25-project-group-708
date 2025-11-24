@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import MatchDiscovery from './MatchDiscovery';
 import useMatchDiscoveryPage from '../../../hooks/useMatchDiscoveryPage';
 
+/**
+ * Page wrapper for Match Discovery.
+ * Handles auth + onboarding checks before showing the discovery content.
+ */
 const MatchDiscoveryPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, checking, hasProfile } = useMatchDiscoveryPage();
