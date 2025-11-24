@@ -22,6 +22,19 @@ interface UserProps {
 const UserCardView = (props: UserProps) => {
   const { user, handleUserCardViewClickHandler } = props;
 
+  const handleBadge = (points: number): string => {
+    if (points >= 10000) return 'Legendary';
+    if (points >= 5000) return 'Epic';
+    if (points >= 2500) return 'Master';
+    if (points >= 1000) return 'Expert';
+    if (points >= 500) return 'Pro';
+    if (points >= 250) return 'Advanced';
+    if (points >= 100) return 'Intermediate';
+    if (points >= 50) return 'Contributor';
+    if (points >= 10) return 'Beginner';
+    return 'Newcomer';
+  };
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
@@ -41,6 +54,7 @@ const UserCardView = (props: UserProps) => {
 
       <h3 className='user-name-large'>{user.username}</h3>
       <p className='user-join-date'>{formatDate(user.dateJoined)}</p>
+      <p className='badge-text'>{handleBadge(user.totalPoints ?? 0)}</p>
 
       <div className='user-stats-grid'>
         <div className='stat-box'>

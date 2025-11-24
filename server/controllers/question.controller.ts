@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import express, { Response } from 'express';
 import {
   Question,
@@ -231,7 +230,6 @@ const questionController = (socket: FakeSOSocket) => {
 
       res.json(status);
     } catch (err) {
-      console.error('ERROR in voteQuestion:', err);
       res.status(500).send(`Error when ${type}ing: ${(err as Error).message}`);
     }
   };
