@@ -18,7 +18,7 @@ export const uploadAvatar = async (username: string, file: File): Promise<Avatar
     formData.append('avatar', file);
     formData.append('username', username);
 
-    const res = await api.post(`${USER_API_URL}/avatar`, formData, {
+    const res = await api.post(`${USER_API_URL}/uploadAvatar`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -48,7 +48,7 @@ export const uploadAvatar = async (username: string, file: File): Promise<Avatar
  */
 export const deleteAvatar = async (username: string): Promise<AvatarDeleteResponse> => {
   try {
-    const res = await api.delete(`${USER_API_URL}/avatar`, {
+    const res = await api.delete(`${USER_API_URL}/deleteAvatar`, {
       data: { username },
     });
 

@@ -29,6 +29,8 @@ const Login = () => {
     handleTwoFactorOptInChange,
     rememberDevice,
     handleRememberDeviceChange,
+    twoFactorEmail,
+    handleTwoFactorEmailChange,
   } = useAuth('login');
 
   /**
@@ -117,6 +119,33 @@ const Login = () => {
                 <label htmlFor='twofactor-optin-checkbox'>Enable two-factor authentication</label>
               </div>
 
+              {(twoFactorOptIn || requires2FA) && (
+                <div className='form-group'>
+                  <label className='form-label' htmlFor='twofactor-email-input'>
+                    Email for verification
+                  </label>
+                  <input
+                    type='email'
+                    value={twoFactorEmail}
+                    onChange={event => handleTwoFactorEmailChange(event.target.value)}
+                    placeholder='name@example.com'
+                    className='input-text'
+                    id='twofactor-email-input'
+                    required={twoFactorOptIn || requires2FA}
+                  />
+                </div>
+              )}
+
+              {twoFactorOptIn && !requires2FA && (
+                <button
+                  type='button'
+                  className='secondary-button'
+                  onClick={handleRequestTwoFactorCode}
+                  disabled={isSendingTwoFactorCode}>
+                  {isSendingTwoFactorCode ? 'Sending…' : 'Send verification code'}
+                </button>
+              )}
+
               <div className='remember-device'>
                 <input
                   type='checkbox'
@@ -147,9 +176,7 @@ const Login = () => {
                     />
                     <p className='form-helper'>
                       Enter the 6-digit code we sent to your email.
-                      {twoFactorDevCode && (
-                        <span className='code-preview'>Test code: {twoFactorDevCode}</span>
-                      )}
+                      {twoFactorDevCode && <span className='code-preview'> </span>}
                     </p>
                   </div>
                   <div className='twofactor-actions'>

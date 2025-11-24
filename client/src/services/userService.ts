@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { UserCredentials, SafeDatabaseUser } from '../types/types';
+import { UserCredentials, SafeDatabaseUser, UserSessionsResponse } from '../types/types';
 import api from './config';
+import { clearAuthToken, storeAuthToken } from '../utils/tokenStorage';
 
 const USER_API_URL = `/api/user`;
 const AUTH_API_URL = `/api/auth`;
@@ -8,6 +9,7 @@ const AUTH_API_URL = `/api/auth`;
 type AuthStatusResponse = {
   authenticated: boolean;
   user?: SafeDatabaseUser;
+  token?: string;
 };
 
 /**
@@ -46,7 +48,7 @@ const getUserByUsername = async (username: string): Promise<SafeDatabaseUser> =>
 const createUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
   try {
     const res = await api.post(`${USER_API_URL}/signup`, user);
-    return res.data;
+    return extractUserFromAuthResponse(res.data);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(`Error while signing up: ${error.response.data}`);
@@ -69,6 +71,21 @@ type LoginOptions = {
   rememberDevice?: boolean;
 };
 
+const extractUserFromAuthResponse = (data: unknown, persistToken = true): SafeDatabaseUser => {
+  const possibleRecord = data as { user?: SafeDatabaseUser; token?: string };
+  const user = possibleRecord.user ?? (data as SafeDatabaseUser | undefined);
+
+  if (!user) {
+    throw new Error('Invalid authentication response from server');
+  }
+
+  if (possibleRecord.token) {
+    storeAuthToken(possibleRecord.token, persistToken);
+  }
+
+  return user;
+};
+
 const loginUser = async (
   user: UserCredentials,
   options?: LoginOptions,
@@ -80,7 +97,7 @@ const loginUser = async (
       rememberDevice: options?.rememberDevice ?? false,
     };
     const res = await api.post(`${USER_API_URL}/login`, payload);
-    return res.data;
+    return extractUserFromAuthResponse(res.data, options?.rememberDevice ?? false);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       const serverMessage =
@@ -98,13 +115,22 @@ const loginUser = async (
  * Requests that the server generate a new 2FA code for the given username.
  * The server responds with the code only for testing purposes.
  */
-const requestTwoFactorCode = async (username: string): Promise<{ code?: string }> => {
+const requestTwoFactorCode = async (
+  username: string,
+  email: string,
+): Promise<{ code?: string }> => {
   if (!username) {
     throw new Error('Username is required to request a verification code');
   }
 
+  if (!email) {
+    throw new Error('Email is required to request a verification code');
+  }
+
   try {
-    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`);
+    const res = await api.post(`${USER_API_URL}/2fa/generate/${encodeURIComponent(username)}`, {
+      email,
+    });
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -225,7 +251,12 @@ const getCurrentUser = async (): Promise<SafeDatabaseUser | null> => {
       throw new Error('Not authenticated');
     }
     if (!res.data.authenticated || !res.data.user) {
+      clearAuthToken();
       return null;
+    }
+    const tokenFromResponse = (res.data as { token?: string }).token;
+    if (tokenFromResponse) {
+      storeAuthToken(tokenFromResponse);
     }
     return res.data.user;
   } catch (error) {
@@ -234,6 +265,7 @@ const getCurrentUser = async (): Promise<SafeDatabaseUser | null> => {
         `Error fetching the current user: ${error.response.data.error || 'Not authenticated'}`,
       );
     } else {
+      clearAuthToken();
       throw new Error('Error fetching new user');
     }
   }
@@ -257,6 +289,8 @@ const logoutUser = async (): Promise<void> => {
     } else {
       throw new Error('Error while logging out');
     }
+  } finally {
+    clearAuthToken();
   }
 };
 
@@ -282,6 +316,22 @@ const findUsersBySkills = async (skills: string[]): Promise<SafeDatabaseUser[]> 
   }
 };
 
+const getActiveSessions = async (): Promise<UserSessionsResponse> => {
+  const res = await api.get(`${AUTH_API_URL}/sessions`);
+  if (res.status !== 200) {
+    throw new Error('Failed to fetch sessions');
+  }
+  return res.data;
+};
+
+const revokeSession = async (sessionId: string): Promise<{ currentSessionRevoked: boolean }> => {
+  const res = await api.delete(`${AUTH_API_URL}/sessions/${sessionId}`);
+  if (res.status !== 200) {
+    throw new Error('Failed to revoke session');
+  }
+  return res.data;
+};
+
 export {
   getUsers,
   getUserByUsername,
@@ -298,4 +348,6 @@ export {
   getTwoFactorStatus,
   enableTwoFactor,
   disableTwoFactor,
+  getActiveSessions,
+  revokeSession,
 };

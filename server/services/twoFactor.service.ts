@@ -1,5 +1,6 @@
 import UserModel from '../models/users.model';
 import { UserResponse } from '../types/types';
+import sendTwoFactorCodeEmail from './email.service';
 
 /**
  * Generate a random 6-digit verification code
@@ -13,6 +14,7 @@ const generateCode = (): string => {
  */
 export const generate2FACode = async (
   username: string,
+  email?: string,
 ): Promise<{ code: string } | { error: string }> => {
   try {
     const user = await UserModel.findOne({ username });
@@ -20,10 +22,21 @@ export const generate2FACode = async (
 
     const code = generateCode();
 
+    if (email) {
+      user.email = email.trim().toLowerCase();
+    } else if (!user.email && user.username.includes('@')) {
+      user.email = user.username;
+    }
+
+    if (!user.email) {
+      return { error: 'Email is required to send the verification code' };
+    }
+
     user.twoFactorCode = code;
     await user.save();
 
-    // Need to send code via email
+    await sendTwoFactorCodeEmail(user.email, code);
+
     return { code };
   } catch (error) {
     return { error: `Error generating 2FA code: ${error}` };

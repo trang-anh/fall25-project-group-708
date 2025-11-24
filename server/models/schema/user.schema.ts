@@ -23,6 +23,11 @@ const userSchema: Schema = new Schema(
     password: {
       type: String,
     },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
     dateJoined: {
       type: Date,
     },

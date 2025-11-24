@@ -30,8 +30,10 @@ import {
   createSession,
   deleteSession,
   getSessionTtl,
+  invalidateUserSessions,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
+import { API_TOKEN_COOKIE_NAME, getJwtTtl, signJwt } from '../services/jwt.service';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -88,12 +90,17 @@ const userController = (socket: FakeSOSocket) => {
         throw Error(user.error);
       }
 
+      invalidateUserSessions(user as SafeDatabaseUser);
+
       const existingSessionId = getSessionIdFromRequest(req);
       if (existingSessionId) {
         deleteSession(existingSessionId);
       }
 
-      const { sessionId } = createSession(user as SafeDatabaseUser);
+      const { sessionId } = createSession(user as SafeDatabaseUser, getSessionTtl(), {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
       const cookieOptions: CookieOptions = {
         httpOnly: true,
         sameSite: 'lax',
@@ -106,7 +113,18 @@ const userController = (socket: FakeSOSocket) => {
 
       res.cookie(SESSION_COOKIE_NAME, sessionId, cookieOptions);
 
-      res.status(200).json(user);
+      const apiToken = signJwt(user as SafeDatabaseUser, getJwtTtl());
+      const tokenCookieOptions: CookieOptions = {
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      };
+      if (rememberDevice) {
+        tokenCookieOptions.maxAge = getJwtTtl();
+      }
+      res.cookie(API_TOKEN_COOKIE_NAME, apiToken, tokenCookieOptions);
+
+      res.status(200).json({ user, token: apiToken });
     } catch (error) {
       res.status(500).send('Login failed');
     }
@@ -234,10 +252,14 @@ const userController = (socket: FakeSOSocket) => {
    * @param req The request containing username as a route parameter.
    * @param res The response, either returning the code or an error.
    */
-  const generate2FA = async (req: UserByUsernameRequest, res: Response): Promise<void> => {
+  const generate2FA = async (
+    req: Request<{ username: string }, unknown, { email?: string }>,
+    res: Response,
+  ): Promise<void> => {
     try {
       const { username } = req.params;
-      const result = await generate2FACode(username);
+      const { email } = req.body || {};
+      const result = await generate2FACode(username, email);
 
       if ('error' in result) {
         res.status(400).json(result);
@@ -324,8 +346,8 @@ const userController = (socket: FakeSOSocket) => {
   router.get('/getUsers', getUsers);
   router.delete('/deleteUser/:username', deleteUser);
   router.patch('/updateBiography', updateBiography);
-  router.post('/avatar', avatarUpload.single('avatar'), uploadAvatar);
-  router.delete('/avatar', deleteAvatar);
+  router.post('/uploadAvatar', avatarUpload.single('avatar'), uploadAvatar);
+  router.delete('/deleteAvatar', deleteAvatar);
   router.post('/2fa/generate/:username', generate2FA);
   router.post('/2fa/enable', enable2FA);
   router.post('/2fa/disable', disable2FAHandler);
