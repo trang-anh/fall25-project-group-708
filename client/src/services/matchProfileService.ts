@@ -51,7 +51,7 @@ export const updateMatchProfile = async (
   const res = await fetch(`${MATCH_PROFILE_BASE_API}/updateMatchProfile/${userId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
+    body: JSON.stringify({ userId, ...updates }),
   });
   if (!res.ok) throw new Error('Failed to update match profile');
   return res.json();

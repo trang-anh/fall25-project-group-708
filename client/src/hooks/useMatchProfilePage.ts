@@ -21,9 +21,13 @@ import {
 type CreateMatchProfileDTO = Omit<MatchProfile, '_id' | 'createdAt'>;
 
 /**
- * Hook for managing current user's match profile
+ * Custom hook to manage the state and logic for match profile, including
+ * fetching match profile details and updating it.
+ *
+ * @returns An object containing the following:
+ * - `profile`: The match profile object.
  */
-export const useMatchProfile = (userId: string | null) => {
+export const useMatchProfilePage = (userId: string | null) => {
   const [profile, setProfile] = useState<DatabaseMatchProfile>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -1,0 +1,26 @@
+.language-checkbox-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.edit-profile-success {
+  color: #2e7d32;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  padding: 8px 12px;
+  background: #e8f5e9;
+  border-radius: 6px;
+  border-left: 4px solid #2e7d32;
+}
+
+.success-inline {
+  align-self: flex-start;
+}

@@ -54,7 +54,7 @@ const useMatchOnboardingPage = () => {
 
     try {
       const profileData: MatchProfile = {
-        userId: user._id,
+        userId: user._id.toString(), // fix here
         isActive: true,
         age: formData.age,
         gender: formData.gender,

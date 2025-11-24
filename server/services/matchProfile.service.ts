@@ -161,10 +161,6 @@ export const checkOnboardingStatus = async (
   userId: string,
 ): Promise<{ exists: boolean; isActive: boolean } | { error: string }> => {
   try {
-    // const matchProfile = await MatchProfileModel.findOne({ userId }).lean();
-    // if (!matchProfile) return { exists: false, isActive: false };
-    // return { exists: true, isActive: matchProfile.isActive };
-
     if (!Types.ObjectId.isValid(userId)) {
       return { error: 'Invalid userId' };
     }

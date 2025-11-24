@@ -197,15 +197,27 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
                     </>
                   )}
 
-                  {match.status === 'accepted' && (
-                    <button className='action-btn message-btn'>Message</button>
+                  {/* Pending & Sending -> Cancel Request */}
+                  {match.status === 'pending' && initiatedByCurrentUser && (
+                    <button
+                      className='action-btn remove-btn'
+                      onClick={() => handleDeleteMatch(match._id.toString())}>
+                      Cancel Request
+                    </button>
                   )}
 
-                  <button
-                    onClick={() => handleDeleteMatch(match._id.toString())}
-                    className='action-btn remove-btn'>
-                    Remove
-                  </button>
+                  {/* Accepted match -> show both Message + Remove */}
+                  {match.status === 'accepted' && (
+                    <>
+                      <button className='action-btn message-btn'>Message</button>
+
+                      <button
+                        className='action-btn remove-btn'
+                        onClick={() => handleDeleteMatch(match._id.toString())}>
+                        Remove
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );

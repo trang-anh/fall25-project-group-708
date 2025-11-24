@@ -28,6 +28,31 @@ function isPopulatedUserId(userId: string | PopulatedUser): userId is PopulatedU
 }
 
 /**
+ * HELPER: Ensures the returned match profile has `userId: string`.
+ * REQUIRED because OpenAPI won't accept an object.
+ */
+function normalizeProfileForResponse(
+  profile: DatabaseMatchProfile,
+): DatabaseMatchProfile & { userId: { _id: string; username: string } } {
+  const rawUser = profile.userId;
+
+  const userObj = isPopulatedUserId(rawUser)
+    ? {
+        _id: rawUser._id.toString(),
+        username: rawUser.username,
+      }
+    : {
+        _id: rawUser.toString(),
+        username: 'Unknown',
+      };
+
+  return {
+    ...profile,
+    userId: userObj,
+  };
+}
+
+/**
  * This controller handles match profile-related routes.
  * @param socket The socket instance to emit events.
  * @returns {express.Router} The router object containing the match profile routes.
@@ -183,7 +208,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: result,
       });
 
-      res.json(result);
+      const clean = normalizeProfileForResponse(result);
+      res.json(clean);
     } catch (err: unknown) {
       res
         .status(500)
@@ -218,7 +244,8 @@ const matchProfileController = (socket: FakeSOSocket) => {
         matchProfile: updatedProfile,
       });
 
-      res.json(updatedProfile);
+      const clean = normalizeProfileForResponse(updatedProfile);
+      res.json(clean);
     } catch (err: unknown) {
       res.status(500).json({
         error: `Error updating match profile: ${(err as Error).message}`,
