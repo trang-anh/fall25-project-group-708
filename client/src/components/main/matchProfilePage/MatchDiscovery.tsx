@@ -8,9 +8,10 @@ interface MatchDiscoveryProps {
 }
 
 const MatchDiscovery: React.FC<MatchDiscoveryProps> = ({ currentUserId }) => {
-  const { profiles, currentUserProfile, loading, error, refetch } =
-    useMatchDiscovery(currentUserId);
-  const { matches, sendMatchRequest } = useUserMatches(currentUserId);
+  const { profiles, refetch } = useMatchDiscovery(currentUserId);
+  // currentUserProfile, loading, error
+  const { matches } = useUserMatches(currentUserId);
+  // sendMatchRequest
   const [selectedLevel, setSelectedLevel] = useState<string>('ALL');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');

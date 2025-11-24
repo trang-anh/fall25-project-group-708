@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { UserCredentials, SafeDatabaseUser, UserSessionsResponse } from '../types/types';
 import api from './config';
+import { clearAuthToken, storeAuthToken } from '../utils/tokenStorage';
 
 const USER_API_URL = `/api/user`;
 const AUTH_API_URL = `/api/auth`;
@@ -8,6 +9,7 @@ const AUTH_API_URL = `/api/auth`;
 type AuthStatusResponse = {
   authenticated: boolean;
   user?: SafeDatabaseUser;
+  token?: string;
 };
 
 /**
@@ -46,7 +48,7 @@ const getUserByUsername = async (username: string): Promise<SafeDatabaseUser> =>
 const createUser = async (user: UserCredentials): Promise<SafeDatabaseUser> => {
   try {
     const res = await api.post(`${USER_API_URL}/signup`, user);
-    return res.data;
+    return extractUserFromAuthResponse(res.data);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(`Error while signing up: ${error.response.data}`);
@@ -69,6 +71,21 @@ type LoginOptions = {
   rememberDevice?: boolean;
 };
 
+const extractUserFromAuthResponse = (data: unknown, persistToken = true): SafeDatabaseUser => {
+  const possibleRecord = data as { user?: SafeDatabaseUser; token?: string };
+  const user = possibleRecord.user ?? (data as SafeDatabaseUser | undefined);
+
+  if (!user) {
+    throw new Error('Invalid authentication response from server');
+  }
+
+  if (possibleRecord.token) {
+    storeAuthToken(possibleRecord.token, persistToken);
+  }
+
+  return user;
+};
+
 const loginUser = async (
   user: UserCredentials,
   options?: LoginOptions,
@@ -80,7 +97,7 @@ const loginUser = async (
       rememberDevice: options?.rememberDevice ?? false,
     };
     const res = await api.post(`${USER_API_URL}/login`, payload);
-    return res.data;
+    return extractUserFromAuthResponse(res.data, options?.rememberDevice ?? false);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       const serverMessage =
@@ -234,7 +251,12 @@ const getCurrentUser = async (): Promise<SafeDatabaseUser | null> => {
       throw new Error('Not authenticated');
     }
     if (!res.data.authenticated || !res.data.user) {
+      clearAuthToken();
       return null;
+    }
+    const tokenFromResponse = (res.data as { token?: string }).token;
+    if (tokenFromResponse) {
+      storeAuthToken(tokenFromResponse);
     }
     return res.data.user;
   } catch (error) {
@@ -243,6 +265,7 @@ const getCurrentUser = async (): Promise<SafeDatabaseUser | null> => {
         `Error fetching the current user: ${error.response.data.error || 'Not authenticated'}`,
       );
     } else {
+      clearAuthToken();
       throw new Error('Error fetching new user');
     }
   }
@@ -266,6 +289,8 @@ const logoutUser = async (): Promise<void> => {
     } else {
       throw new Error('Error while logging out');
     }
+  } finally {
+    clearAuthToken();
   }
 };
 

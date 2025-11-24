@@ -33,6 +33,7 @@ import {
   invalidateUserSessions,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
+import { API_TOKEN_COOKIE_NAME, getJwtTtl, signJwt } from '../services/jwt.service';
 
 const userController = (socket: FakeSOSocket) => {
   const router: Router = express.Router();
@@ -112,7 +113,18 @@ const userController = (socket: FakeSOSocket) => {
 
       res.cookie(SESSION_COOKIE_NAME, sessionId, cookieOptions);
 
-      res.status(200).json(user);
+      const apiToken = signJwt(user as SafeDatabaseUser, getJwtTtl());
+      const tokenCookieOptions: CookieOptions = {
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      };
+      if (rememberDevice) {
+        tokenCookieOptions.maxAge = getJwtTtl();
+      }
+      res.cookie(API_TOKEN_COOKIE_NAME, apiToken, tokenCookieOptions);
+
+      res.status(200).json({ user, token: apiToken });
     } catch (error) {
       res.status(500).send('Login failed');
     }

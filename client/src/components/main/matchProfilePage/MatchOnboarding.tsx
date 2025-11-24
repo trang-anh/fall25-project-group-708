@@ -45,7 +45,7 @@ const PROGRAMMING_LANGUAGES = [
   'HTML/CSS',
 ];
 
-const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ currentUserId, onComplete, onSkip }) => {
+const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ onComplete, onSkip }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<OnboardingFormData>({

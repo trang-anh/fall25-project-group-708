@@ -16,9 +16,50 @@ import {
   listSessionsForUser,
 } from '../services/session.service';
 import { getSessionIdFromRequest } from '../utils/sessionCookie';
+import {
+  API_TOKEN_COOKIE_NAME,
+  extractJwtFromRequest,
+  getJwtTtl,
+  signJwt,
+  verifyJwt,
+} from '../services/jwt.service';
+import UserModel from '../models/users.model';
+import { DatabaseUser, SafeDatabaseUser } from '../types/types';
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:4530';
 const RECENT_LOGIN_LIMIT = 5;
+const toSafeUser = (user: DatabaseUser): SafeDatabaseUser => ({
+  _id: user._id,
+  username: user.username,
+  dateJoined: user.dateJoined,
+  biography: user.biography,
+  githubId: user.githubId,
+  totalPoints: user.totalPoints,
+});
+
+const resolveUserFromJwt = async (
+  token: string | undefined,
+): Promise<SafeDatabaseUser | undefined> => {
+  if (!token) {
+    return undefined;
+  }
+
+  try {
+    const payload = verifyJwt(token);
+    if (!payload?.userId) {
+      return undefined;
+    }
+
+    const dbUser = await UserModel.findById(payload.userId).select('-password');
+    if (!dbUser) {
+      return undefined;
+    }
+
+    return toSafeUser(dbUser as DatabaseUser);
+  } catch {
+    return undefined;
+  }
+};
 
 const authController = (): Router => {
   const router = express.Router();
@@ -69,13 +110,38 @@ const authController = (): Router => {
         maxAge: getSessionTtl(),
       });
 
-      res.redirect(`${CLIENT_URL}/home`);
+      const apiToken = signJwt(user, getJwtTtl());
+      res.cookie(API_TOKEN_COOKIE_NAME, apiToken, {
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: getJwtTtl(),
+      });
+
+      const queryParams = new URLSearchParams({
+        username: user.username,
+        githubId: user.githubId || '',
+        token: apiToken,
+      });
+
+      res.redirect(`${CLIENT_URL}/home?${queryParams.toString()}`);
     } catch (error) {
       res.status(500).json({ error: 'GitHub OAuth failed.' });
     }
   });
 
-  router.get('/user', (req: Request, res: Response) => {
+  router.get('/user', async (req: Request, res: Response) => {
+    const tokenFromRequest = extractJwtFromRequest(req);
+    const userFromToken = await resolveUserFromJwt(tokenFromRequest);
+
+    if (userFromToken) {
+      return res.status(200).json({
+        authenticated: true,
+        user: userFromToken,
+        token: tokenFromRequest,
+      });
+    }
+
     const sessionId = getSessionIdFromRequest(req);
     const user = getSessionUser(sessionId);
 
@@ -83,14 +149,23 @@ const authController = (): Router => {
       return res.status(200).json({ authenticated: false });
     }
 
-    return res.status(200).json({ authenticated: true, user });
+    const apiToken = signJwt(user, getJwtTtl());
+    res.cookie(API_TOKEN_COOKIE_NAME, apiToken, {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return res.status(200).json({ authenticated: true, user, token: apiToken });
   });
 
-  router.post('/logout', (req: Request, res: Response) => {
+  router.post('/logout', async (req: Request, res: Response) => {
+    const token = extractJwtFromRequest(req);
     const sessionId = getSessionIdFromRequest(req);
-    const user = getSessionUser(sessionId);
+    const sessionUser = getSessionUser(sessionId);
+    const jwtUser = await resolveUserFromJwt(token);
 
-    if (!sessionId || !user) {
+    if (!sessionUser && !jwtUser) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -101,15 +176,22 @@ const authController = (): Router => {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
+    res.clearCookie(API_TOKEN_COOKIE_NAME, {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
 
     return res.status(200).json({ message: 'Logged out' });
   });
 
-  router.get('/sessions', (req: Request, res: Response) => {
+  router.get('/sessions', async (req: Request, res: Response) => {
+    const token = extractJwtFromRequest(req);
     const sessionId = getSessionIdFromRequest(req);
-    const user = getSessionUser(sessionId);
+    const jwtUser = await resolveUserFromJwt(token);
+    const user = jwtUser ?? getSessionUser(sessionId);
 
-    if (!sessionId || !user) {
+    if (!user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -131,11 +213,13 @@ const authController = (): Router => {
     });
   });
 
-  router.delete('/sessions/:sessionId', (req: Request, res: Response) => {
+  router.delete('/sessions/:sessionId', async (req: Request, res: Response) => {
+    const token = extractJwtFromRequest(req);
     const currentSessionId = getSessionIdFromRequest(req);
-    const user = getSessionUser(currentSessionId);
+    const jwtUser = await resolveUserFromJwt(token);
+    const user = jwtUser ?? getSessionUser(currentSessionId);
 
-    if (!currentSessionId || !user) {
+    if (!user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -151,6 +235,11 @@ const authController = (): Router => {
     if (currentSessionRevoked) {
       res.clearCookie(SESSION_COOKIE_NAME, {
         httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
+      res.clearCookie(API_TOKEN_COOKIE_NAME, {
+        httpOnly: false,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
       });
