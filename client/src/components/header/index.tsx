@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import useHeader from '../../hooks/useHeader';
 import './index.css';
-import FakeStackOverflowLogo from './FakeStackOverflowLogo';
+import FakeStackOverflowLogo from './Code2Date';
 import useUserContext from '../../hooks/useUserContext';
 import DarkModeToggle from '../darkModeToggle/DarkModeToggle';
 
