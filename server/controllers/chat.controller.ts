@@ -315,11 +315,6 @@ const chatController = (socket: FakeSOSocket) => {
     });
   });
 
-  // ===================================================================
-  // Route Registration
-  // IMPORTANT: Specific routes MUST come before parameterized routes
-  // ===================================================================
-
   // Specific routes without dynamic parameters
   router.post('/createChat', createChatRoute);
   router.post('/createGroupChat', createGroupChatRoute);

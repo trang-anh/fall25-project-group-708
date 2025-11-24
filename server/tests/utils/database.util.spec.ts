@@ -104,6 +104,7 @@ describe('populateDocument', () => {
   });
 
   it('should fetch and populate a chat document', async () => {
+    const mockDate = new Date();
     const mockChat = {
       _id: 'chatId',
       participants: ['user1'],
@@ -112,8 +113,8 @@ describe('populateDocument', () => {
           _id: 'messageId',
           msg: 'Hello',
           msgFrom: 'user1',
-          msgDateTime: new Date(),
-          type: 'direct' as const,
+          msgDateTime: mockDate,
+          type: 'text',
         },
       ],
       toObject: jest.fn().mockReturnValue({
@@ -124,22 +125,25 @@ describe('populateDocument', () => {
             _id: 'messageId',
             msg: 'Hello',
             msgFrom: 'user1',
-            msgDateTime: new Date(),
-            type: 'direct' as const,
+            msgDateTime: mockDate,
+            type: 'text',
           },
         ],
         chatType: 'direct' as const,
       }),
       chatType: 'direct' as const,
     };
+
     const mockUser = {
       _id: 'userId',
       username: 'user1',
       avatarUrl: '',
     };
+
     (ChatModel.findOne as jest.Mock).mockReturnValue({
       populate: jest.fn().mockResolvedValue(mockChat),
     });
+
     (UserModel.find as jest.Mock).mockReturnValue({
       select: jest.fn().mockResolvedValue([mockUser]),
     });
@@ -147,15 +151,19 @@ describe('populateDocument', () => {
     const result = await populateDocument('chatId', 'chat');
 
     expect(ChatModel.findOne).toHaveBeenCalledWith({ _id: 'chatId' });
+    expect(UserModel.find).toHaveBeenCalledWith({
+      username: { $in: ['user1'] },
+    });
     expect(result).toEqual({
-      ...mockChat.toObject(),
+      _id: 'chatId',
+      participants: ['user1'],
       messages: [
         {
           _id: 'messageId',
           msg: 'Hello',
           msgFrom: 'user1',
-          msgDateTime: mockChat.messages[0].msgDateTime,
-          type: 'direct',
+          msgDateTime: mockDate,
+          type: 'text',
           user: {
             _id: 'userId',
             username: 'user1',

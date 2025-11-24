@@ -102,7 +102,7 @@ export interface AddMessageRequestToChat extends ChatIdRequest {
 export interface AddParticipantRequest extends ChatIdRequest {
   body: {
     userId: string;
-  }
+  };
 }
 
 /**
