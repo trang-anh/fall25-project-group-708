@@ -24,65 +24,61 @@ describe('tokenStorage (client)', () => {
   let storeAuthToken: typeof import('../../../client/src/utils/tokenStorage').storeAuthToken;
   let loadAuthToken: typeof import('../../../client/src/utils/tokenStorage').loadAuthToken;
   let clearAuthToken: typeof import('../../../client/src/utils/tokenStorage').clearAuthToken;
-  let TOKEN_STORAGE_KEY: string;
+  let tokenStorageKey: string;
 
   beforeEach(() => {
-    // @ts-ignore
+    // @ts-expect-error - provide minimal window stub for tests
     global.window = {
       localStorage: mockStorage(),
       sessionStorage: mockStorage(),
     };
-    // @ts-ignore
+    // @ts-expect-error - provide minimal document stub for tests
     global.document = { cookie: '' };
 
     jest.resetModules();
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const tokenStorage = require('../../../client/src/utils/tokenStorage');
+    jest.isolateModules(async () => {
+      const tokenStorage = (await import(
+        '../../../client/src/utils/tokenStorage'
+      )) as typeof import('../../../client/src/utils/tokenStorage');
       storeAuthToken = tokenStorage.storeAuthToken;
       loadAuthToken = tokenStorage.loadAuthToken;
       clearAuthToken = tokenStorage.clearAuthToken;
-      TOKEN_STORAGE_KEY = tokenStorage.TOKEN_STORAGE_KEY;
+      tokenStorageKey = tokenStorage.TOKEN_STORAGE_KEY;
     });
   });
 
   afterEach(() => {
     clearAuthToken();
-    // @ts-ignore
     global.window = originalWindow;
-    // @ts-ignore
     global.document = originalDocument;
   });
 
   it('stores tokens in localStorage when persist=true', () => {
     storeAuthToken('persisted', true);
-    expect(global.window?.localStorage.getItem(TOKEN_STORAGE_KEY)).toBe('persisted');
-    expect(global.window?.sessionStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
+    expect(global.window?.localStorage.getItem(tokenStorageKey)).toBe('persisted');
+    expect(global.window?.sessionStorage.getItem(tokenStorageKey)).toBeNull();
   });
 
   it('stores tokens in sessionStorage when persist=false', () => {
     storeAuthToken('temp', false);
-    expect(global.window?.sessionStorage.getItem(TOKEN_STORAGE_KEY)).toBe('temp');
-    expect(global.window?.localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
+    expect(global.window?.sessionStorage.getItem(tokenStorageKey)).toBe('temp');
+    expect(global.window?.localStorage.getItem(tokenStorageKey)).toBeNull();
   });
 
   it('clears tokens from all storage locations and cookies', () => {
     storeAuthToken('persisted', true);
     storeAuthToken('temp', false);
-    // @ts-ignore
     global.document.cookie = 'fake_so_token=cookieval';
 
     clearAuthToken();
 
-    expect(global.window?.localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
-    expect(global.window?.sessionStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
-    // @ts-ignore
+    expect(global.window?.localStorage.getItem(tokenStorageKey)).toBeNull();
+    expect(global.window?.sessionStorage.getItem(tokenStorageKey)).toBeNull();
     expect(global.document.cookie).toContain('fake_so_token=');
   });
 
   it('loads token from storage first, then cookie fallback', () => {
     // Cookie fallback
-    // @ts-ignore
     global.document.cookie = 'fake_so_token=cookieval';
     expect(loadAuthToken()).toBe('cookieval');
 
