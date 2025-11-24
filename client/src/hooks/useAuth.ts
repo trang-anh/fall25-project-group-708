@@ -33,6 +33,7 @@ const useAuth = (authType: 'login' | 'signup') => {
   const [isSendingTwoFactorCode, setIsSendingTwoFactorCode] = useState(false);
   const [twoFactorOptIn, setTwoFactorOptIn] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(() => !!loadRememberedUser());
+  const [twoFactorEmail, setTwoFactorEmail] = useState<string>('');
 
   const { setUser } = useLoginContext();
   const navigate = useNavigate();
@@ -44,26 +45,50 @@ const useAuth = (authType: 'login' | 'signup') => {
     setShowPassword(prevState => !prevState);
   };
 
-  /**
-   * Handles changes in input fields and updates the corresponding state.
-   *
-   * @param e - The input change event.
-   * @param field - The field being updated ('username', 'password', or 'confirmPassword').
-   */
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     field: 'username' | 'password' | 'confirmPassword' | 'twoFactor',
   ) => {
-    const fieldText = e.target.value.trim();
+    const value = e.target.value;
 
     if (field === 'username') {
-      setUsername(fieldText);
-    } else if (field === 'password') {
-      setPassword(fieldText);
-    } else if (field === 'confirmPassword') {
-      setPasswordConfirmation(fieldText);
-    } else if (field === 'twoFactor') {
-      const digitsOnly = fieldText.replace(/\D/g, '').slice(0, 6);
+      setUsername(value.trim());
+      return;
+    }
+
+    if (field === 'password') {
+      setPassword(value);
+
+      // Validate password only on signup
+      if (authType === 'signup') {
+        const isValid = value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+
+        if (!isValid) {
+          setErr('Password must be at least 8 characters and contain a letter and number');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'confirmPassword') {
+      setPasswordConfirmation(value);
+
+      if (authType === 'signup') {
+        if (value !== password) {
+          setErr('Passwords do not match');
+        } else {
+          setErr('');
+        }
+      }
+
+      return;
+    }
+
+    if (field === 'twoFactor') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
       setTwoFactorCode(digitsOnly);
     }
   };
@@ -102,15 +127,23 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
   };
 
+  const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
   const handleRequestTwoFactorCode = async (): Promise<boolean> => {
     if (!username) {
       setErr('Enter your username before requesting a verification code');
       return false;
     }
 
+    const emailForCode = twoFactorEmail.trim();
+    if (!emailForCode || !isValidEmail(emailForCode)) {
+      setErr('Enter a valid email address to receive the verification code');
+      return false;
+    }
+
     setIsSendingTwoFactorCode(true);
     try {
-      const response = await requestTwoFactorCode(username);
+      const response = await requestTwoFactorCode(username, emailForCode);
       setRequires2FA(true);
       setTwoFactorDevCode(response.code ?? null);
       setTwoFactorCode('');
@@ -135,18 +168,15 @@ const useAuth = (authType: 'login' | 'signup') => {
     }
   }, [requires2FA, twoFactorOptIn]);
 
-  const handleTwoFactorOptInChange = async (checked: boolean) => {
+  const handleTwoFactorOptInChange = (checked: boolean) => {
     setTwoFactorOptIn(checked);
 
-    if (authType !== 'login') {
+    if (checked) {
+      setErr('');
       return;
     }
 
-    if (checked) {
-      if (!requires2FA) {
-        await handleRequestTwoFactorCode();
-      }
-    } else if (!requires2FA) {
+    if (!requires2FA) {
       cancelTwoFactorFlow();
     }
   };
@@ -156,6 +186,10 @@ const useAuth = (authType: 'login' | 'signup') => {
     if (!checked) {
       clearRememberedUser();
     }
+  };
+
+  const handleTwoFactorEmailChange = (value: string) => {
+    setTwoFactorEmail(value);
   };
 
   /**
@@ -190,7 +224,10 @@ const useAuth = (authType: 'login' | 'signup') => {
       );
 
       if ('requires2FA' in result && result.requires2FA) {
-        await handleRequestTwoFactorCode();
+        setTwoFactorOptIn(true);
+        setErr(
+          'Two-factor authentication required. Enter your email to receive a verification code.',
+        );
         return;
       }
 
@@ -222,6 +259,7 @@ const useAuth = (authType: 'login' | 'signup') => {
     twoFactorDevCode,
     isSendingTwoFactorCode,
     twoFactorOptIn,
+    twoFactorEmail,
     rememberDevice,
     handleInputChange,
     handleSubmit,
@@ -230,6 +268,7 @@ const useAuth = (authType: 'login' | 'signup') => {
     cancelTwoFactorFlow,
     handleTwoFactorOptInChange,
     handleRememberDeviceChange,
+    handleTwoFactorEmailChange,
   };
 };
 

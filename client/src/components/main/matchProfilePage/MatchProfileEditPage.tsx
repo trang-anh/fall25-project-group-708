@@ -20,11 +20,9 @@ const MatchProfileEditPage: React.FC = () => {
     formData,
     loading,
     error,
-
     successEdit,
     successToggle,
     messageToggle,
-
     handleSetField,
     handleToggleLanguage,
     handleToggleActive,
@@ -33,9 +31,9 @@ const MatchProfileEditPage: React.FC = () => {
     cancelDeactivate,
     confirmDeactivate,
     showDeactivateModal,
-  } = useMatchEditProfilePage(userId.toString());
+  } = useMatchEditProfilePage(userId?.toString() || '');
 
-  // Static dropdown + checkbox location values
+  // Static dropdown values
   const locations = [
     'NORTH AMERICA',
     'SOUTH AMERICA',
@@ -46,8 +44,8 @@ const MatchProfileEditPage: React.FC = () => {
     'ANTARCTICA',
   ];
 
-  // Static dropdown + checkbox programming languages values
-  const programmingLanguage = [
+  // Static programming languages
+  const programmingLanguages = [
     'JavaScript',
     'TypeScript',
     'Python',
@@ -67,180 +65,250 @@ const MatchProfileEditPage: React.FC = () => {
     'HTML/CSS',
   ];
 
+  // Loading state
   if (loading && !profile) {
     return (
-      <div className='edit-profile-loading'>
-        <div className='spinner'></div>
-        <p>Loading your profile...</p>
+      <div className='edit-profile-page'>
+        <div className='edit-profile-container'>
+          <div className='edit-profile-loading'>
+            <div className='spinner'></div>
+            <p>Loading your profile...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Error state without profile
   if (error && !profile) {
-    return <p className='edit-profile-error'>Error: {error}</p>;
+    return (
+      <div className='edit-profile-page'>
+        <div className='edit-profile-container'>
+          <div className='edit-profile-error'>
+            <p>Error: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // No profile found
   if (!profile || !formData) {
-    return <p>No match profile found.</p>;
+    return (
+      <div className='edit-profile-page'>
+        <div className='edit-profile-container'>
+          <div className='edit-profile-error'>
+            <p>No match profile found. Please create a profile first.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className='edit-profile-container'>
-      <h1>Edit Match Profile</h1>
-      <p className='subtitle'>Update your preferences and profile information.</p>
-
-      {error && <p className='edit-profile-error'>{error}</p>}
-
-      <div className='edit-form'>
-        {/* AGE */}
-        <div className='form-group'>
-          <label>Age</label>
-          <input
-            type='number'
-            value={formData.age ?? ''}
-            onChange={e => handleSetField('age', Number(e.target.value))}
-          />
+    <div className='edit-profile-page'>
+      <div className='edit-profile-container'>
+        {/* Header */}
+        <div className='edit-profile-header'>
+          <h1>Edit Match Profile</h1>
+          <p className='subtitle'>Update your preferences and profile information</p>
         </div>
 
-        {/* GENDER */}
-        <div className='form-group'>
-          <label>Gender</label>
-          <select
-            value={formData.gender || ''}
-            onChange={e => handleSetField('gender', e.target.value)}>
-            <option value='FEMALE'>Female</option>
-            <option value='MALE'>Male</option>
-            <option value='NON-BINARY'>Non-binary</option>
-            <option value='PREFER TO NOT DESCRIBE'>Prefer to not describe</option>
-          </select>
-        </div>
-
-        {/* LOCATION */}
-        <div className='form-group'>
-          <label>Location</label>
-          <select
-            value={formData.location}
-            onChange={e => handleSetField('location', e.target.value)}>
-            <option value=''>Select your region</option>
-            {locations.map(loc => (
-              <option key={loc} value={loc}>
-                {loc}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* PROGRAMMING LANGUAGES */}
-        <div className='form-group'>
-          <label>Programming Languages</label>
-          <div className='language-checkbox-list'>
-            {programmingLanguage.map(lang => (
-              <label key={lang} className='checkbox-item'>
-                <input
-                  type='checkbox'
-                  checked={formData.programmingLanguage.includes(lang)}
-                  onChange={() => handleToggleLanguage(lang)}
-                />
-                {lang}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* LEVEL */}
-        <div className='form-group'>
-          <label>Skill Level</label>
-          <select value={formData.level} onChange={e => handleSetField('level', e.target.value)}>
-            <option value='BEGINNER'>Beginner</option>
-            <option value='INTERMEDIATE'>Intermediate</option>
-            <option value='ADVANCED'>Advanced</option>
-          </select>
-        </div>
-
-        {/* BIOGRAPHY */}
-        <div className='form-group'>
-          <label>Biography</label>
-          <textarea
-            value={formData.biography || ''}
-            onChange={e => handleSetField('biography', e.target.value)}
-            rows={4}
-          />
-        </div>
-
-        {/* ONBOARDING ANSWERS */}
-        <div className='form-group'>
-          <label>Goals</label>
-          <input
-            type='text'
-            value={formData.onboardingAnswers?.goals ?? ''}
-            onChange={e =>
-              handleSetField('onboardingAnswers', {
-                ...formData.onboardingAnswers,
-                goals: e.target.value,
-              })
-            }
-          />
-        </div>
-
-        <div className='form-group'>
-          <label>Personality</label>
-          <input
-            type='text'
-            value={formData.onboardingAnswers?.personality ?? ''}
-            onChange={e =>
-              handleSetField('onboardingAnswers', {
-                ...formData.onboardingAnswers,
-                personality: e.target.value,
-              })
-            }
-          />
-        </div>
-
-        <div className='form-group'>
-          <label>Preferred Project Type</label>
-          <input
-            type='text'
-            value={formData.onboardingAnswers?.projectType || ''}
-            onChange={e =>
-              handleSetField('onboardingAnswers', {
-                ...formData.onboardingAnswers,
-                projectType: e.target.value,
-              })
-            }
-          />
-        </div>
-
-        {/* SUCCESS MESSAGES (Edit + Toggle) */}
+        {/* Success/Error Messages */}
         {successEdit && (
-          <p className='edit-profile-success small-success'>
-            Your profile was updated! Redirecting…
-          </p>
+          <div className='edit-profile-success'>Profile updated successfully!</div>
         )}
 
-        {successToggle && <p className='edit-profile-success small-success'>{messageToggle}</p>}
+        {successToggle && <div className='edit-profile-success'>{messageToggle}</div>}
 
-        {/* SAVE BUTTON */}
-        <button className='save-btn' onClick={handleSaveChanges} disabled={loading}>
-          {loading ? 'Saving...' : 'Save Changes'}
-        </button>
+        {error && <div className='edit-profile-error'>{error}</div>}
 
-        {/* ACTIVATE / DEACTIVATE BUTTON */}
-        <button
-          className={`toggle-btn ${profile.isActive ? 'active' : 'inactive'}`}
-          onClick={profile.isActive ? requestDeactivate : handleToggleActive}
-          disabled={loading}>
-          {profile.isActive ? 'Deactivate Profile' : 'Reactivate Profile'}
-        </button>
+        {/* Form */}
+        <form className='edit-form' onSubmit={e => e.preventDefault()}>
+          {/* Basic Information Section */}
+          <div className='form-section'>
+            <div className='form-group'>
+              <label htmlFor='age'>Age</label>
+              <input
+                id='age'
+                type='number'
+                min='13'
+                max='120'
+                value={formData.age ?? ''}
+                onChange={e => handleSetField('age', Number(e.target.value))}
+              />
+            </div>
+
+            <div className='form-group'>
+              <label htmlFor='gender'>Gender</label>
+              <select
+                id='gender'
+                value={formData.gender || ''}
+                onChange={e => handleSetField('gender', e.target.value)}>
+                <option value=''>Select gender</option>
+                <option value='MALE'>Male</option>
+                <option value='FEMALE'>Female</option>
+                <option value='NON-BINARY'>Non-binary</option>
+                <option value='PREFER NOT TO SAY'>Prefer not to say</option>
+              </select>
+            </div>
+
+            <div className='form-group'>
+              <label htmlFor='location'>Location</label>
+              <select
+                id='location'
+                value={formData.location}
+                onChange={e => handleSetField('location', e.target.value)}>
+                <option value=''>Select your region</option>
+                {locations.map(loc => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Programming Languages */}
+          <div className='form-group'>
+            <label>Programming Languages</label>
+            <div className='language-checkbox-list'>
+              {programmingLanguages.map(lang => (
+                <label key={lang} className='checkbox-item'>
+                  <input
+                    type='checkbox'
+                    checked={formData.programmingLanguage.includes(lang)}
+                    onChange={() => handleToggleLanguage(lang)}
+                  />
+                  <span>{lang}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Skill Level */}
+          <div className='form-group'>
+            <label htmlFor='level'>Skill Level</label>
+            <select
+              id='level'
+              value={formData.level}
+              onChange={e => handleSetField('level', e.target.value)}>
+              <option value='BEGINNER'>Beginner</option>
+              <option value='INTERMEDIATE'>Intermediate</option>
+              <option value='ADVANCED'>Advanced</option>
+            </select>
+          </div>
+
+          {/* Biography */}
+          <div className='form-group'>
+            <label htmlFor='biography'>Biography</label>
+            <textarea
+              id='biography'
+              value={formData.biography || ''}
+              onChange={e => handleSetField('biography', e.target.value)}
+              placeholder='Tell us about yourself, your coding interests, and what you are looking for in a partner...'
+              rows={6}
+            />
+          </div>
+
+          {/* Onboarding Answers */}
+          <div className='form-group'>
+            <label htmlFor='goals'>Coding Goals</label>
+            <input
+              id='goals'
+              type='text'
+              value={formData.onboardingAnswers?.goals ?? ''}
+              onChange={e =>
+                handleSetField('onboardingAnswers', {
+                  ...formData.onboardingAnswers,
+                  goals: e.target.value,
+                })
+              }
+              placeholder='e.g., Build web applications, contribute to open source...'
+            />
+          </div>
+
+          <div className='form-group'>
+            <label htmlFor='personality'>Coding Style</label>
+            <input
+              id='personality'
+              type='text'
+              value={formData.onboardingAnswers?.personality ?? ''}
+              onChange={e =>
+                handleSetField('onboardingAnswers', {
+                  ...formData.onboardingAnswers,
+                  personality: e.target.value,
+                })
+              }
+              placeholder='e.g., I love pair programming, prefer working solo...'
+            />
+          </div>
+
+          <div className='form-group'>
+            <label htmlFor='projectType'>Preferred Project Types</label>
+            <input
+              id='projectType'
+              type='text'
+              value={formData.onboardingAnswers?.projectType || ''}
+              onChange={e =>
+                handleSetField('onboardingAnswers', {
+                  ...formData.onboardingAnswers,
+                  projectType: e.target.value,
+                })
+              }
+              placeholder='e.g., Mobile apps, web development, game dev...'
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className='button-group'>
+            <button
+              type='button'
+              className='save-btn'
+              onClick={handleSaveChanges}
+              disabled={loading}>
+              {loading ? (
+                <>
+                  <div className='button-spinner'></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <span>💾</span>
+                  Save Changes
+                </>
+              )}
+            </button>
+
+            <button
+              type='button'
+              className={`toggle-btn ${profile.isActive ? 'active' : 'inactive'}`}
+              onClick={profile.isActive ? requestDeactivate : handleToggleActive}
+              disabled={loading}>
+              {profile.isActive ? (
+                <>
+                  <span>✓</span>
+                  Profile Active
+                </>
+              ) : (
+                <>
+                  <span>⏸</span>
+                  Profile Inactive
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
 
-      {/* CONFIRM MODAL */}
+      {/* Deactivation Confirmation Modal */}
       {showDeactivateModal && (
         <div className='modal-backdrop'>
           <div className='modal'>
             <h3>Deactivate Profile?</h3>
             <p>
               Deactivating your profile will remove you from match recommendations until you
-              reactivate it.
+              reactivate it. Your existing connections will remain intact.
             </p>
 
             <div className='modal-actions'>
