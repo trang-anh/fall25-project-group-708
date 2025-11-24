@@ -120,7 +120,7 @@ const useDirectMessage = () => {
       }
 
       const participants = [user.username, ...selectedUsers];
-      const chat = await createGroupChat(participants, groupChatName.trim());
+      const chat = await createGroupChat(participants, groupChatName.trim(), user.username);
       setSelectedChat(chat);
       handleJoinChat(chat._id);
       setShowCreatePanel(false);
