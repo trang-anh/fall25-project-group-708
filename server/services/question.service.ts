@@ -308,7 +308,6 @@ export const getCommunityQuestions = async (communityId: string): Promise<Databa
     return [];
   }
 };
-
 /**
  * Check for any pre-existing questions.
  *
@@ -322,18 +321,36 @@ export const fetchFiveQuestionsByTextAndTitle = async (
   text: string,
 ): Promise<PopulatedDatabaseQuestion[]> => {
   try {
-    //clean up title
+    // Clean up title and text
     const cleanTitle = title?.trim() || '';
     const cleanText = text?.trim() || '';
 
     if (!cleanText && !cleanTitle) return [];
 
-    //regrex title and text to help with the search
-    const titleRegrex = new RegExp(cleanTitle.split(/\s+/).join('|'), 'i');
-    const textRegrex = new RegExp(cleanText.split(/\s+/).join('|'), 'i');
+    // Build query conditions
+    const conditions = [];
+
+    // Only add title condition if cleanTitle exists
+    if (cleanTitle) {
+      // Escape special regex characters
+      const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const titleRegex = new RegExp(escapedTitle, 'i');
+      conditions.push({ title: { $regex: titleRegex } });
+    }
+
+    // Only add text condition if cleanText exists
+    if (cleanText) {
+      // Escape special regex characters
+      const escapedText = cleanText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const textRegex = new RegExp(escapedText, 'i');
+      conditions.push({ text: { $regex: textRegex } });
+    }
+
+    // If no conditions, return empty array
+    if (conditions.length === 0) return [];
 
     const similarQuestions: PopulatedDatabaseQuestion[] = await QuestionModel.find({
-      $or: [{ title: { $regex: titleRegrex } }, { text: { $regex: textRegrex } }],
+      $or: conditions,
     })
       .populate<{
         tags: DatabaseTag[];
@@ -349,13 +366,12 @@ export const fetchFiveQuestionsByTextAndTitle = async (
         },
         { path: 'comments', model: CommentModel },
       ])
-      //only show first 5
       .limit(5)
       .exec();
 
     return similarQuestions;
   } catch (error) {
-    console.log(`The error is` + error);
+    console.log(`The error is: ` + error);
     return [];
   }
 };
