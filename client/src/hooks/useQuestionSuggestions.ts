@@ -11,10 +11,11 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Sanitize input
-    const sanitizedTitle = title.trim();
+    // Remove asterisks from title and text (from content moderation)
+    const sanitizedTitle = title.trim().replace(/\*/g, '');
+    const sanitizedText = text.trim().replace(/\*/g, '');
 
-    // Check if title is only special characters (no alphanumeric)
+    // Check special characters
     const hasAlphanumeric = /[a-zA-Z0-9]/.test(sanitizedTitle);
 
     // Check if content is mostly censored (more than 50% asterisks)
@@ -34,7 +35,8 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
     // Debounce the API call - wait 500ms after user stops typing
     const timeoutId = setTimeout(async () => {
       try {
-        const data = await getSuggestedQuestions(sanitizedTitle, text);
+        // Pass already sanitized values
+        const data = await getSuggestedQuestions(sanitizedTitle, sanitizedText);
         setSuggestions(data);
       } catch (error) {
         setSuggestions([]);

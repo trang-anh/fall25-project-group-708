@@ -309,8 +309,7 @@ const questionController = (socket: FakeSOSocket) => {
   ): Promise<void> => {
     const { title, text } = req.query;
     try {
-      const q = await fetchFiveQuestionsByTextAndTitle(title, text);
-
+      const q = await fetchFiveQuestionsByTextAndTitle(title as string, text as string);
       if ('error' in q) {
         throw new Error('Error while fetching question by id');
       }

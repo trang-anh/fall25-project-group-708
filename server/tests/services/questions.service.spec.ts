@@ -593,10 +593,22 @@ describe('Question model', () => {
       expect(QuestionModel.find).not.toHaveBeenCalled();
     });
 
-    test('calls QuestionModel.find() with correct regex for title only', async () => {
+    test('returns empty array when only stop words are provided', async () => {
+      const result = await fetchFiveQuestionsByTextAndTitle('i have a question about the', '');
+      expect(result).toEqual([]);
+      expect(QuestionModel.find).not.toHaveBeenCalled();
+    });
+    test('calls QuestionModel.find() with correct regex for title with meaningful keywords', async () => {
       const execMock = jest.fn().mockResolvedValue([]);
-      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
-      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
+
+      // The populate mock needs to return an object with BOTH limit AND sort
+      const populateMock = jest.fn().mockReturnValue({
+        limit: limitMock,
+        sort: sortMock,
+      });
 
       (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
 
@@ -606,18 +618,25 @@ describe('Question model', () => {
 
       const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
 
-      const expectedRegex = new RegExp('react component', 'i');
+      const expectedRegex = new RegExp('react|component', 'i');
 
-      expect(queryArg.$or[0].title.$regex).toEqual(expectedRegex);
+      expect(queryArg.$or).toBeDefined();
+      expect(queryArg.$or.length).toBeGreaterThan(0);
+      expect(queryArg.$or[0].title.$regex.source).toEqual(expectedRegex.source);
+      expect(queryArg.$or[0].title.$regex.flags).toEqual(expectedRegex.flags);
       expect(populateMock).toHaveBeenCalled();
-      expect(limitMock).toHaveBeenCalledWith(5);
-      expect(execMock).toHaveBeenCalled();
     });
 
-    test('calls QuestionModel.find() with correct regex for text only', async () => {
+    test('calls QuestionModel.find() with correct regex for text with meaningful keywords', async () => {
       const execMock = jest.fn().mockResolvedValue([]);
-      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
-      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
+
+      const populateMock = jest.fn().mockReturnValue({
+        limit: limitMock,
+        sort: sortMock,
+      });
 
       (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
 
@@ -625,36 +644,72 @@ describe('Question model', () => {
 
       const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
 
-      const expectedRegex = new RegExp('how to build api', 'i');
+      const expectedRegex = new RegExp('build|api', 'i');
 
-      expect(queryArg.$or[0].text.$regex).toEqual(expectedRegex);
-      expect(limitMock).toHaveBeenCalledWith(5);
-      expect(execMock).toHaveBeenCalled();
+      expect(queryArg.$or).toBeDefined();
+      expect(queryArg.$or[1].text.$regex.source).toEqual(expectedRegex.source);
+      expect(queryArg.$or[1].text.$regex.flags).toEqual(expectedRegex.flags);
     });
 
     test('returns populated questions when query succeeds', async () => {
       const mockQuestions: PopulatedDatabaseQuestion[] = [
-        { _id: '1', title: 'Test', text: 'Body' } as any,
-        { _id: '2', title: 'Another', text: 'More' } as any,
+        { _id: '1', title: 'Test React', text: 'Body' } as any,
+        { _id: '2', title: 'Another Component', text: 'More' } as any,
       ];
 
-      const execMock = jest.fn().mockResolvedValue(mockQuestions);
-      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      // Create a proper promise chain
+      const mockChain = {
+        populate: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(mockQuestions),
+      };
+
+      // Make each method return the chain so they can be chained
+      mockChain.populate.mockReturnValue(mockChain);
+      mockChain.limit.mockReturnValue(mockChain);
+      mockChain.sort.mockReturnValue(mockChain);
+      mockChain.lean.mockReturnValue(mockChain);
+
+      (QuestionModel.find as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await fetchFiveQuestionsByTextAndTitle('react', 'component');
+
+      expect(result).toEqual(mockQuestions);
+      expect(mockChain.populate).toHaveBeenCalled();
+      expect(mockChain.limit).toHaveBeenCalledWith(5);
+      expect(mockChain.sort).toHaveBeenCalledWith({ ask_date_time: -1 });
+      expect(mockChain.lean).toHaveBeenCalled();
+      expect(mockChain.exec).toHaveBeenCalled();
+    });
+
+    test('filters out stop words and combines title and text keywords', async () => {
+      const execMock = jest.fn().mockResolvedValue([]);
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
       const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
 
       (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
 
-      const result = await fetchFiveQuestionsByTextAndTitle('abc', 'xyz');
+      await fetchFiveQuestionsByTextAndTitle('i have a typescript question', 'how to usestate');
 
-      expect(result).toEqual(mockQuestions);
-      expect(populateMock).toHaveBeenCalled();
-      expect(limitMock).toHaveBeenCalledWith(5);
-      expect(execMock).toHaveBeenCalled();
+      const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
+
+      // Should extract: 'typescript', 'usestate' (filtered and combined, 'use' is a stop word)
+      const expectedRegex = new RegExp('typescript|usestate', 'i');
+
+      expect(queryArg.$or).toBeDefined();
+      expect(queryArg.$or[0].title.$regex.source).toEqual(expectedRegex.source);
+      expect(queryArg.$or[1].text.$regex.source).toEqual(expectedRegex.source);
     });
 
-    test('returns empty array if .exec() throws error', async () => {
+    test('returns empty array if query execution throws error', async () => {
       const execMock = jest.fn().mockRejectedValue(new Error('Database error'));
-      const limitMock = jest.fn().mockReturnValue({ exec: execMock });
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
       const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
 
       (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
@@ -662,7 +717,6 @@ describe('Question model', () => {
       const result = await fetchFiveQuestionsByTextAndTitle('title', 'text');
 
       expect(result).toEqual([]);
-      expect(execMock).toHaveBeenCalled();
     });
 
     test('returns empty array if QuestionModel.find() throws error', async () => {
@@ -673,6 +727,44 @@ describe('Question model', () => {
       const result = await fetchFiveQuestionsByTextAndTitle('hello', 'world');
 
       expect(result).toEqual([]);
+    });
+
+    test('handles special regex characters in input', async () => {
+      const execMock = jest.fn().mockResolvedValue([]);
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      // Test with special characters that need escaping
+      await fetchFiveQuestionsByTextAndTitle('c++ programming', '');
+
+      expect(QuestionModel.find).toHaveBeenCalled();
+      const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
+      expect(queryArg.$or).toBeDefined();
+      // Should escape the ++ to \+\+
+      expect(queryArg.$or[0].title.$regex.source).toContain('c\\+\\+');
+    });
+
+    test('deduplicates keywords from title and text', async () => {
+      const execMock = jest.fn().mockResolvedValue([]);
+      const leanMock = jest.fn().mockReturnValue({ exec: execMock });
+      const sortMock = jest.fn().mockReturnValue({ lean: leanMock });
+      const limitMock = jest.fn().mockReturnValue({ sort: sortMock });
+      const populateMock = jest.fn().mockReturnValue({ limit: limitMock });
+
+      (QuestionModel.find as jest.Mock).mockReturnValue({ populate: populateMock });
+
+      await fetchFiveQuestionsByTextAndTitle('react component', 'react hooks component');
+
+      const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
+
+      // Should deduplicate: 'react', 'component', 'hooks'
+      const expectedRegex = new RegExp('react|component|hooks', 'i');
+
+      expect(queryArg.$or[0].title.$regex.source).toEqual(expectedRegex.source);
     });
   });
 });

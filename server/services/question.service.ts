@@ -308,13 +308,12 @@ export const getCommunityQuestions = async (communityId: string): Promise<Databa
     return [];
   }
 };
+
 /**
- * Check for any pre-existing questions.
- *
- * @param {string} title - The title of the question to be filtered for duplication.
- * @param {string} text - The text body of the question to be filtered for duplication.
- *
- * @returns {Promise<PopulatedDatabaseQuestion[]>} - Possible duplicates.
+ * This function fetches up to five questions that are similar to the provided title and text.
+ * @param title the title of the question
+ * @param text the test of the question
+ * @returns 5 or less questions that are similar to the title and text provided
  */
 export const fetchFiveQuestionsByTextAndTitle = async (
   title: string,
@@ -327,27 +326,82 @@ export const fetchFiveQuestionsByTextAndTitle = async (
 
     if (!cleanText && !cleanTitle) return [];
 
-    // Build query conditions
+    // Define common stop words to filter out
+    const stopWords = [
+      'i',
+      'have',
+      'a',
+      'an',
+      'the',
+      'about',
+      'how',
+      'to',
+      'question',
+      'with',
+      'in',
+      'on',
+      'at',
+      'for',
+      'is',
+      'am',
+      'are',
+      'was',
+      'were',
+      'my',
+      'me',
+      'this',
+      'that',
+      'these',
+      'those',
+      'what',
+      'when',
+      'where',
+      'why',
+      'help',
+      'need',
+      'want',
+      'can',
+      'could',
+      'would',
+      'should',
+      'use', // Add 'use' to stop words
+    ];
+
+    // Extract meaningful keywords from title
+    const extractKeywords = (input: string): string[] => {
+      return input
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 2) // Filter short words
+        .filter(word => !stopWords.includes(word)) // Remove stop words
+        .filter(word => /[a-zA-Z0-9]/.test(word)); // Must contain alphanumeric
+    };
+
+    // Escape special regex characters
+    const escapeRegex = (str: string): string => {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    const titleKeywords = extractKeywords(cleanTitle);
+    const textKeywords = extractKeywords(cleanText);
+
+    // Combine and deduplicate keywords
+    const allKeywords = [...new Set([...titleKeywords, ...textKeywords])];
+
+    // no meaningful keywords
+    if (allKeywords.length === 0) return [];
+
+    // Build conditions for OR search (match ANY keyword)
     const conditions = [];
 
-    // Only add title condition if cleanTitle exists
-    if (cleanTitle) {
-      // Escape special regex characters
-      const escapedTitle = cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const titleRegex = new RegExp(escapedTitle, 'i');
-      conditions.push({ title: { $regex: titleRegex } });
-    }
+    if (allKeywords.length > 0) {
+      // Escape each keyword and create pattern that matches any of them
+      const escapedKeywords = allKeywords.map(escapeRegex);
+      const keywordPattern = escapedKeywords.join('|');
+      const regex = new RegExp(keywordPattern, 'i');
 
-    // Only add text condition if cleanText exists
-    if (cleanText) {
-      // Escape special regex characters
-      const escapedText = cleanText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const textRegex = new RegExp(escapedText, 'i');
-      conditions.push({ text: { $regex: textRegex } });
+      conditions.push({ title: { $regex: regex } }, { text: { $regex: regex } });
     }
-
-    // If no conditions, return empty array
-    if (conditions.length === 0) return [];
 
     const similarQuestions: PopulatedDatabaseQuestion[] = await QuestionModel.find({
       $or: conditions,
@@ -366,12 +420,14 @@ export const fetchFiveQuestionsByTextAndTitle = async (
         },
         { path: 'comments', model: CommentModel },
       ])
+      .sort({ ask_date_time: -1 }) // Sort by most recent
       .limit(5)
+      .lean()
       .exec();
 
     return similarQuestions;
   } catch (error) {
-    console.log(`The error is: ` + error);
+    console.log(`Error fetching similar questions: ${error}`);
     return [];
   }
 };

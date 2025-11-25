@@ -9,18 +9,25 @@ import CommentSection from '../commentSection';
 import useAnswerPage from '../../../hooks/useAnswerPage';
 import useQuestionSuggestions from '../../../hooks/useQuestionSuggestions';
 import QuestionSuggestion from '../newQuestion/QuestionSuggestion';
+import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 
 /**
  * AnswerPage component that displays the full content of a question along with its answers.
  * It also includes the functionality to vote, ask a new question, and post a new answer.
  */
 const AnswerPage = () => {
+  const { qid } = useParams();
   const { questionID, question, handleNewComment, handleNewAnswer } = useAnswerPage();
   // Fetch suggestions based on title and text input (limited to 5)
   const { suggestions, loading } = useQuestionSuggestions(
     question?.title ?? '',
     question?.text ?? '',
   );
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [qid]);
 
   if (!question) {
     return null;
