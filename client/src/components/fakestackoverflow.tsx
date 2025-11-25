@@ -29,6 +29,7 @@ import MatchDiscoveryPage from './main/matchProfilePage/MatchDiscoveryPage';
 import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
 import { getUserByUsername } from '../services/userService';
 import { loadRememberedUser } from '../utils/authStorage';
+import { storeAuthToken } from '../utils/tokenStorage';
 import useCheckAuth from '../hooks/useCheckAuth';
 
 const ProtectedRoute = ({
@@ -69,7 +70,11 @@ const AuthBootstrap = () => {
 const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
   // Check for OAuth callback params during initialization
   const urlParams = new URLSearchParams(window.location.search);
-  const hasOAuthParams = !!(urlParams.get('username') || urlParams.get('githubId'));
+  const hasOAuthParams = !!(
+    urlParams.get('username') ||
+    urlParams.get('githubId') ||
+    urlParams.get('token')
+  );
 
   const [user, setUser] = useState<SafeDatabaseUser | null>(null);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(hasOAuthParams);
@@ -86,6 +91,11 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
       const currentUrlParams = new URLSearchParams(window.location.search);
       const username = currentUrlParams.get('username');
       const githubId = currentUrlParams.get('githubId');
+      const token = currentUrlParams.get('token');
+
+      if (token) {
+        storeAuthToken(token);
+      }
 
       if (isProcessingOAuth && !username && !githubId) {
         setIsProcessingOAuth(false);

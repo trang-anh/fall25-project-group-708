@@ -129,7 +129,9 @@ describe('populateDocument', () => {
             type: 'text',
           },
         ],
+        chatType: 'direct' as const,
       }),
+      chatType: 'direct' as const,
     };
 
     const mockUser = {
@@ -155,6 +157,7 @@ describe('populateDocument', () => {
     expect(result).toEqual({
       _id: 'chatId',
       participants: ['user1'],
+      chatType: 'direct',
       messages: [
         {
           _id: 'messageId',

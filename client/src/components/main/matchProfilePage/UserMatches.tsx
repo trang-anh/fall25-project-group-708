@@ -65,6 +65,7 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
         );
         setPopulatedMatches(populated);
       } catch (err) {
+        alert('Failed to load match profiles. Please try again later.');
       } finally {
         setLoadingProfiles(false);
       }
@@ -77,7 +78,9 @@ const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
     if (window.confirm('Are you sure you want to remove this match?')) {
       try {
         await removeMatch(matchId);
-      } catch (err) {}
+      } catch (err) {
+        alert('Failed to remove match. Please try again.');
+      }
     }
   };
 
