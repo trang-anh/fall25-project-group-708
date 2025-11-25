@@ -4,6 +4,8 @@ import ChatsListCard from './chatsListCard';
 import UsersListPage from '../usersListPage';
 import MessageCard from '../messageCard';
 import Avatar from '../../avatar';
+import useMatchedUserProfile from '../../../hooks/useMatchedUserProfile';
+import MatchedUserProfileHeader from './MatchedUserProfileHeader';
 
 /**
  * DirectMessage component renders a page for direct messaging and group chats.
@@ -31,6 +33,8 @@ const DirectMessage = () => {
     error,
     currentUsername,
   } = useDirectMessage();
+
+  const matched = useMatchedUserProfile(selectedChat, currentUsername);
 
   const isGroupChat =
     selectedChat?.chatType === 'group' || (selectedChat?.participants?.length ?? 0) > 2;
@@ -204,6 +208,13 @@ const DirectMessage = () => {
                 )}
               </div>
             </div>
+            {!matched.isGroupChat && matched.otherProfile && (
+              <MatchedUserProfileHeader
+                username={matched.otherParticipant!}
+                avatarUrl={matched.otherAvatar}
+                profile={matched.otherProfile}
+              />
+            )}
             <div className='chat-messages'>
               {selectedChat.messages.map((message, index) => {
                 const prevMessage = index > 0 ? selectedChat.messages[index - 1] : null;

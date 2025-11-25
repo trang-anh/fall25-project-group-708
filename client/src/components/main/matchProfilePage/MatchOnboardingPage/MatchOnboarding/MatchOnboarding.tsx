@@ -1,7 +1,7 @@
 import React from 'react';
 import './MatchOnboarding.css';
-import useMatchOnboarding from '../../../hooks/useMatchOnboarding';
-import { OnboardingFormData } from '../../../types/onboardingFormData';
+import useMatchOnboarding from '../../../../../hooks/useMatchOnboarding';
+import { OnboardingFormData } from '../../../../../types/onboardingFormData';
 
 /**
  * Props for the MatchOnboarding component.
