@@ -9,12 +9,19 @@ interface MatchedUserProfileHeaderProps {
   profile: DatabaseMatchProfile;
 }
 
+/**
+ * MatchedUserProfileHeader - Displays matched user's profile in chat header
+ * Shows avatar, username, programming languages, and collaboration style
+ */
 const MatchedUserProfileHeader: React.FC<MatchedUserProfileHeaderProps> = ({
   username,
   avatarUrl,
   profile,
 }) => {
+  // Get top 3 languages for display
   const languages = profile.programmingLanguage.slice(0, 3);
+  const hasMoreLanguages = profile.programmingLanguage.length > 3;
+  const additionalCount = profile.programmingLanguage.length - 3;
 
   return (
     <div className='matched-profile-header'>
@@ -23,13 +30,24 @@ const MatchedUserProfileHeader: React.FC<MatchedUserProfileHeaderProps> = ({
       <div className='matched-profile-info'>
         <h3>{username}</h3>
 
-        <p className='matched-profile-languages'>
-          {languages.length > 0 ? languages.join(', ') : 'No languages listed'}
-        </p>
+        {languages.length > 0 && (
+          <div className='matched-profile-languages'>
+            {languages.map((lang, idx) => (
+              <span key={idx} className='language-badge'>
+                {lang}
+              </span>
+            ))}
+            {hasMoreLanguages && (
+              <span className='language-badge'>+{additionalCount}</span>
+            )}
+          </div>
+        )}
 
-        <p className='matched-profile-collaboration'>
-          Collaboration style: {profile.onboardingAnswers?.personality || 'Unknown'}
-        </p>
+        {profile.onboardingAnswers?.personality && (
+          <p className='matched-profile-collaboration'>
+            {profile.onboardingAnswers.personality}
+          </p>
+        )}
       </div>
     </div>
   );
