@@ -3,7 +3,7 @@ import { AvatarUploadResponse, AvatarDeleteResponse } from '@fake-stack-overflow
 import api from './config';
 
 const USER_API_URL = `/api/user`;
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const apiBaseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
 
 /**
  * Upload avatar image for a user
