@@ -87,11 +87,13 @@ export const createChat = async (participants: string[]): Promise<PopulatedDatab
 export const createGroupChat = async (
   participants: string[],
   chatName: string,
+  chatAdmin: string,
 ): Promise<PopulatedDatabaseChat> => {
   const res = await api.post(`${CHAT_API_URL}/createGroupChat`, {
     participants,
     messages: [],
     chatName,
+    chatAdmin,
   });
 
   if (res.status !== 200) {

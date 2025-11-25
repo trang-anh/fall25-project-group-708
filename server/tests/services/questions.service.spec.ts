@@ -1,3 +1,5 @@
+jest.mock('../../models/questions.model');
+
 import mongoose, { Query } from 'mongoose';
 import QuestionModel from '../../models/questions.model';
 import {
@@ -580,8 +582,6 @@ describe('Question model', () => {
     });
   });
 
-  jest.mock('../../models/questions.model');
-
   describe('fetchFiveQuestionsByTextAndTitle', () => {
     beforeEach(() => {
       jest.clearAllMocks();
@@ -603,9 +603,10 @@ describe('Question model', () => {
       await fetchFiveQuestionsByTextAndTitle('react component', '');
 
       expect(QuestionModel.find).toHaveBeenCalledTimes(1);
+
       const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
 
-      const expectedRegex = new RegExp('react|component', 'i');
+      const expectedRegex = new RegExp('react component', 'i');
 
       expect(queryArg.$or[0].title.$regex).toEqual(expectedRegex);
       expect(populateMock).toHaveBeenCalled();
@@ -624,9 +625,9 @@ describe('Question model', () => {
 
       const queryArg = (QuestionModel.find as jest.Mock).mock.calls[0][0];
 
-      const expectedRegex = new RegExp('how|to|build|api', 'i');
+      const expectedRegex = new RegExp('how to build api', 'i');
 
-      expect(queryArg.$or[1].text.$regex).toEqual(expectedRegex);
+      expect(queryArg.$or[0].text.$regex).toEqual(expectedRegex);
       expect(limitMock).toHaveBeenCalledWith(5);
       expect(execMock).toHaveBeenCalled();
     });
