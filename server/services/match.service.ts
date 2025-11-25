@@ -112,7 +112,6 @@ export const getUserMatches = async (
         };
       }),
     );
-    // return matches;
     return enriched;
   } catch (err) {
     return { error: (err as Error).message };
