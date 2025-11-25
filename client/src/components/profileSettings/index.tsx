@@ -32,7 +32,6 @@ const ProfileSettings: React.FC = () => {
     setShowConfirmation,
     handleResetPassword,
     handleUpdateBiography,
-    handleDeleteUser,
     handleViewCollectionsPage,
     updateUserData,
     twoFactorEnabled,

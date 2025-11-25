@@ -17,6 +17,7 @@ import {
 } from '../services/chatService';
 // import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
+import { useSearchParams } from 'react-router-dom';
 
 /**
  * useDirectMessage is a custom hook that provides state and functions for direct messaging and group chats.
@@ -33,6 +34,12 @@ const useDirectMessage = () => {
   const [chats, setChats] = useState<PopulatedDatabaseChat[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // const [searchParams] = useSearchParams();
+  // const targetUser = searchParams.get('user');
+
+  const [searchParams] = useSearchParams();
+  const targetUser = searchParams.get('user');
   const { showToast } = useToast();
 
   const handleJoinChat = (chatID: ObjectId) => {
@@ -269,6 +276,34 @@ const useDirectMessage = () => {
       socket.emit('leaveChat', String(selectedChat?._id));
     };
   }, [user.username, socket, selectedChat?._id]);
+
+  // Auto-open or create chat when ?user=username is present in the URL
+  useEffect(() => {
+    // Not navigating from matches → nothing to do
+    if (!targetUser) return;
+
+    // Wait for chats from the server to load
+    if (chats.length === 0) return;
+
+    // If a chat with this user already exists -> open it
+    const existingChat = chats.find(chat => chat.participants.includes(targetUser));
+
+    // If a chat exists and it's not already open
+    if (existingChat && !selectedChat) {
+      handleChatSelect(existingChat._id);
+      return;
+    }
+
+    // If NO chat exists:
+    if (!existingChat && !selectedChat) {
+      // Set the user to create a chat with
+      handleUserSelect({ username: targetUser } as SafeDatabaseUser);
+
+      // Create chat
+      handleCreateChat();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetUser, chats, selectedChat]);
 
   return {
     selectedChat,

@@ -1,8 +1,8 @@
 import React from 'react';
-import './MatchDiscovery.css';
+import './MatchDiscovery/index.css';
 import { useNavigate } from 'react-router-dom';
 import MatchDiscovery from './MatchDiscovery';
-import useMatchDiscoveryPage from '../../../hooks/useMatchDiscoveryPage';
+import useMatchDiscoveryPage from '../../../../hooks/useMatchDiscoveryPage';
 
 /**
  * Page wrapper for Match Discovery.

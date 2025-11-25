@@ -1,10 +1,10 @@
 import React from 'react';
-import { useUserMatches } from '../../../hooks/useMatchProfilePage';
-import MatchProfileCard from './MatchProfileCard';
-import './MatchDiscovery.css';
-import useMatchDiscovery from '../../../hooks/useMatchDiscovery';
-import useMatchRecommendation from '../../../hooks/useMatchRecommendation';
-import { RecommendationProfile } from '../../../types/recommendationProfile';
+import { useUserMatches } from '../../../../../hooks/useMatchProfilePage';
+import MatchProfileCard from '../../MatchProfileCard/MatchProfileCard';
+import './index.css';
+import useMatchDiscovery from '../../../../../hooks/useMatchDiscovery';
+import useMatchRecommendation from '../../../../../hooks/useMatchRecommendation';
+import { RecommendationProfile } from '../../../../../types/recommendationProfile';
 
 /**
  * Props for the MatchDiscovery page.

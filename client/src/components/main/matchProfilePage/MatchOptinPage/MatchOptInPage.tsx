@@ -1,6 +1,6 @@
 import React from 'react';
 import './MatchOptInPage.css';
-import useMatchOptIn from '../../../hooks/useMatchOptInPage';
+import useMatchOptIn from '../../../../hooks/useMatchOptInPage';
 
 /**
  * Structure of the match opt in page so users can decide whether

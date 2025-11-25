@@ -1,8 +1,8 @@
 import React from 'react';
-import './MatchOnboarding.css';
+import './MatchOnboarding/MatchOnboarding.css';
 import { useNavigate } from 'react-router-dom';
-import MatchOnboarding from './MatchOnboarding';
-import useMatchOnboardingPage from '../../../hooks/useMatchOnboardingPage';
+import MatchOnboarding from './MatchOnboarding/MatchOnboarding.tsx';
+import useMatchOnboardingPage from '../../../../hooks/useMatchOnboardingPage';
 
 /**
  * Page wrapper for the Match Onboarding flow.
