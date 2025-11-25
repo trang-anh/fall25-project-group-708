@@ -37,6 +37,8 @@ const Login = () => {
    * redirects to the GitHub OAuth authentication page
    */
   const handleGitHubLogin = () => {
+    // eslint-disable-next-line no-console
+    console.log(apiBaseUrl);
     window.location.href = `${apiBaseUrl}/api/auth/github`;
   };
 
