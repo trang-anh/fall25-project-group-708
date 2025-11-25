@@ -24,7 +24,10 @@ export type GithubUserProfile = {
 const ensureGithubConfig = () => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  const redirectUri = process.env.GITHUB_REDIRECT_URI || DEFAULT_GITHUB_REDIRECT_URI;
+  const redirectUri =
+    process.env.GITHUB_REDIRECT_URI ||
+    process.env.OAUTH_REDIRECT_URI ||
+    DEFAULT_GITHUB_REDIRECT_URI;
 
   if (!clientId || !clientSecret) {
     throw new Error('GitHub OAuth is not configured properly.');
