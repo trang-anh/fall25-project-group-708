@@ -27,6 +27,7 @@ import MatchOptInPage from './main/matchProfilePage/MatchOptInPage';
 import MatchOnboardingPage from './main/matchProfilePage/MatchOnboardingPage';
 import MatchDiscoveryPage from './main/matchProfilePage/MatchDiscoveryPage';
 import UserMatchesPage from './main/matchProfilePage/UserMatchesPage';
+import MatchProfileEditPage from './main/matchProfilePage/MatchProfileEditPage';
 import { getUserByUsername } from '../services/userService';
 import { loadRememberedUser } from '../utils/authStorage';
 import { storeAuthToken } from '../utils/tokenStorage';
@@ -170,6 +171,7 @@ const FakeStackOverflow = ({ socket }: { socket: FakeSOSocket | null }) => {
           <Route path='/match-onboarding' element={<MatchOnboardingPage />} />
           <Route path='/match-discovery' element={<MatchDiscoveryPage />} />
           <Route path='/match' element={<UserMatchesPage />} />
+          <Route path='/match/profile/edit' element={<MatchProfileEditPage />} />
         </Route>
       </Routes>
     </LoginContext.Provider>

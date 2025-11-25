@@ -1,6 +1,5 @@
-import { ObjectId } from 'mongodb';
 import { Request } from 'express';
-import { DatabaseMatchProfile } from './matchProfile';
+// import { DatabaseMatchProfile } from './matchProfile';
 
 /**
  * Represents a match between two users.
@@ -16,11 +15,11 @@ import { DatabaseMatchProfile } from './matchProfile';
  * - `initiatedBy`: The user who initiated the match request.
  */
 export interface Match {
-  userA: ObjectId;
-  userB: ObjectId;
+  userA: string;
+  userB: string;
   status: string;
   score: number;
-  initiatedBy: ObjectId;
+  initiatedBy: string;
 }
 
 /**
@@ -30,19 +29,9 @@ export interface Match {
  * - `updatedAt`: The date the match was last updated.
  */
 export interface DatabaseMatch extends Match {
-  _id: ObjectId;
+  _id: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-/**
- * Represents a populated match record.
- * Includes the full `DatabaseMatchProfile` objects for both users,
- * instead of just their ObjectId references.
- */
-export interface PopulatedDatabaseMatch extends Omit<DatabaseMatch, 'userA' | 'userB'> {
-  userA: DatabaseMatchProfile;
-  userB: DatabaseMatchProfile;
 }
 
 /**
@@ -71,7 +60,14 @@ export type MatchResponse = DatabaseMatch | { error: string };
  * Represents a response for match generated operations.
  * Either returns a `DatabaseMatch` object or an error message.
  */
-export type GenerateMatchesResponse = { error: string } | { matches: DatabaseMatch[] };
+export interface GenerateMatchesResponse {
+  recommendations?: {
+    userId: PopulatedUser;
+    score: number;
+    profile: MatchProfileWithUser;
+  }[];
+  error?: string;
+}
 
 /**
  * Represents a request to fetch or modify a specific match by ID.
@@ -90,5 +86,31 @@ export interface MatchRequest extends Request {
 export interface GetUserMatchesRequest extends Request {
   params: {
     userId: string;
+  };
+}
+
+/**
+ * Data sent from the client to create a match.
+ * Does NOT include _id, createdAt, or updatedAt.
+ */
+export interface CreateMatchDTO {
+  userA: string;
+  userB: string;
+  status: string;
+  score: number;
+  initiatedBy: string;
+}
+
+/**
+ * Request type for updating a match status (accept or decline).
+ * Sent to /match/updateStatus/:matchId
+ */
+export interface UpdateMatchStatusRequest extends express.Request {
+  params: {
+    matchId: string;
+  };
+  body: {
+    userId: string;
+    status: 'accepted' | 'rejected';
   };
 }

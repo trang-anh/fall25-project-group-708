@@ -22,13 +22,11 @@ const matchSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     userB: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true,
     },
     status: {
       type: String,
@@ -40,8 +38,7 @@ const matchSchema: Schema = new Schema(
     initiatedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
-      unique: true,
+      required: false,
     },
     createdAt: {
       type: Date,
@@ -52,5 +49,7 @@ const matchSchema: Schema = new Schema(
   },
   { collection: 'Match' },
 );
+
+matchSchema.index({ userA: 1, userB: 1 }, { unique: true });
 
 export default matchSchema;

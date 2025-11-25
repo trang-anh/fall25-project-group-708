@@ -5,21 +5,19 @@ import {
   DatabaseMatch,
   MatchResponse,
   GenerateMatchesResponse,
-  PopulatedDatabaseMatchProfile,
+  MatchProfileWithUser,
 } from '../types/types';
 import extractFeatures from './matchFeature.service';
 import computeScore from './matchMath.service';
 
 /**
- * Creates a new community with the provided data.
- * The admin user is automatically added to the participants list if not already included.
+ * Creates a new match record between two users.
  *
- * @param communityData - Object containing community details including name, description, visibility, admin, and participants
- * @returns A Promise resolving to the newly created community document or an error object
+ * @param matchData - The match information including userA, userB, status, score, and who initiated it.
+ * @returns A Promise resolving to the newly created match document (normalized) or an error object.
  */
 export const createMatch = async (matchData: Match): Promise<MatchResponse> => {
   try {
-    // Ensure admin is included in the participants list
     const newMatch = new MatchModel({
       userA: matchData.userA,
       userB: matchData.userB,
@@ -31,7 +29,15 @@ export const createMatch = async (matchData: Match): Promise<MatchResponse> => {
     });
 
     const savedMatch = await newMatch.save();
-    return savedMatch.toObject() as DatabaseMatch;
+    const plain = savedMatch.toObject();
+
+    return {
+      ...plain,
+      _id: plain._id.toString(),
+      userA: plain.userA.toString(),
+      userB: plain.userB.toString(),
+      initiatedBy: plain.initiatedBy.toString(),
+    } as DatabaseMatch;
   } catch (err) {
     return { error: (err as Error).message };
   }
@@ -70,7 +76,43 @@ export const getUserMatches = async (
     })
       .lean<DatabaseMatch[]>()
       .exec();
-    return matches;
+
+    // Build otherUserProfile for each match
+    const enriched = await Promise.all(
+      matches.map(async match => {
+        const otherUserId =
+          match.userA.toString() === userId ? match.userB.toString() : match.userA.toString();
+
+        const otherProfile = await MatchProfileModel.findOne({ userId: otherUserId })
+          .populate('userId', 'username')
+          .lean()
+          .exec();
+
+        return {
+          ...match,
+          _id: match._id.toString(),
+          userA: match.userA.toString(),
+          userB: match.userB.toString(),
+          initiatedBy: match.initiatedBy?.toString() ?? null,
+          otherUserProfile: otherProfile
+            ? {
+                ...otherProfile,
+                userId:
+                  typeof otherProfile.userId === 'object'
+                    ? {
+                        _id: otherProfile.userId._id.toString(),
+                        username: otherProfile.userId.username,
+                      }
+                    : {
+                        _id: otherProfile.userId.toString(),
+                        username: 'Unknown',
+                      },
+              }
+            : null,
+        };
+      }),
+    );
+    return enriched;
   } catch (err) {
     return { error: (err as Error).message };
   }
@@ -111,86 +153,119 @@ export const deleteMatch = async (matchId: string, userId: string): Promise<Matc
 };
 
 /**
- * Generates or updates matches for a given user based on their match profile
- * and returns the list of match documents sorted by descending score.
+ * Updates the status of a match (accepted or rejected).
  *
- * - Only considers other active match profiles.
- * - Skips pairs with no language overlap (skillOverlap = 0).
+ * @param matchId - The ID of the match being updated.
+ * @param userId - The ID of the user performing the update.
+ * @param newStatus - The new status to set.
+ * @returns A Promise resolving to the updated match document or an error object.
  */
-export const generateMatchesForUser = async (userId: string): Promise<GenerateMatchesResponse> => {
+export const updateMatchStatus = async (
+  matchId: string,
+  userId: string,
+  newStatus: 'accepted' | 'rejected',
+): Promise<MatchResponse> => {
+  try {
+    const match = await MatchModel.findById(matchId);
+
+    if (!match) {
+      return { error: 'Match not found' };
+    }
+
+    // Only participants can update the match
+    if (match.userA.toString() !== userId && match.userB.toString() !== userId) {
+      return { error: 'Unauthorized: Only participants can update this match' };
+    }
+
+    match.status = newStatus;
+    match.updatedAt = new Date();
+
+    const saved = await match.save();
+    return {
+      ...saved.toObject(),
+      _id: saved._id.toString(),
+      userA: saved.userA.toString(),
+      userB: saved.userB.toString(),
+      initiatedBy: saved.initiatedBy?.toString() ?? null,
+    };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+};
+
+/**
+ * Generates match recommendations for a user based on similarity scoring.
+ *
+ * - Only considers active match profiles.
+ * - Uses extracted feature vectors to compute a compatibility score.
+ * - Skips recommendations with no language overlap.
+ *
+ * @param userId - The ID of the user requesting recommendations.
+ * @returns A Promise resolving to an ordered list of recommended matches or an error object.
+ */
+export const generateMatchRecommendation = async (
+  userId: string,
+): Promise<GenerateMatchesResponse> => {
   try {
     // 1. Get this user's populated match profile
     const userProfileDoc = await MatchProfileModel.findOne({ userId, isActive: true })
-      .populate('programmingLanguage')
-      .populate('preferences.preferredLanguages')
-      .exec();
+      .populate('userId', 'username')
+      .lean();
+    if (!userProfileDoc) return { recommendations: [] };
 
-    if (!userProfileDoc) {
-      return { error: 'Active MatchProfile not found for this user' };
-    }
-
-    const userProfile = userProfileDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+    const userProfile = userProfileDoc as unknown as MatchProfileWithUser;
 
     // 2. Get all other active profiles
     const otherProfilesDocs = await MatchProfileModel.find({
       userId: { $ne: userId },
       isActive: true,
     })
-      .populate('programmingLanguage')
-      .populate('preferences.preferredLanguages')
-      .exec();
+      .populate('userId', 'username')
+      .lean();
 
-    const matches: DatabaseMatch[] = [];
+    // 3. Build recommendations
+    const recommendations = otherProfilesDocs
+      .map(doc => {
+        const plainDoc = doc;
 
-    for (const otherDoc of otherProfilesDocs) {
-      const otherProfile = otherDoc.toObject() as unknown as PopulatedDatabaseMatchProfile;
+        if (!plainDoc.userId || typeof plainDoc.userId === 'string') {
+          throw new Error('Populate failed: userId is still ObjectId/string');
+        }
 
-      // 3. Extract features between user A and user B
-      const features = extractFeatures(userProfile, otherProfile);
+        const populatedUser = plainDoc.userId as { _id: string; username: string };
 
-      const [skillOverlap] = features;
-      // 3.6 Essential: Given User A (Python & Java), don't see User B (C, Assembly)
-      // --> skip pairs with no shared languages
-      if (skillOverlap === 0) {
-        // no overlap in programmingLanguage -> don't create a match
-        continue;
-      }
-
-      // 4. Compute compatibility score (0–1)
-      const score = computeScore(features);
-
-      // 5. Upsert Match document for this pair
-      // We'll store userA as the caller, userB as the other profile.
-      const matchDoc = await MatchModel.findOneAndUpdate(
-        {
-          userA: userProfile._id,
-          userB: otherProfile._id,
-        },
-        {
-          $set: {
-            score,
-            status: 'pending',
-            updatedAt: new Date(),
+        const profile: MatchProfileWithUser = {
+          ...plainDoc,
+          userId: {
+            _id: populatedUser._id.toString(),
+            username: populatedUser.username,
           },
-          $setOnInsert: {
-            createdAt: new Date(),
+        };
+
+        const features = extractFeatures(userProfile, profile);
+        const score = computeScore(features);
+        const [skillOverlap] = features;
+
+        if (skillOverlap === 0) return null;
+
+        return {
+          userId: profile.userId._id.toString(),
+          score,
+          profile: {
+            ...profile,
+            userId: {
+              _id: profile.userId._id.toString(),
+              username: profile.userId.username,
+            },
           },
-        },
-        {
-          new: true,
-          upsert: true,
-        },
-      ).exec();
+        };
+      })
+      .filter(
+        (r): r is { userId: string; score: number; profile: MatchProfileWithUser } => r !== null,
+      )
+      .sort((a, b) => b.score - a.score);
 
-      if (matchDoc) {
-        matches.push(matchDoc.toObject() as DatabaseMatch);
-      }
-    }
-
-    // 6. Sort matches by score descending
-    matches.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-
-    return { matches };
+    return { recommendations };
   } catch (err) {
     return { error: (err as Error).message };
   }

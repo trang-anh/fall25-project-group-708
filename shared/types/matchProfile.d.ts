@@ -1,6 +1,4 @@
-import { ObjectId } from 'mongodb';
 import { Request } from 'express';
-import { ProgrammingLanguage } from './programmingLanguage';
 
 /**
  * Represents a match profile.
@@ -9,16 +7,16 @@ import { ProgrammingLanguage } from './programmingLanguage';
  * - `questions`: The questions that have been added to the collection.
  */
 export interface MatchProfile {
-  userId: ObjectId;
+  userId: string;
   isActive: boolean;
   age: number;
   gender: string;
   location: string;
-  programmingLanguage: ProgrammingLanguage[];
+  programmingLanguage: string[];
   level: string;
 
   preferences: {
-    preferredLanguages: ProgrammingLanguage[];
+    preferredLanguages: string[];
     preferredLevel: string;
   };
 
@@ -40,34 +38,33 @@ export interface MatchProfile {
  * - `preferredLanguage: The preferred programming languages that have been added to the match profile.
  */
 export interface DatabaseMatchProfile
-  extends Omit<MatchProfile, 'programmingLanguage', 'preferences'> {
-  _id: ObjectId;
-  userId: ObjectId;
+  extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
+  _id: string;
+  userId: string | PopulatedUser;
   isActive: boolean;
-  programmingLanguage: ObjectId[];
+  createdAt: Date;
+
+  programmingLanguage: string[];
+
   preferences: {
-    preferredLanguages: ObjectId[];
+    preferredLanguages: string[];
     preferredLevel: string;
   };
-  createdAt: Date;
 }
 
 /**
- * Represents a populated match profile.
- * - Includes full ProgrammingLanguage and User objects.
+ * Represents a populated user profile.
  */
-export interface PopulatedDatabaseMatchProfile
-  extends Omit<MatchProfile, 'programmingLanguage' | 'preferences'> {
-  _id: ObjectId;
-  userId: ObjectId;
-  isActive: boolean;
-  createdAt: Date;
+interface PopulatedUser {
+  _id: string;
+  username: string;
+}
 
-  programmingLanguage: ProgrammingLanguage[];
-  preferences: {
-    preferredLanguages: ProgrammingLanguage[];
-    preferredLevel: string;
-  };
+/**
+ * Represents a populated match profile with username.
+ */
+export interface MatchProfileWithUser extends Omit<DatabaseMatchProfile, 'userId'> {
+  userId: PopulatedUser;
 }
 
 /**

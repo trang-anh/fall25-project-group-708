@@ -1,24 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './MatchOnboarding.css';
+import useMatchOnboarding from '../../../hooks/useMatchOnboarding';
+import { OnboardingFormData } from '../../../types/onboardingFormData';
 
-interface OnboardingFormData {
-  age: number;
-  gender: string;
-  location: string;
-  programmingLanguage: string[];
-  level: string;
-  preferences: {
-    preferredLanguages: string[];
-    preferredLevel: string;
-  };
-  onboardingAnswers: {
-    goals: string;
-    personality: string;
-    projectType: string;
-  };
-  biography: string;
-}
-
+/**
+ * Props for the MatchOnboarding component.
+ *
+ * @param currentUserId - The ID of the logged-in user.
+ * @param onComplete - Callback when form submission is complete.
+ * @param onSkip - Optional callback if the user chooses to skip onboarding.
+ */
 interface MatchOnboardingProps {
   currentUserId: string;
   onComplete: (formData: OnboardingFormData) => Promise<void>;
@@ -45,114 +36,34 @@ const PROGRAMMING_LANGUAGES = [
   'HTML/CSS',
 ];
 
+/**
+ * Main onboarding component that walks users through multiple steps
+ * to complete their match profile.
+ *
+ * @component
+ * @param props - The component props.
+ * @returns The onboarding form UI.
+ */
 const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ onComplete, onSkip }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<OnboardingFormData>({
-    age: 18,
-    gender: '',
-    location: '',
-    programmingLanguage: [],
-    level: 'BEGINNER',
-    preferences: {
-      preferredLanguages: [],
-      preferredLevel: 'ALL',
-    },
-    onboardingAnswers: {
-      goals: '',
-      personality: '',
-      projectType: '',
-    },
-    biography: '',
-  });
+  // Extract logic from the hook
+  const {
+    formData,
+    currentStep,
+    isSubmitting,
+    totalSteps,
+    updateFormData,
+    updateNestedField,
+    toggleLanguage,
+    canProceed,
+    handleNext,
+    handleBack,
+    handleSubmit,
+  } = useMatchOnboarding(onComplete);
 
-  const totalSteps = 5;
-
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const updateNestedField = (parent: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [parent]: {
-        ...(prev[parent as keyof OnboardingFormData] as any),
-        [field]: value,
-      },
-    }));
-  };
-
-  const toggleLanguage = (language: string, isPreference: boolean = false) => {
-    if (isPreference) {
-      setFormData(prev => {
-        const current = prev.preferences.preferredLanguages;
-        const updated = current.includes(language)
-          ? current.filter(l => l !== language)
-          : [...current, language];
-        return {
-          ...prev,
-          preferences: { ...prev.preferences, preferredLanguages: updated },
-        };
-      });
-    } else {
-      setFormData(prev => {
-        const updated = prev.programmingLanguage.includes(language)
-          ? prev.programmingLanguage.filter(l => l !== language)
-          : [...prev.programmingLanguage, language];
-        return { ...prev, programmingLanguage: updated };
-      });
-    }
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return formData.age >= 13 && formData.gender && formData.location;
-      case 2:
-        return formData.programmingLanguage.length > 0 && formData.level;
-      case 3:
-        return formData.preferences.preferredLanguages.length > 0;
-      case 4:
-        return (
-          formData.onboardingAnswers.goals &&
-          formData.onboardingAnswers.personality &&
-          formData.onboardingAnswers.projectType
-        );
-      case 5:
-        return formData.biography.length >= 50;
-      default:
-        return false;
-    }
-  };
-
-  const handleNext = () => {
-    if (canProceed() && currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!canProceed()) return;
-
-    setIsSubmitting(true);
-    try {
-      await onComplete(formData);
-    } catch (error) {
-      alert('Failed to save profile. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  /**
+   * Renders the current step of the onboarding flow.
+   * @returns {JSX.Element | null} The step content.
+   */
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -184,25 +95,30 @@ const MatchOnboarding: React.FC<MatchOnboardingProps> = ({ onComplete, onSkip })
                 onChange={e => updateFormData('gender', e.target.value)}
                 className='form-select'>
                 <option value=''>Select gender</option>
-                <option value='Male'>Male</option>
-                <option value='Female'>Female</option>
-                <option value='Non-binary'>Non-binary</option>
-                <option value='Prefer not to say'>Prefer not to say</option>
-                <option value='Other'>Other</option>
+                <option value='MALE'>Male</option>
+                <option value='FEMALE'>Female</option>
+                <option value='NON-BINARY'>Non-binary</option>
+                <option value='PREFER NOT TO SAY'>Prefer not to say</option>
               </select>
             </div>
 
             <div className='form-group'>
               <label htmlFor='location'>Location</label>
-              <input
+              <select
                 id='location'
-                type='text'
-                placeholder='e.g., Boston, MA'
                 value={formData.location}
                 onChange={e => updateFormData('location', e.target.value)}
-                className='form-input'
-              />
-              <span className='helper-text'>City and state/country</span>
+                className='form-select'>
+                <option value=''>Select your region</option>
+                <option value='NORTH AMERICA'>North America</option>
+                <option value='SOUTH AMERICA'>South America</option>
+                <option value='EUROPE'>Europe</option>
+                <option value='ASIA'>Asia</option>
+                <option value='AFRICA'>Africa</option>
+                <option value='AUSTRALIA'>Australia</option>
+                <option value='ANTARCTICA'>Antarctica</option>
+              </select>
+              <span className='helper-text'>Select your general region</span>
             </div>
           </div>
         );

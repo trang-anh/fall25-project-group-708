@@ -1,5 +1,5 @@
 import './index.css';
-import FakeStackOverflowLogo from './FakeStackOverflowLogo';
+import Code2DateLogo from './Code2Date.tsx';
 import { Link } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import DarkModeToggle from '../../darkModeToggle/DarkModeToggle';
@@ -61,7 +61,7 @@ const Login = () => {
 
       {/* Main Content */}
       <div className='login-content'>
-        <FakeStackOverflowLogo />
+        <Code2DateLogo />
         <div className='login-wrapper'>
           {/* Left Column - Traditional Login */}
           <div className='login-form-section'>

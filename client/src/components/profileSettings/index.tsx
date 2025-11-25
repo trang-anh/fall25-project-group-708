@@ -533,16 +533,6 @@ const ProfileSettings: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {/* Danger Zone */}
-            {canEditProfile && (
-              <div className='section-divider danger-zone'>
-                <h3 className='section-title'>Danger Zone</h3>
-                <button className='button button-danger full-width' onClick={handleDeleteUser}>
-                  Delete Account
-                </button>
-              </div>
-            )}
           </>
         ) : (
           <p className='error-message'>
