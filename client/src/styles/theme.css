@@ -8,7 +8,11 @@
   --bg-card: #ffffff;
   --bg-hover: #f5f5f7;
   --bg-active: rgba(255, 255, 255, 0.5);
-  
+
+  /* Logo */
+  --logo-border: #EC4899;
+  --logo-accent: #EC4899;
+
   /* Text Colors */
   --text-primary: #1d1d1f;
   --text-secondary: #86868b;
@@ -52,6 +56,9 @@
   --bg-card: #2c2c2e;
   --bg-hover: #3a3a3c;
   --bg-active: rgba(255, 255, 255, 0.15);
+
+  --logo-border: #3B82F6;
+  --logo-accent: #3B82F6;
   
   /* Text Colors */
   --text-primary: #f5f5f7;

@@ -119,6 +119,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
 .match-item:hover {
@@ -136,7 +137,10 @@
   border: 4px solid var(--accent-blue);
   background: var(--accent-blue);
   flex-shrink: 0;
-  margin-bottom: 1.5rem;
+  margin: 0 auto 1.5rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-avatar img {
@@ -154,6 +158,7 @@
   font-size: 3rem;
   font-weight: 700;
   color: #ffffff;
+  background: var(--accent-blue);
 }
 
 /* Match Info */
@@ -168,7 +173,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   margin-bottom: 1.5rem;
   width: 100%;
 }
@@ -237,29 +242,31 @@
 /* Compatibility Score Section */
 .compatibility-section {
   width: 100%;
-  background: var(--bg-secondary);
-  padding: 1.5rem;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
-  text-align: center;
+}
+
+.compatibility-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .compatibility-label {
-  display: block;
   color: var(--text-tertiary);
-  font-size: 0.813rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.75rem;
 }
 
 .compatibility-value {
-  display: block;
-  color: var(--accent-blue);
-  font-size: 2.5rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
   font-weight: 700;
-  line-height: 1;
 }
 
 /* Profile Details */
@@ -270,12 +277,10 @@
 
 .detail-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  padding: 0.75rem;
-  background: var(--bg-secondary);
-  border-radius: 8px;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .detail-label {
@@ -288,8 +293,8 @@
 
 .detail-value {
   color: var(--text-primary);
-  font-size: 0.938rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 /* Language Tags */
@@ -299,15 +304,16 @@
   gap: 0.5rem;
   justify-content: center;
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .lang-badge {
-  padding: 0.5rem 0.875rem;
+  padding: 0.5rem 1rem;
   background: var(--accent-blue-light);
   border: 1px solid var(--accent-blue);
   border-radius: 8px;
   color: var(--accent-blue);
-  font-size: 0.813rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -315,19 +321,19 @@
 .match-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
   color: var(--text-tertiary);
-  font-size: 0.813rem;
+  font-size: 0.875rem;
   margin-bottom: 1.5rem;
   width: 100%;
+  text-align: center;
 }
 
 .meta-text,
 .meta-date {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin: 0;
+  line-height: 1.4;
 }
 
 /* Match Actions */
@@ -336,6 +342,7 @@
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
+  align-items: stretch;
 }
 
 .action-btn {
