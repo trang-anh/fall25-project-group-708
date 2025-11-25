@@ -1,6 +1,6 @@
 import React from 'react';
 import './UserMatches.css';
-import useUserMatchesList from '../../../hooks/useUserMatchesList';
+import useUserMatchesList from '../../../../../hooks/useUserMatchesList';
 
 /**
  * Props for the UserMatches component.

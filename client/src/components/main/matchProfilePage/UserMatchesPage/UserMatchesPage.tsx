@@ -1,6 +1,6 @@
 import React from 'react';
-import useUserContext from '../../../hooks/useUserContext';
-import UserMatches from './UserMatches';
+import useUserContext from '../../../../hooks/useUserContext';
+import UserMatches from './UserMatches/UserMatches';
 
 /**
  * Wrapper component for UserMatches that provides user context
