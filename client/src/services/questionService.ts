@@ -118,7 +118,9 @@ const getSuggestedQuestions = async (
   text: string,
 ): Promise<PopulatedDatabaseQuestion[]> => {
   const params = new URLSearchParams();
+
   params.append('title', title.trim());
+
   if (text.trim()) {
     params.append('text', text.trim());
   }

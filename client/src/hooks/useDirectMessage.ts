@@ -7,8 +7,16 @@ import {
   SafeDatabaseUser,
 } from '../types/types';
 import useUserContext from './useUserContext';
-import { createChat, getChatById, getChatsByUser, sendMessage } from '../services/chatService';
+import {
+  createChat,
+  createGroupChat,
+  getChatById,
+  getChatsByUser,
+  leaveGroupChat,
+  sendMessage,
+} from '../services/chatService';
 // import { useSearchParams } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 /**
  * useDirectMessage is a custom hook that provides state and functions for direct messaging and group chats.
@@ -25,9 +33,7 @@ const useDirectMessage = () => {
   const [chats, setChats] = useState<PopulatedDatabaseChat[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  // const [searchParams] = useSearchParams();
-  // const targetUser = searchParams.get('user');
+  const { showToast } = useToast();
 
   const handleJoinChat = (chatID: ObjectId) => {
     socket.emit('joinChat', String(chatID));
@@ -104,6 +110,7 @@ const useDirectMessage = () => {
       handleJoinChat(chat._id);
       setShowCreatePanel(false);
       setChatToCreate('');
+      showToast('Chat created successfully!', 'success');
     } else {
       // Group chat creation
       if (selectedUsers.length < 1) {
@@ -124,6 +131,7 @@ const useDirectMessage = () => {
       setSelectedUsers([]);
       setGroupChatName('');
       setError(null);
+      showToast(`Group chat "${groupChatName}" created successfully!`, 'success');
     }
   };
 
@@ -142,6 +150,15 @@ const useDirectMessage = () => {
       return;
     }
 
+    // Check if current user is the admin/creator
+    const isAdmin = selectedChat.chatAdmin === user.username;
+
+    if (isAdmin) {
+      setError('Group admin cannot leave the chat');
+      showToast('Group admin cannot leave the chat', 'error');
+      return;
+    }
+
     try {
       await leaveGroupChat(selectedChat._id, user.username);
 
@@ -149,6 +166,7 @@ const useDirectMessage = () => {
       setChats(prev => prev.filter(c => c._id !== selectedChat._id));
       setSelectedChat(null);
       setError(null);
+      showToast('Left group chat successfully', 'success');
     } catch (err) {
       setError(
         `Failed to leave group chat: ${err instanceof Error ? err.message : 'Unknown error'}`,
@@ -176,21 +194,29 @@ const useDirectMessage = () => {
       switch (type) {
         case 'created': {
           if (chat.participants.includes(user.username)) {
-            setChats(prevChats => [chat, ...prevChats]);
+            setChats(prevChats => {
+              const chatExists = prevChats.some(c => c._id === chat._id);
+              if (chatExists) return prevChats;
+              return [chat, ...prevChats];
+            });
           }
           return;
         }
         case 'newMessage': {
-          setSelectedChat(chat);
-          setChats(prevChats => {
-            const existingIndex = prevChats.findIndex(c => c._id === chat._id);
-            if (existingIndex >= 0) {
-              const updated = [...prevChats];
-              updated[existingIndex] = chat;
-              return updated;
+          if (chat.participants.includes(user.username)) {
+            if (selectedChat?._id === chat._id) {
+              setSelectedChat(chat);
             }
-            return prevChats;
-          });
+            setChats(prevChats => {
+              const existingIndex = prevChats.findIndex(c => c._id === chat._id);
+              if (existingIndex >= 0) {
+                const updated = [...prevChats];
+                updated[existingIndex] = chat;
+                return updated;
+              }
+              return prevChats;
+            });
+          }
           return;
         }
         case 'newParticipant': {
@@ -205,15 +231,22 @@ const useDirectMessage = () => {
           return;
         }
         case 'removedParticipant': {
-          // If current user was removed or chat was updated
           if (!chat.participants.includes(user.username)) {
-            // User was removed, remove chat from list
-            setChats(prev => prev.filter(c => c._id !== chat._id));
-            if (selectedChat?._id === chat._id) {
-              setSelectedChat(null);
-            }
+            // User was removed
+            setChats(prevChats => {
+              const wasParticipant = prevChats.some(
+                c => c._id === chat._id && c.participants.includes(user.username),
+              );
+              if (wasParticipant) {
+                if (selectedChat?._id === chat._id) {
+                  setSelectedChat(null);
+                }
+                return prevChats.filter(c => c._id !== chat._id);
+              }
+              return prevChats;
+            });
           } else {
-            // Someone else left, update the chat
+            // Someone else left
             setChats(prevChats => prevChats.map(c => (c._id === chat._id ? chat : c)));
             if (selectedChat?._id === chat._id) {
               setSelectedChat(chat);
@@ -236,33 +269,6 @@ const useDirectMessage = () => {
       socket.emit('leaveChat', String(selectedChat?._id));
     };
   }, [user.username, socket, selectedChat?._id]);
-
-  // // Auto-open or create chat when ?user=username is present in the URL
-  // useEffect(() => {
-  //   // Not navigating from matches → nothing to do
-  //   if (!targetUser) return;
-
-  //   // Wait for chats from the server to load
-  //   if (chats.length === 0) return;
-
-  //   // If a chat with this user already exists → open it
-  //   const existingChat = chats.find(chat => chat.participants.includes(targetUser));
-
-  //   // If a chat exists and it's not already open
-  //   if (existingChat && !selectedChat) {
-  //     handleChatSelect(existingChat._id);
-  //     return;
-  //   }
-
-  //   // If NO chat exists:
-  //   if (!existingChat && !selectedChat) {
-  //     // Set the user to create a chat with
-  //     handleUserSelect({ username: targetUser } as SafeDatabaseUser);
-
-  //     // Create chat
-  //     handleCreateChat();
-  //   }
-  // }, [targetUser, chats, selectedChat]);
 
   return {
     selectedChat,

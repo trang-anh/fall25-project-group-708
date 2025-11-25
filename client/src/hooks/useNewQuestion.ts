@@ -164,16 +164,13 @@ const useNewQuestion = () => {
 
     const notDuplicateQuestion: NotDuplicateQuestion = {
       username: user.username,
-      question: res._id, // ← Send just the ID
-      duplicateOf: notDuplicateData
-        ? notDuplicateData.similarQuestions.map(q => q._id) // ← Map to IDs
-        : [],
+      question: res._id,
+      duplicateOf: notDuplicateData ? notDuplicateData.similarQuestions.map(q => q._id) : [],
       justification: notDuplicateData ? notDuplicateData.justification : '',
       createdAt: new Date(),
     };
 
-    // Handle both regular response and response with warning
-    if (res && res._id) {
+    if (res) {
       if (notDuplicateData) {
         await saveNotDuplicateQuestion(notDuplicateQuestion);
       }

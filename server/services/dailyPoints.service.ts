@@ -48,7 +48,7 @@ const updateDailyPoints = async (username: string, pointsChange: number) => {
             net_change: applied,
           },
         },
-        { new: true }, // Return updated document
+        { new: true },
       );
     }
 

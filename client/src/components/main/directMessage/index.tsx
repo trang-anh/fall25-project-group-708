@@ -152,7 +152,11 @@ const DirectMessage = () => {
           )}
 
           <div className='users-list-container'>
-            <UsersListPage handleUserSelect={handleUserSelect} selectedUsers={selectedUsers} />
+            <UsersListPage
+              handleUserSelect={handleUserSelect}
+              selectedUsers={selectedUsers}
+              currentUsername={currentUsername}
+            />
           </div>
         </div>
       )}

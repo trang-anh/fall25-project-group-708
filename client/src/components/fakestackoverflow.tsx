@@ -32,6 +32,7 @@ import { getUserByUsername } from '../services/userService';
 import { loadRememberedUser } from '../utils/authStorage';
 import { storeAuthToken } from '../utils/tokenStorage';
 import useCheckAuth from '../hooks/useCheckAuth';
+import useGlobalChatListener from '../hooks/useGlobalChatListener';
 
 const ProtectedRoute = ({
   user,
@@ -55,8 +56,17 @@ const ProtectedRoute = ({
   }
 
   return (
-    <UserContext.Provider value={{ user, socket, updateUser }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ user, socket, updateUser }}>
+      <GlobalChatListenerWrapper />
+      {children}
+    </UserContext.Provider>
   );
+};
+
+// New wrapper component that calls the hook inside UserContext
+const GlobalChatListenerWrapper = () => {
+  useGlobalChatListener();
+  return null;
 };
 
 /**

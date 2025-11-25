@@ -11,8 +11,18 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Only search if title is at least 3 characters
-    if (title.trim().length < 3) {
+    // Sanitize input
+    const sanitizedTitle = title.trim();
+
+    // Check if title is only special characters (no alphanumeric)
+    const hasAlphanumeric = /[a-zA-Z0-9]/.test(sanitizedTitle);
+
+    // Check if content is mostly censored (more than 50% asterisks)
+    const asteriskRatio = (sanitizedTitle.match(/\*/g) || []).length / sanitizedTitle.length;
+    const isMostlyCensored = asteriskRatio > 0.5;
+
+    // Only search if title is at least 3 characters AND contains alphanumeric AND not heavily censored
+    if (sanitizedTitle.length < 3 || !hasAlphanumeric || isMostlyCensored) {
       setSuggestions([]);
       setLoading(false);
       return;
@@ -24,7 +34,7 @@ const useQuestionSuggestions = (title: string, text: string = '') => {
     // Debounce the API call - wait 500ms after user stops typing
     const timeoutId = setTimeout(async () => {
       try {
-        const data = await getSuggestedQuestions(title, text);
+        const data = await getSuggestedQuestions(sanitizedTitle, text);
         setSuggestions(data);
       } catch (error) {
         setSuggestions([]);

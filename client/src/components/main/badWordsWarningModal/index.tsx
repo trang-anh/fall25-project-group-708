@@ -19,7 +19,7 @@ const BadWordWarningModal = ({
     <div className='modal-overlay' onClick={onClose}>
       <div className='modal-content bad-word-modal' onClick={e => e.stopPropagation()}>
         <div className='modal-header'>
-          <h2>⚠️ Inappropriate Language Detected</h2>
+          <h2>Inappropriate Language Detected</h2>
         </div>
 
         <div className='modal-body'>
@@ -31,9 +31,8 @@ const BadWordWarningModal = ({
           <div className='warning-box'>
             <h3>If you continue posting:</h3>
             <ul>
-              <li>❌ Inappropriate words will be automatically censored (replaced with ***)</li>
-              <li>📉 You will lose reputation points (1 point per inappropriate word)</li>
-              <li>⚠️ Repeated violations may affect your account standing</li>
+              <li>Inappropriate words will be automatically censored</li>
+              <li>You will lose reputation points (1 point per bad word)</li>
             </ul>
           </div>
 
@@ -44,11 +43,11 @@ const BadWordWarningModal = ({
         </div>
 
         <div className='modal-footer'>
-          <button className='btn-secondary' onClick={onClose}>
+          <button className='btn-back' onClick={onClose}>
             Go Back and Edit
           </button>
           <button className='btn-warning' onClick={onPostAnyway}>
-            Post Anyway (with penalties)
+            Post Anyway
           </button>
         </div>
       </div>

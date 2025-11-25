@@ -12,6 +12,7 @@ import { SafeDatabaseUser } from '../../../types/types';
 interface UserListPageProps {
   handleUserSelect?: (user: SafeDatabaseUser) => void;
   selectedUsers?: string[];
+  currentUsername?: string;
 }
 
 /**
@@ -21,7 +22,7 @@ interface UserListPageProps {
  */
 const UsersListPage = (props: UserListPageProps) => {
   const { userList, setUserFilter } = useUsersListPage();
-  const { handleUserSelect = null } = props;
+  const { handleUserSelect = null, currentUsername } = props;
   const navigate = useNavigate();
 
   /**
@@ -37,11 +38,16 @@ const UsersListPage = (props: UserListPageProps) => {
     }
   };
 
+  // Filter out current user from the list
+  const filteredUsers = currentUsername
+    ? userList.filter(user => user.username !== currentUsername)
+    : userList;
+
   return (
     <div className='user-card-container'>
-      <UsersListHeader userCount={userList.length} setUserFilter={setUserFilter} />
+      <UsersListHeader userCount={filteredUsers.length} setUserFilter={setUserFilter} />
       <div className='users_list'>
-        {userList.map(user => (
+        {filteredUsers.map(user => (
           <UserCardView
             user={user}
             key={user.username}
@@ -49,7 +55,7 @@ const UsersListPage = (props: UserListPageProps) => {
           />
         ))}
       </div>
-      {(!userList.length || userList.length === 0) && (
+      {(!filteredUsers.length || filteredUsers.length === 0) && (
         <div className='no-users-message'>No Users Found</div>
       )}
     </div>

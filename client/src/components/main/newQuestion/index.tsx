@@ -54,13 +54,13 @@ const NewQuestionPage = () => {
 
   const handlePostQuestion = async () => {
     // If there are suggestions and user provided justification, save it
-    if (suggestions.length > 0 && justification.trim()) {
+    if (suggestions.length > 0) {
       postQuestion(false, {
         similarQuestions: suggestions,
         justification: justification.trim(),
       });
     } else {
-      postQuestion();
+      postQuestion(false);
     }
   };
 
@@ -69,8 +69,16 @@ const NewQuestionPage = () => {
   };
 
   const handlePostAnyway = () => {
-    setShowBadWordWarning(false);
-    postQuestion(true);
+    if (suggestions.length > 0) {
+      postQuestion(true, {
+        similarQuestions: suggestions,
+        justification: justification.trim(),
+      });
+      setShowBadWordWarning(false);
+    } else {
+      postQuestion(true);
+      setShowBadWordWarning(false);
+    }
   };
 
   return (
