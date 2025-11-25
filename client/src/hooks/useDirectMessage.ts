@@ -7,7 +7,14 @@ import {
   SafeDatabaseUser,
 } from '../types/types';
 import useUserContext from './useUserContext';
-import { createChat, getChatById, getChatsByUser, sendMessage } from '../services/chatService';
+import {
+  createChat,
+  createGroupChat,
+  getChatById,
+  getChatsByUser,
+  leaveGroupChat,
+  sendMessage,
+} from '../services/chatService';
 // import { useSearchParams } from 'react-router-dom';
 
 /**
