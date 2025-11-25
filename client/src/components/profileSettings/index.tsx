@@ -215,14 +215,15 @@ const ProfileSettings: React.FC = () => {
           </button>
         </div>
 
-        {successMessage && <p className='success-message'>{successMessage}</p>}
-        {errorMessage && <p className='error-message'>{errorMessage}</p>}
-        {avatarError && <p className='error-message'>{avatarError}</p>}
+        <div className='profile-content'>
+          {successMessage && <p className='success-message'>{successMessage}</p>}
+          {errorMessage && <p className='error-message'>{errorMessage}</p>}
+          {avatarError && <p className='error-message'>{avatarError}</p>}
 
-        {userData ? (
-          <>
-            {/* Profile Picture Section */}
-            <div className='profile-picture-section'>
+          {userData ? (
+            <>
+              {/* Profile Picture Section */}
+              <div className='profile-picture-section'>
               <div className='profile-avatar'>
                 {displayAvatar ? (
                   <img src={displayAvatar} alt={userData.username} className='avatar-image' />
@@ -544,6 +545,7 @@ const ProfileSettings: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

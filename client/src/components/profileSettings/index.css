@@ -17,6 +17,8 @@
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
 }
 
 /* Header */
@@ -27,6 +29,32 @@
   padding: 2rem 2.5rem;
   border-bottom: 1px solid var(--border-primary);
   flex-shrink: 0;
+  z-index: 10;
+}
+
+/* Scrollable Content */
+.profile-settings .profile-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar styling */
+.profile-settings .profile-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-settings .profile-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.profile-settings .profile-content::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+.profile-settings .profile-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }
 
 .profile-settings h2 {
@@ -812,6 +840,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
 }
 
 /* Header */
