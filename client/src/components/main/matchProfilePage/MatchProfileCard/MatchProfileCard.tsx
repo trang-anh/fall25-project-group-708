@@ -1,8 +1,8 @@
 import React from 'react';
 import './MatchProfileCard.css';
 import { DatabaseMatch } from '@fake-stack-overflow/shared';
-import useMatchProfileCard from '../../../hooks/useMatchProfileCard';
-import { RecommendationProfile } from '../../../types/recommendationProfile';
+import useMatchProfileCard from '../../../../hooks/useMatchProfileCard';
+import { RecommendationProfile } from '../../../../types/recommendationProfile';
 
 /**
  * Props for an individual match profile card.

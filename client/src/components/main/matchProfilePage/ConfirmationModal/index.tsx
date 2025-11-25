@@ -1,5 +1,5 @@
 import React from 'react';
-import './ConfirmationModal.css';
+import './index.css';
 
 /**
  * Props for a simple confirmation modal.

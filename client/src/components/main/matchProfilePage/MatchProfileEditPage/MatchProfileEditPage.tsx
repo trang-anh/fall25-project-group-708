@@ -1,7 +1,7 @@
 import React from 'react';
 import './MatchProfileEditPage.css';
-import useUserContext from '../../../hooks/useUserContext';
-import useMatchEditProfilePage from '../../../hooks/useMatchEditProfile';
+import useUserContext from '../../../../hooks/useUserContext';
+import useMatchEditProfilePage from '../../../../hooks/useMatchEditProfile';
 
 /**
  * Edit page for a user's match profile.
