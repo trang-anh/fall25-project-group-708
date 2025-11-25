@@ -1,0 +1,29 @@
+.matched-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e5e5e5;
+  background-color: #fafafa;
+}
+
+.matched-profile-name {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.matched-profile-info p {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.matched-profile-languages {
+  font-weight: 500;
+}
+
+.matched-profile-collaboration {
+  color: #777;
+}
