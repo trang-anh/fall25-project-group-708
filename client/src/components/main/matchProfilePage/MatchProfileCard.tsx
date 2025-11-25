@@ -4,6 +4,10 @@ import { DatabaseMatch } from '@fake-stack-overflow/shared';
 import useMatchProfileCard from '../../../hooks/useMatchProfileCard';
 import { RecommendationProfile } from '../../../types/recommendationProfile';
 
+/**
+ * Props for an individual match profile card.
+ * Shows one recommended developer + match status/actions.
+ */
 interface MatchProfileCardProps {
   profile: RecommendationProfile;
   currentUserId: string;
@@ -11,6 +15,10 @@ interface MatchProfileCardProps {
   sendMatchRequest: (targetUserId: string, score: number) => Promise<DatabaseMatch | undefined>;
 }
 
+/**
+ * Card component for displaying a recommended user's profile.
+ * Handles match state (matched / pending / available) and sends requests.
+ */
 const MatchProfileCard: React.FC<MatchProfileCardProps> = ({
   profile,
   currentUserId,

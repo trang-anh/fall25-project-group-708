@@ -139,7 +139,7 @@ const useMatchEditProfilePage = (userId: string | null) => {
   const cancelDeactivate = () => setShowDeactivateModal(false);
 
   /**
-   * Confirm deactivation — calls ONLY your real logic
+   * Confirm deactivation
    */
   const confirmDeactivate = async () => {
     setShowDeactivateModal(false);

@@ -131,7 +131,10 @@ describe('Test userController', () => {
       const response = await supertest(app).post('/api/user/login').send(mockReqBody);
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockUserJSONResponse);
+      expect(response.body).toMatchObject({
+        user: mockUserJSONResponse,
+        token: expect.any(String),
+      });
       expect(loginUserSpy).toHaveBeenCalledWith(mockReqBody);
     });
 

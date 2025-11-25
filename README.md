@@ -142,7 +142,8 @@ A class diagram for the schema definition is shown below:
 | `/getMatch/:matchId`           | GET    | Get a specific match               |
 | `/getUserMatches/:userId`      | GET    | Get all users matches              |
 | `/create`                      | POST   | Create a match                     |
-| `/recommend/:userId`           | POST   | Recommend matches for users        |
+| `/recommend/:userId`           | GET    | Recommend matches for users        |
+| `/updateStatus/:matchId`       | PATCH  | Update the match's status          |
 | `/delete/:matchId`             | DELETE | Delete a match                     |
 
 

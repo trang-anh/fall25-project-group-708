@@ -32,7 +32,6 @@ const ProfileSettings: React.FC = () => {
     setShowConfirmation,
     handleResetPassword,
     handleUpdateBiography,
-    handleDeleteUser,
     handleViewCollectionsPage,
     updateUserData,
     twoFactorEnabled,
@@ -61,6 +60,19 @@ const ProfileSettings: React.FC = () => {
   const [avatarError, setAvatarError] = React.useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const twoFactorSwitchChecked = twoFactorEnabled || showTwoFactorSetup;
+
+  const handleBadge = (points: number): string => {
+    if (points >= 10000) return 'Legendary';
+    if (points >= 5000) return 'Epic';
+    if (points >= 2500) return 'Master';
+    if (points >= 1000) return 'Expert';
+    if (points >= 500) return 'Pro';
+    if (points >= 250) return 'Advanced';
+    if (points >= 100) return 'Intermediate';
+    if (points >= 50) return 'Contributor';
+    if (points >= 10) return 'Beginner';
+    return 'Newcomer';
+  };
 
   const handleTwoFactorCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const checked = event.target.checked;
@@ -284,6 +296,11 @@ const ProfileSettings: React.FC = () => {
               <div className='info-row'>
                 <label className='info-label'>Username</label>
                 <div className='info-value'>{userData.username}</div>
+              </div>
+
+              <div className='info-row'>
+                <label className='info-label'>Badge</label>
+                <div className='info-value'>{handleBadge(userData.totalPoints ?? 0)}</div>
               </div>
 
               <div className='info-row'>

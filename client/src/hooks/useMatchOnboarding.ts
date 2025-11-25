@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { OnboardingFormData } from '../types/onboardingFormData';
 
+/**
+ * Hook for managing the multi-step match onboarding form.
+ * Tracks step progress, form data, validation, and final submission.
+ */
 const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<void>) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // All onboarding form fields stored in one object
   const [formData, setFormData] = useState<OnboardingFormData>({
     age: 18,
     gender: '',
@@ -102,18 +107,27 @@ const useMatchOnboarding = (onComplete: (data: OnboardingFormData) => Promise<vo
     }
   };
 
+  /**
+   * Move to the next step if requirements are met.
+   */
   const handleNext = () => {
     if (canProceed() && currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     }
   };
 
+  /**
+   * Move back one step.
+   */
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
   };
 
+  /**
+   * Final submit — calls the onComplete callback.
+   */
   const handleSubmit = async () => {
     if (!canProceed()) return;
     setIsSubmitting(true);

@@ -22,7 +22,7 @@ function isPopulatedUserId(userId: string | PopulatedUser): userId is PopulatedU
  * Creates a new match profile with the provided data.
  *
  * @param matchProfileData - Object containing match profile details including userid, active status, age, gender, location etc.
- * @returns A Promise resolving to the newly created match profile document or an error object
+ * @returns A Promise resolving to the newly created match profile or an error object
  */
 export const createMatchProfile = async (
   matchProfileData: MatchProfile,
@@ -102,11 +102,11 @@ export const getAllMatchProfiles = async (): Promise<
 };
 
 /**
- * Updates user's match profiles information in the database.
+ * Updates an existing match profile with the given fields.
  *
- * @param {string} username - The username of the user to update.
- * @param {Partial<User>} updates - An object containing the fields to update and their new values.
- * @returns {Promise<UserResponse>} - Resolves with the updated user object (without the password) or an error message.
+ * @param userId - The ID of the user whose match profile is being updated.
+ * @param updates - An object containing the fields to update.
+ * @returns A Promise resolving to the updated profile or an error object.
  */
 export const updateMatchProfile = async (
   userId: string,

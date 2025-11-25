@@ -115,9 +115,7 @@ const MatchProfileEditPage: React.FC = () => {
         </div>
 
         {/* Success/Error Messages */}
-        {successEdit && (
-          <div className='edit-profile-success'>Profile updated successfully!</div>
-        )}
+        {successEdit && <div className='edit-profile-success'>Profile updated successfully!</div>}
 
         {successToggle && <div className='edit-profile-success'>{messageToggle}</div>}
 

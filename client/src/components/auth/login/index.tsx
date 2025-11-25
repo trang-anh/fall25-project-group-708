@@ -1,11 +1,11 @@
 import './index.css';
-import FakeStackOverflowLogo from './Code2Date';
+import Code2DateLogo from './Code2Date.tsx';
 import { Link } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import DarkModeToggle from '../../darkModeToggle/DarkModeToggle';
 
 // use environment variable or fallback to localhost
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const apiBaseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
 
 /**
  * Renders a login page Github login option
@@ -37,6 +37,8 @@ const Login = () => {
    * redirects to the GitHub OAuth authentication page
    */
   const handleGitHubLogin = () => {
+    // eslint-disable-next-line no-console
+    console.log(apiBaseUrl);
     window.location.href = `${apiBaseUrl}/api/auth/github`;
   };
 
@@ -61,7 +63,7 @@ const Login = () => {
 
       {/* Main Content */}
       <div className='login-content'>
-        <FakeStackOverflowLogo />
+        <Code2DateLogo />
         <div className='login-wrapper'>
           {/* Left Column - Traditional Login */}
           <div className='login-form-section'>

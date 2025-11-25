@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import MatchOnboarding from './MatchOnboarding';
 import useMatchOnboardingPage from '../../../hooks/useMatchOnboardingPage';
 
+/**
+ * Page wrapper for the Match Onboarding flow.
+ * Handles auth checks, onboarding status checks, and displaying the form.
+ */
 const MatchOnboardingPage: React.FC = () => {
   const navigate = useNavigate();
 

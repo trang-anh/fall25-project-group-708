@@ -18,10 +18,10 @@ import {
 } from '../services/match.service';
 
 /**
- * This controller handles match-related routes.
- * @param socket The socket instance to emit events.
- * @returns {express.Router} The router object containing the match routes.
- * @throws {Error} Throws an error if the match operations fail.
+ * Controller for handling match-related routes.
+ *
+ * @param socket - The socket instance used to emit match update events.
+ * @returns An Express router with all match endpoints registered.
  */
 const matchController = (socket: FakeSOSocket) => {
   const router = express.Router();
@@ -194,11 +194,11 @@ const matchController = (socket: FakeSOSocket) => {
   };
 
   /**
-   * Generates matches for a user and emits matchUpdate events for each match.
-   */
-  /**
-   * Generates matches for a user, emits matchUpdate events,
-   * and returns the list of generated matches.
+   * Generates match recommendations for a user.
+   * Returns recommended profiles sorted by compatibility.
+   *
+   * @param req - Express request containing `userId` in params.
+   * @param res - Express response used to send the result.
    */
   const generateMatchRecommendationsRoute = async (
     req: MatchProfileRequest,

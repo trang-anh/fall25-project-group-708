@@ -2,9 +2,17 @@ import React from 'react';
 import './UserMatches.css';
 import useUserMatchesList from '../../../hooks/useUserMatchesList';
 
+/**
+ * Props for the UserMatches component.
+ * `currentUserId` is the logged-in user's id.
+ */
 interface UserMatchesProps {
   currentUserId: string;
 }
+
+/**
+ * Returns the CSS class used for the status badge.
+ */
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case 'accepted':
@@ -18,6 +26,9 @@ const getStatusBadgeClass = (status: string) => {
   }
 };
 
+/**
+ * Converts match status into a readable label.
+ */
 const getStatusLabel = (status: string) => {
   switch (status) {
     case 'accepted':
@@ -31,6 +42,10 @@ const getStatusLabel = (status: string) => {
   }
 };
 
+/**
+ * Displays all matches for the current user.
+ * Includes filtering, match actions (accept/decline/remove), and basic stats.
+ */
 const UserMatches: React.FC<UserMatchesProps> = ({ currentUserId }) => {
   const {
     matches,

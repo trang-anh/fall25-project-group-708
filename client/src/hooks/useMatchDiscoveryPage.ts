@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import useUserContext from './useUserContext';
 import { checkOnboardingStatus } from '../services/matchProfileService';
 
+/**
+ * Simple hook for the Match Discovery page.
+ * Checks if the user has a match profile; if not, redirect to onboarding.
+ */
 const useMatchDiscoveryPage = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
@@ -11,6 +15,10 @@ const useMatchDiscoveryPage = () => {
   const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
+    /**
+     * Verifies if the current user has completed onboarding.
+     * Redirects to the opt-in page if no profile exists.
+     */
     const checkProfile = async () => {
       if (!user?._id) {
         setChecking(false);

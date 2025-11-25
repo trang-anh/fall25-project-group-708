@@ -3,7 +3,9 @@ import { SafeDatabaseUser, UserResponse } from '../types/types';
 
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const GITHUB_USER_URL = 'https://api.github.com/user';
-const DEFAULT_GITHUB_REDIRECT_URI = 'http://localhost:8000/api/auth/github/callback';
+const DEFAULT_GITHUB_REDIRECT_URI =
+  process.env.OAUTH_REDIRECT_URI ||
+  'https://cs4530-f25-708-dosr.onrender.com/api/auth/github/callback';
 
 type GithubAccessTokenResponse = {
   access_token?: string;
@@ -22,7 +24,7 @@ export type GithubUserProfile = {
 const ensureGithubConfig = () => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  const redirectUri = process.env.GITHUB_REDIRECT_URI || DEFAULT_GITHUB_REDIRECT_URI;
+  const redirectUri = process.env.OAUTH_REDIRECT_URI || DEFAULT_GITHUB_REDIRECT_URI;
 
   if (!clientId || !clientSecret) {
     throw new Error('GitHub OAuth is not configured properly.');

@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { DatabaseMatchProfile } from './matchProfile';
+// import { DatabaseMatchProfile } from './matchProfile';
 
 /**
  * Represents a match between two users.
@@ -32,16 +32,6 @@ export interface DatabaseMatch extends Match {
   _id: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-/**
- * Represents a populated match record.
- * Includes the full `DatabaseMatchProfile` objects for both users,
- * instead of just their ObjectId references.
- */
-export interface PopulatedDatabaseMatch extends Omit<DatabaseMatch, 'userA' | 'userB'> {
-  userA: DatabaseMatchProfile;
-  userB: DatabaseMatchProfile;
 }
 
 /**
@@ -109,10 +99,6 @@ export interface CreateMatchDTO {
   status: string;
   score: number;
   initiatedBy: string;
-}
-
-export interface CreateMatchDTORequest extends Request {
-  body: CreateMatchDTO;
 }
 
 /**

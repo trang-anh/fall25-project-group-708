@@ -5,16 +5,30 @@ import { getMatchProfile } from '../services/matchProfileService';
 import { updateMatchStatus } from '../services/matchService';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Extended match with optional populated profile from the other user.
+ */
 export interface PopulatedMatch extends DatabaseMatch {
   otherUserProfile?: DatabaseMatchProfile | null;
 }
 
+/**
+ * Normalized version of a match profile where:
+ * - userId is always a string
+ * - username is extracted if available
+ * - programmingLanguage is always an array
+ */
 export interface NormalizedMatchProfile extends Omit<DatabaseMatchProfile, 'userId'> {
   userId: string;
   username?: string;
   programmingLanguage: string[];
 }
 
+/**
+ * Normalized version of a match object where:
+ * - all ObjectIds are converted to strings
+ * - populated profile is included
+ */
 export interface NormalizedMatch
   extends Omit<DatabaseMatch, 'userA' | 'userB' | '_id' | 'initiatedBy'> {
   _id: string;
@@ -24,7 +38,9 @@ export interface NormalizedMatch
   otherUserProfile: NormalizedMatchProfile | null;
 }
 
-// Normalize userId into a safe string
+/**
+ * Safely converts various backend ID formats into a clean string.
+ */
 function normalizeId(id: unknown): string {
   try {
     // string
@@ -64,6 +80,9 @@ function normalizeId(id: unknown): string {
   }
 }
 
+/**
+ * Checks whether a backend user is populated (contains username).
+ */
 function isPopulatedUser(value: unknown): value is { _id: unknown; username: string } {
   return (
     typeof value === 'object' &&
@@ -74,7 +93,9 @@ function isPopulatedUser(value: unknown): value is { _id: unknown; username: str
   );
 }
 
-// Normalize profile fields
+/**
+ * Converts a backend profile into a normalized, UI-safe profile object.
+ */
 function normalizeProfile(profile: DatabaseMatchProfile | null): NormalizedMatchProfile | null {
   if (!profile) return null;
 
@@ -95,6 +116,11 @@ function normalizeProfile(profile: DatabaseMatchProfile | null): NormalizedMatch
   };
 }
 
+/**
+ * Hook for fully managing the user's matches list.
+ * Loads matches, populates the other user's profile, filters them,
+ * and exposes accept/decline/remove actions.
+ */
 const useUserMatchesList = (currentUserId: string) => {
   const { matches, loading, error, removeMatch, refetch } = useUserMatches(currentUserId);
   const [populatedMatches, setPopulatedMatches] = useState<NormalizedMatch[]>([]);

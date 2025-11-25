@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateMatchRecommendation } from '../services/matchService';
 import { RecommendationProfile } from '../types/recommendationProfile';
-// import { MatchProfileWithUser } from '@fake-stack-overflow/shared';
 
+/**
+ * Backend recommendation format before converting into frontend shape.
+ */
 interface BackendRecommendation {
   userId: string;
   score: number;
@@ -30,20 +32,29 @@ interface BackendRecommendation {
   };
 }
 
+/**
+ * Response format returned by generateMatchRecommendation().
+ */
 interface RecommendationResponse {
   recommendations: BackendRecommendation[];
   message: string;
 }
 
-// This hook loads match recommendations directly from backend
+/**
+ * Hook for loading match recommendations from the backend.
+ * Converts the backend format into a simpler RecommendationProfile[]
+ * used by the UI.
+ */
 const useMatchRecommendation = (userId: string | null) => {
   const [recommended, setRecommended] = useState<RecommendationProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Fetch recommendations and convert them to frontend-friendly objects.
+   */
   const fetchRecommended = useCallback(async () => {
     if (!userId) return;
-    // setRecommended([]);
     setLoading(true);
     setError(null);
 
@@ -51,10 +62,11 @@ const useMatchRecommendation = (userId: string | null) => {
       // backend already returns full profile + score
       const res: RecommendationResponse = await generateMatchRecommendation(userId);
 
+      // Convert backend recommendation into RecommendationProfile[]
       const converted: RecommendationProfile[] = res.recommendations.map(rec => {
         const raw = rec.profile.userId;
 
-        // FORCE shape: {_id: string, username: string}
+        // normalize userId shape
         const userObj =
           raw && typeof raw === 'object' && '_id' in raw
             ? { _id: String(raw._id), username: String(raw.username ?? 'Unknown User') }

@@ -7,7 +7,14 @@ import {
   SafeDatabaseUser,
 } from '../types/types';
 import useUserContext from './useUserContext';
-import { createChat, getChatById, getChatsByUser, sendMessage } from '../services/chatService';
+import {
+  createChat,
+  createGroupChat,
+  getChatById,
+  getChatsByUser,
+  leaveGroupChat,
+  sendMessage,
+} from '../services/chatService';
 // import { useSearchParams } from 'react-router-dom';
 
 /**
@@ -117,7 +124,7 @@ const useDirectMessage = () => {
       }
 
       const participants = [user.username, ...selectedUsers];
-      const chat = await createGroupChat(participants, groupChatName.trim());
+      const chat = await createGroupChat(participants, groupChatName.trim(), user.username);
       setSelectedChat(chat);
       handleJoinChat(chat._id);
       setShowCreatePanel(false);
