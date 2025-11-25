@@ -7,13 +7,15 @@ import useUserSearch from '../../../../hooks/useUserSearch';
  *
  * userCount - The number of users to be displayed in the header.
  * setUserFilter - A function that sets the search bar filter value.
+ * setUserSort - A function that sets the user sorting option.
  */
 interface UserHeaderProps {
   userCount: number;
   setUserFilter: (search: string) => void;
+  setUserSort: (sort: SortOption) => void;
 }
 
-type SortOption = 'newest' | 'oldest' | 'points';
+export type SortOption = 'newest' | 'oldest' | 'points';
 
 /**
  * UsersListHeader component displays the header section for a list of users.
@@ -22,12 +24,13 @@ type SortOption = 'newest' | 'oldest' | 'points';
  * @param userCount - The number of users displayed in the header.
  * @param setUserFilter - Function that sets the search bar filter value.
  */
-const UsersListHeader = ({ userCount, setUserFilter }: UserHeaderProps) => {
+const UsersListHeader = ({ userCount, setUserFilter, setUserSort }: UserHeaderProps) => {
   const { val, handleInputChange } = useUserSearch(setUserFilter);
   const [activeSort, setActiveSort] = useState<SortOption>('newest');
 
   const handleSortClick = (sort: SortOption) => {
     setActiveSort(sort);
+    setUserSort(sort);
   };
 
   return (
