@@ -68,6 +68,14 @@
   line-height: 1.4;
 }
 
+.badge-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+  line-height: 1.4;
+  font-weight: bold;
+}
+
 .user-stats-grid {
   width: 100%;
   display: flex;

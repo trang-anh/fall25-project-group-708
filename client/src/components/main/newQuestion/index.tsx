@@ -78,6 +78,7 @@ const NewQuestionPage = () => {
       <BadWordWarningModal
         show={showBadWordWarning}
         onClose={handleCloseBadWordWarning}
+        data-testid='bad-word-modal'
         onPostAnyway={handlePostAnyway}
         detectedIn={badWordDetails}
       />
@@ -87,6 +88,7 @@ const NewQuestionPage = () => {
           title={'Question Title'}
           hint={'Limit title to 100 characters or less'}
           id={'formTitleInput'}
+          data-testid='question-title'
           val={title}
           setState={handleTitleChange}
           err={titleErr}
@@ -98,6 +100,7 @@ const NewQuestionPage = () => {
           title={'Question Text'}
           hint={'Add details'}
           id={'formTextInput'}
+          data-testid='question-text'
           val={text}
           setState={setText}
           err={textErr}
@@ -109,6 +112,7 @@ const NewQuestionPage = () => {
           title={'Tags'}
           hint={'Add keywords separated by whitespace'}
           id={'formTagInput'}
+          data-testid='question-tags'
           val={tagNames}
           setState={setTagNames}
           err={tagErr}
@@ -122,6 +126,7 @@ const NewQuestionPage = () => {
             <textarea
               id='justification'
               className='justification_field'
+              data-testid='justification'
               value={justification}
               onChange={e => setJustification(e.target.value)}
               placeholder="E.g., I'm asking about a different framework, version, or specific use case..."
@@ -140,7 +145,10 @@ const NewQuestionPage = () => {
           ))}
         </select>
         <div className='btn_indicator_container'>
-          <button className='form_postBtn' onClick={handlePostQuestion}>
+          <button
+            className='form_postBtn'
+            onClick={handlePostQuestion}
+            data-testid='post-question-btn'>
             Post Question
           </button>
           <div className='mandatory_indicator'>* indicates mandatory fields</div>

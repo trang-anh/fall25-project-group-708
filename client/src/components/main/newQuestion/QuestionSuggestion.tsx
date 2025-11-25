@@ -50,7 +50,7 @@ const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   };
 
   return (
-    <div className='similar_posts_section'>
+    <div className='similar_posts_section' data-testid='suggestion-section'>
       <div className='similar_posts_header'>
         <div className='similar_posts_title'>Posts that may be similar</div>
         <div className='similar_posts_subtitle'>click to view the full question</div>

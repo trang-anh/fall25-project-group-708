@@ -52,7 +52,8 @@
   },
   "scripts": {
     "dev": "nodemon server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "prestart": "npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "MODE=production node ./dist/server.js",

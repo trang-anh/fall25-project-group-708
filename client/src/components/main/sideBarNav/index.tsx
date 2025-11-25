@@ -10,14 +10,14 @@ import Avatar from '../../avatar';
  */
 const SideBarNav = () => {
   const { user } = useUserContext();
-  const [showMessagingOptions, setShowMessagingOptions] = useState<boolean>(false);
+  // const [showMessagingOptions, setShowMessagingOptions] = useState<boolean>(false);
   const [showPartnerOptions, setShowPartnerOptions] = useState<boolean>(false);
   const location = useLocation();
 
   // Auto-expand messaging options if on a messaging route
   useEffect(() => {
     if (location.pathname.startsWith('/messaging')) {
-      setShowMessagingOptions(true);
+      // setShowMessagingOptions(true);
     }
   }, [location.pathname]);
 
