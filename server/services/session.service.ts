@@ -21,7 +21,7 @@ type SessionRecord = {
 
 const sessionStore = new Map<string, SessionRecord>();
 
-const getUserId = (user?: SafeDatabaseUser): string | undefined => {
+export const getUserId = (user?: SafeDatabaseUser): string | undefined => {
   if (!user || !user._id) {
     return undefined;
   }

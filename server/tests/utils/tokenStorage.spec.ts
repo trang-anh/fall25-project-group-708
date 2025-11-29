@@ -1,4 +1,13 @@
-const mockStorage = (): Storage => {
+type SimpleStorage = {
+  length: number;
+  clear: () => void;
+  getItem: (key: string) => string | null;
+  key: (index: number) => string | null;
+  removeItem: (key: string) => void;
+  setItem: (key: string, value: string) => void;
+};
+
+const mockStorage = (): SimpleStorage => {
   let store: Record<string, string> = {};
   return {
     get length() {
@@ -36,10 +45,11 @@ describe('tokenStorage (client)', () => {
     global.document = { cookie: '' };
 
     jest.resetModules();
-    jest.isolateModules(async () => {
-      const tokenStorage = (await import(
-        '../../../client/src/utils/tokenStorage'
-      )) as typeof import('../../../client/src/utils/tokenStorage');
+    jest.isolateModules(() => {
+      // Load module synchronously using jest helper to avoid top-level imports
+      const tokenStorage = jest.requireActual(
+        '../../../client/src/utils/tokenStorage',
+      ) as typeof import('../../../client/src/utils/tokenStorage');
       storeAuthToken = tokenStorage.storeAuthToken;
       loadAuthToken = tokenStorage.loadAuthToken;
       clearAuthToken = tokenStorage.clearAuthToken;

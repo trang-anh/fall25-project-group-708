@@ -224,31 +224,35 @@ const authController = (): Router => {
     }
 
     const targetSessionId = req.params.sessionId;
-    const deleted = deleteSessionForUser(user, targetSessionId);
+    try {
+      const deleted = deleteSessionForUser(user, targetSessionId);
 
-    if (!deleted) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
+      if (!deleted) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
 
-    const currentSessionRevoked = targetSessionId === currentSessionId;
+      const currentSessionRevoked = targetSessionId === currentSessionId;
 
-    if (currentSessionRevoked) {
-      res.clearCookie(SESSION_COOKIE_NAME, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
+      if (currentSessionRevoked) {
+        res.clearCookie(SESSION_COOKIE_NAME, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        });
+        res.clearCookie(API_TOKEN_COOKIE_NAME, {
+          httpOnly: false,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        });
+      }
+
+      return res.status(200).json({
+        message: 'Session revoked',
+        currentSessionRevoked,
       });
-      res.clearCookie(API_TOKEN_COOKIE_NAME, {
-        httpOnly: false,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to revoke session.' });
     }
-
-    return res.status(200).json({
-      message: 'Session revoked',
-      currentSessionRevoked,
-    });
   });
 
   return router;
