@@ -37,16 +37,12 @@ const MatchedUserProfileHeader: React.FC<MatchedUserProfileHeaderProps> = ({
                 {lang}
               </span>
             ))}
-            {hasMoreLanguages && (
-              <span className='language-badge'>+{additionalCount}</span>
-            )}
+            {hasMoreLanguages && <span className='language-badge'>+{additionalCount}</span>}
           </div>
         )}
 
         {profile.onboardingAnswers?.personality && (
-          <p className='matched-profile-collaboration'>
-            {profile.onboardingAnswers.personality}
-          </p>
+          <p className='matched-profile-collaboration'>{profile.onboardingAnswers.personality}</p>
         )}
       </div>
     </div>
