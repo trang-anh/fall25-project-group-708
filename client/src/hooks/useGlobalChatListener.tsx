@@ -12,13 +12,11 @@ const useGlobalChatListener = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    // Don't set up listeners if user or socket isn't available
     if (!socket || !user?.username) return;
 
     const handleChatUpdate = (chatUpdate: ChatUpdatePayload) => {
       const { chat, type } = chatUpdate;
 
-      // Only show notifications, don't manage chat state here
       switch (type) {
         case 'created': {
           if (chat.participants.includes(user.username)) {
@@ -41,18 +39,17 @@ const useGlobalChatListener = () => {
           break;
         }
         case 'removedParticipant': {
+          const chatName =
+            chat.chatName && chat.chatName.trim() !== '' ? `"${chat.chatName}"` : 'the group chat';
+
           if (!chat.participants.includes(user.username)) {
-            const chatName =
-              chat.chatName && chat.chatName.trim() !== ''
-                ? `"${chat.chatName}"`
-                : 'the group chat';
             showToast(`You were removed from ${chatName}`, 'info');
+          } else {
+            showToast(`A member left ${chatName}`, 'info');
           }
           break;
         }
         case 'newMessage': {
-          // Optionally show new message notifications here
-          // For now, we'll skip this to avoid notification spam
           break;
         }
       }
