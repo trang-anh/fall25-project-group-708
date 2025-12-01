@@ -3,17 +3,12 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './index.css';
 import useProfileSettings from '../../hooks/useProfileSettings';
-import {
-  uploadAvatar,
-  deleteAvatar,
-  validateImageFile,
-  getAvatarUrl,
-} from '../../services/avatarService';
+import useUserContext from '../../hooks/useUserContext';
+import useAvatarManager from '../../hooks/useAvatarManager';
 
 const ProfileSettings: React.FC = () => {
   const {
     userData,
-    loading,
     editBioMode,
     newBio,
     newPassword,
@@ -53,11 +48,31 @@ const ProfileSettings: React.FC = () => {
     refreshSessions,
   } = useProfileSettings();
 
-  const [selectedAvatar, setSelectedAvatar] = React.useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
-  const [avatarLoading, setAvatarLoading] = React.useState(false);
-  const [avatarError, setAvatarError] = React.useState<string>('');
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { updateUser } = useUserContext();
+
+  const {
+    avatarFile,
+    avatarLoading,
+    avatarError,
+    displayAvatar,
+    fileInputRef,
+    handleAvatarChange,
+    handleAvatarClick,
+    handleAvatarUpload,
+    handleAvatarDelete,
+    handleCancelAvatar,
+  } = useAvatarManager({
+    username: userData?.username,
+    currentAvatarUrl: userData?.avatarUrl,
+    onAvatarUpdate: (avatarUrl: string) => {
+      updateUser({ avatarUrl });
+      updateUserData({
+        ...userData!,
+        avatarUrl,
+      });
+    },
+  });
+
   const twoFactorSwitchChecked = twoFactorEnabled || showTwoFactorSetup;
 
   const handleBadge = (points: number): string => {
@@ -110,111 +125,6 @@ const ProfileSettings: React.FC = () => {
 
     return new Date(timestamp).toLocaleString();
   };
-
-  // Handle avatar file selection
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      setAvatarError(validation.error || 'Invalid file');
-      return;
-    }
-
-    setAvatarError('');
-    setAvatarFile(file);
-
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedAvatar(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Trigger file input click
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Handle avatar upload - FIXED VERSION
-  const handleAvatarUpload = async () => {
-    if (!avatarFile || !userData?.username) return;
-
-    setAvatarLoading(true);
-    setAvatarError('');
-
-    try {
-      const result = await uploadAvatar(userData.username, avatarFile);
-
-      // Update user data properly - keep all fields, only change avatarUrl
-      updateUserData({
-        ...userData,
-        avatarUrl: result.avatarUrl,
-      });
-
-      // Reset upload state
-      setAvatarFile(null);
-      setSelectedAvatar(null);
-
-      // Clear file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      setAvatarError(error instanceof Error ? error.message : 'Failed to upload avatar');
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
-
-  // Handle avatar deletion
-  const handleAvatarDelete = async () => {
-    if (!userData?.username) return;
-
-    if (!window.confirm('Are you sure you want to delete your avatar?')) return;
-
-    setAvatarLoading(true);
-    setAvatarError('');
-
-    try {
-      await deleteAvatar(userData.username);
-
-      // Update user data properly - keep all fields, only clear avatarUrl
-      updateUserData({
-        ...userData,
-        avatarUrl: '',
-      });
-    } catch (error) {
-      setAvatarError(error instanceof Error ? error.message : 'Failed to delete avatar');
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
-
-  // Cancel avatar selection
-  const handleCancelAvatar = () => {
-    setSelectedAvatar(null);
-    setAvatarFile(null);
-    setAvatarError('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className='profile-settings'>
-        <div className='profile-card'>
-          <h2>Loading user data...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  const displayAvatar = selectedAvatar || getAvatarUrl(userData?.avatarUrl);
 
   return (
     <div className='profile-settings'>
