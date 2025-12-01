@@ -4,6 +4,8 @@ import { app } from '../../app';
 import * as util from '../../services/user.service';
 import { SafeDatabaseUser, User } from '../../types/types';
 import * as twoFA from '../../services/twoFactor.service';
+import * as sessionService from '../../services/session.service';
+import { SESSION_COOKIE_NAME } from '../../services/session.service';
 
 const mockUser: User = {
   username: 'user1',
@@ -205,6 +207,26 @@ describe('Test userController', () => {
       const response = await supertest(app).post('/api/user/login').send(mockReqBody);
 
       expect(response.status).toBe(500);
+    });
+
+    it('clears old session when present (rememberDevice=false)', async () => {
+      const mockReqBody = {
+        username: mockUser.username,
+        password: mockUser.password,
+      };
+
+      loginUserSpy.mockResolvedValueOnce(mockSafeUser);
+      const deleteSessionSpy = jest
+        .spyOn(sessionService, 'deleteSession')
+        .mockImplementation(() => {});
+
+      const response = await supertest(app)
+        .post('/api/user/login')
+        .set('Cookie', [`${SESSION_COOKIE_NAME}=old-session`])
+        .send(mockReqBody);
+
+      expect(response.status).toBe(200);
+      expect(deleteSessionSpy).toHaveBeenCalled();
     });
 
     it('should set maxAge on cookies when rememberDevice=true', async () => {
