@@ -1,12 +1,8 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Uq-6GvbM)
-The team project for this class is designed to mirror the experiences of a software engineer: by virtue of your individual projects, you have been _onboarded_ to our codebase, made several individual contributions, and have formed a team to propose, develop and implement new features. The codebase that we’ll be developing on is a Fake Stack Overflow project (let’s call it HuskyFlow). You will get an opportunity to work with the starter code which provides basic skeleton for the app and then additional features will be proposed and implemented by you! All implementation will take place in the TypeScript programming language, using React for the user interface.
+# Code2Date
 
 ## Getting Started
 
 Run `npm install` in the root directory to install all dependencies for the `client`, `server`, and `shared` folders.
-
-> [!NOTE]
-> Refer to [IP1](https://neu-se.github.io/CS4530-Spring-2025/assignments/ip1) and [IP2](https://neu-se.github.io/CS4530-Spring-2025/assignments/ip2) for further instructions related to setting up MongoDB, setting environment variables, and running the client and server.
 
 ## Codebase Folder Structure
 
@@ -149,17 +145,11 @@ A class diagram for the schema definition is shown below:
 
 ## OpenAPI specification
 
-OpenAPI specifications as given in the [`server/openapi.yaml`](./server/openapi.yaml) file should give you an idea about the overall structure of the API endpoints, the request format and the various path/query parameters required as well as the expected response formats. To see a detailed explanation of the schemas and to test the endpoint in a sandboxed environment, you can use the Swagger UI page as follows:
-
 - Start the server as specified earlier (`cd server && npm run dev`).
 - Visit `http://localhost:8000/api/docs` to see the complete API specification in a user friendly manner.
 - You should be able to see and test out individual endpoints using the *Try it out* button associated with each endpoint.
 
 The specification itself is coupled with an OpenAPI validator (present as a middleware) that validates every request and response against the provided spec document.
-
-## Cypress Tests
-
-Cypress tests are end-to-end tests that can help verify your implementation.
 
 ### Setup Instructions
 
@@ -190,6 +180,3 @@ Cypress tests are end-to-end tests that can help verify your implementation.
    - Choose your browser (Chrome is preferred)
    - Click on any of the test files to run it
    - If any of the tests fail, you should be able to see the exact sequence of steps that led to the failure.
-
-> [!NOTE]
-> Running Cypress tests is optional. Cypress tests require significant system resources, and without them, the tests may be flaky. We will use these tests for grading.
