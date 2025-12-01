@@ -37,7 +37,6 @@ const ProfileSettings: React.FC = () => {
     twoFactorEnabled,
     twoFactorCodeInput,
     setTwoFactorCodeInput,
-    twoFactorDevCode,
     isTwoFactorLoading,
     showTwoFactorSetup,
     twoFactorEmail,
@@ -429,9 +428,6 @@ const ProfileSettings: React.FC = () => {
                           onChange={handleTwoFactorInputChange}
                           placeholder='Enter 6-digit code'
                         />
-                        {twoFactorDevCode && (
-                          <p className='twofactor-helper'>Test code: {twoFactorDevCode}</p>
-                        )}
                         <div className='twofactor-actions'>
                           <button
                             className='button button-primary'
