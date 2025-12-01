@@ -171,7 +171,7 @@ const ProfileSettings: React.FC = () => {
     }
   };
 
-  // Handle avatar deletion - FIXED VERSION
+  // Handle avatar deletion
   const handleAvatarDelete = async () => {
     if (!userData?.username) return;
 
@@ -227,9 +227,10 @@ const ProfileSettings: React.FC = () => {
           </button>
         </div>
 
-        {successMessage && <p className='success-message'>{successMessage}</p>}
-        {errorMessage && <p className='error-message'>{errorMessage}</p>}
-        {avatarError && <p className='error-message'>{avatarError}</p>}
+        <div className='profile-content'>
+          {successMessage && <p className='success-message'>{successMessage}</p>}
+          {errorMessage && <p className='error-message'>{errorMessage}</p>}
+          {avatarError && <p className='error-message'>{avatarError}</p>}
 
         {userData ? (
           <>
@@ -530,6 +531,23 @@ const ProfileSettings: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Danger Zone Section */}
+                {canEditProfile && (
+                  <div className='danger-zone'>
+                    <h3 className='section-title'>Danger Zone</h3>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <p style={{ color: 'var(--text-secondary)', margin: '0 0 1rem 0' }}>
+                        Permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                      <button
+                        className='button button-danger'
+                        onClick={() => setShowConfirmation(true)}>
+                        Delete My Account
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -561,6 +579,7 @@ const ProfileSettings: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
