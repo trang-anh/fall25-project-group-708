@@ -44,7 +44,7 @@ A class diagram for the schema definition is shown below:
 
 ### `/question`
 
-| Endpoint          | Method | Description                     |
+| Endpoint                       | Method | Description                     |
 | -------------------------------| ------ | --------------------------------- |
 | `/getQuestion`                 | GET    | Fetch questions by filter         |
 | `/getQuestionById/`            | GET    | Fetch a specific question by ID   |
@@ -80,7 +80,7 @@ A class diagram for the schema definition is shown below:
 
 ### `/chat`
 
-| Endpoint                    | Method | Description                                                                 |
+| Endpoint                    | Method | Description     |
 | --------------------------- | ------ | --------------------------------------------------------------------------- |
 | `/createChat`               | POST   | Create a new chat.                                                          |
 | `/:chatId/addMessage`       | POST   | Add a new message to an existing chat.                                      |
@@ -101,8 +101,8 @@ A class diagram for the schema definition is shown below:
 
 ### `/api/collection`
 
-| Endpoint                            | Method | Description                         |
-| ----------------------------------- | ------ | ----------------------------------- |
+| Endpoint                              | Method | Description                         |
+| ------------------------------------- | ------ | ----------------------------------- |
 | `/create`                             | POST   | Create a new collection             |
 | `/delete/:collectionId`               | DELETE | Delete a collection                 |
 | `/toggleSaveQuestion`                 | PATCH  | Add/remove question from collection |
