@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { app } from '../../app';
 import * as util from '../../services/user.service';
 import { SafeDatabaseUser, User } from '../../types/types';
+import * as twoFA from '../../services/twoFactor.service';
 
 const mockUser: User = {
   username: 'user1',
@@ -28,6 +29,7 @@ const updatedUserSpy = jest.spyOn(util, 'updateUser');
 const getUserByUsernameSpy = jest.spyOn(util, 'getUserByUsername');
 const getUsersListSpy = jest.spyOn(util, 'getUsersList');
 const deleteUserByUsernameSpy = jest.spyOn(util, 'deleteUserByUsername');
+const generate2FASpy = jest.spyOn(twoFA, 'generate2FACode');
 
 describe('Test userController', () => {
   describe('POST /signup', () => {
@@ -204,6 +206,109 @@ describe('Test userController', () => {
 
       expect(response.status).toBe(500);
     });
+
+    it('should set maxAge on cookies when rememberDevice=true', async () => {
+      loginUserSpy.mockResolvedValueOnce(mockSafeUser);
+
+      const res = await supertest(app).post('/api/user/login').send({
+        username: mockUser.username,
+        password: mockUser.password,
+        rememberDevice: true,
+      });
+
+      const setCookieHeader = res.headers['set-cookie'];
+      const cookies = Array.isArray(setCookieHeader)
+        ? (setCookieHeader as string[]).join('')
+        : (setCookieHeader as string) || '';
+
+      expect(cookies).toContain('Max-Age');
+    });
+  });
+
+  describe('POST /2FA/generate', () => {
+    it('should generate a 2FA code', async () => {
+      generate2FASpy.mockResolvedValueOnce({ code: '123456' });
+
+      const res = await supertest(app)
+        .post('/api/user/2fa/generate/user1')
+        .send({ email: 'test@test.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ code: '123456' });
+    });
+
+    it('should return 400 when 2FA generation fails', async () => {
+      generate2FASpy.mockResolvedValueOnce({ error: 'Invalid user' });
+
+      const res = await supertest(app).post('/api/user/2fa/generate/user1').send({});
+
+      expect(res.status).toBe(400);
+    });
+
+    const verifyAndEnableSpy = jest.spyOn(twoFA, 'verifyAndEnable2FA');
+
+    it('should enable 2FA when correct code provided', async () => {
+      verifyAndEnableSpy.mockResolvedValueOnce({ success: true } as any);
+
+      const res = await supertest(app)
+        .post('/api/user/2fa/enable')
+        .send({ username: 'user1', code: '123456' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
+    });
+
+    it('should return 400 when username or code missing', async () => {
+      const res = await supertest(app).post('/api/user/2fa/enable').send({ username: 'user1' }); // code missing
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 on invalid 2FA code', async () => {
+      verifyAndEnableSpy.mockResolvedValueOnce({ error: 'Invalid code' });
+
+      const res = await supertest(app)
+        .post('/api/user/2fa/enable')
+        .send({ username: 'user1', code: '000000' });
+
+      expect(res.status).toBe(400);
+    });
+
+    const disable2FASpy = jest.spyOn(twoFA, 'disable2FA');
+
+    it('should disable 2FA successfully', async () => {
+      disable2FASpy.mockResolvedValueOnce({ success: true } as any);
+
+      const res = await supertest(app).post('/api/user/2fa/disable').send({ username: 'user1' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
+    });
+
+    it('should return 400 when disabling 2FA without username', async () => {
+      const res = await supertest(app).post('/api/user/2fa/disable').send({});
+
+      expect(res.status).toBe(400);
+    });
+
+    const is2FASpy = jest.spyOn(twoFA, 'is2FAEnabled');
+
+    it('should return 2FA status', async () => {
+      is2FASpy.mockResolvedValueOnce(true);
+
+      const res = await supertest(app).get('/api/user/2fa/status/user1');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ twoFactorEnabled: true });
+    });
+
+    it('should return 500 if checking 2FA status fails', async () => {
+      is2FASpy.mockRejectedValueOnce(new Error('db error'));
+
+      const res = await supertest(app).get('/api/user/2fa/status/user1');
+
+      expect(res.status).toBe(500);
+    });
   });
 
   describe('POST /resetPassword', () => {
@@ -365,6 +470,12 @@ describe('Test userController', () => {
   });
 
   describe('PATCH /updateBiography', () => {
+    const mockSocket = { emit: jest.fn() };
+
+    beforeAll(() => {
+      app.set('socket', mockSocket);
+    });
+
     it('should successfully update biography given correct arguments', async () => {
       const mockReqBody = {
         username: mockUser.username,

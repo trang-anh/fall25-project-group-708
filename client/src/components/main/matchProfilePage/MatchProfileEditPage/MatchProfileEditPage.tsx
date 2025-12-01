@@ -85,7 +85,8 @@ const MatchProfileEditPage: React.FC = () => {
       <div className='edit-profile-page'>
         <div className='edit-profile-container'>
           <div className='edit-profile-error'>
-            <p>Error: {error}</p>
+            <p>No match profile found. Please create a profile first.</p>
+            {/* <p>Error: {error}</p> */}
           </div>
         </div>
       </div>
