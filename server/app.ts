@@ -137,6 +137,7 @@ app.use('/api/notDuplicateQuestion', notDuplicateQuestionController(socket));
 app.use('/api/auth', authController());
 app.use('/api/match', matchController(socket));
 app.use('/api/matchProfile', matchProfileController(socket));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 const openApiDocument = yaml.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
