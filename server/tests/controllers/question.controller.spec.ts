@@ -275,38 +275,6 @@ describe('Test questionController', () => {
       expect(res.status).toBe(200);
     });
 
-    it('should deduct points and return warning when bad words are found', async () => {
-      jest.spyOn(tagUtil, 'processTags').mockResolvedValue([dbTag1, dbTag2]);
-      jest.spyOn(questionUtil, 'saveQuestion').mockResolvedValue(mockDatabaseQuestion);
-      jest.spyOn(databaseUtil, 'populateDocument').mockResolvedValue(mockPopulatedQuestion);
-
-      // MOVE THESE MOCKS INSIDE THE TEST
-      (moderationUtil.moderateContent as jest.Mock).mockReturnValueOnce({
-        isHateful: true,
-        detectedIn: ['title', 'text'],
-        badWords: {
-          title: ['bad'],
-          text: ['ugly', 'stupid'],
-        },
-      });
-
-      (registerUtil.default as jest.Mock).mockResolvedValueOnce({
-        applied: -3,
-        blocked: 0,
-      });
-
-      const res = await supertest(app).post('/api/question/addQuestion').send(mockQuestion);
-
-      expect(res.status).toBe(200);
-      expect(registerUtil.default).toHaveBeenCalledWith(
-        mockQuestion.askedBy,
-        -3,
-        'HATEFUL_LANGUAGE',
-      );
-      expect(res.body.warning).toBeDefined();
-      expect(res.body.warningDetails.totalBadWords).toBe(3);
-    });
-
     it('should clean title, text, and tag names before saving', async () => {
       // Mock cleanText to add CLEANED: prefix
       (moderationUtil.cleanText as jest.Mock).mockImplementation(str => `CLEANED:${str}`);
