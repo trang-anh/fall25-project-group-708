@@ -101,7 +101,9 @@ describe('Auth/JWT integration', () => {
     });
     jest.spyOn(jwtService, 'signJwt').mockReturnValue('new.jwt.token');
     jest.spyOn(jwtService, 'getJwtTtl').mockReturnValue(7777);
-    jest.spyOn(UserModel, 'findById').mockResolvedValue(null as never);
+    jest.spyOn(UserModel, 'findById').mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    } as unknown as ReturnType<typeof UserModel.findById>);
 
     const sessionUser = {
       _id: mockUser._id,

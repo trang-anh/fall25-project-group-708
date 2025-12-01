@@ -2345,11 +2345,13 @@ components:
 
     AuthStatusResponse:
       type: object
+      additionalProperties: true
       properties:
         authenticated:
           type: boolean
         user:
-          $ref: '#/components/schemas/SafeDatabaseUser'
+          type: object
+          description: Authenticated user data (shape may vary).
         token:
           type: string
           description: JWT issued for API access.
