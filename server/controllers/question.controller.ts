@@ -170,20 +170,7 @@ const questionController = (socket: FakeSOSocket) => {
 
       socket.emit('questionUpdate', populatedQuestion as PopulatedDatabaseQuestion);
 
-      if (totalBadWords > 0) {
-        res.json({
-          ...populatedQuestion,
-          warning: 'Some words were automatically filtered for inappropriate language.',
-          warningDetails: {
-            detectedIn: moderation.detectedIn,
-            badWords: moderation.badWords,
-            totalBadWords,
-            pointsDeducted: totalBadWords,
-          },
-        });
-      } else {
-        res.json(populatedQuestion);
-      }
+      res.json(populatedQuestion);
     } catch (err: unknown) {
       if (err instanceof Error) {
         res.status(500).send(`Error when saving question: ${err.message}`);

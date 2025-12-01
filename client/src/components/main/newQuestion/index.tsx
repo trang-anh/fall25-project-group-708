@@ -68,7 +68,7 @@ const NewQuestionPage = () => {
     setShowBadWordWarning(false);
   };
 
-  const handlePostAnyway = () => {
+  const handlePostAnyway = async () => {
     if (suggestions.length > 0) {
       postQuestion(true, {
         similarQuestions: suggestions,
