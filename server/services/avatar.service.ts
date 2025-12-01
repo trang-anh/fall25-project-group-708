@@ -48,7 +48,6 @@ export const uploadAvatarService = async (
         fs.unlinkSync(oldPath);
       } catch (error) {
         // Failed to delete old avatar - not critical, continue anyway
-        // The new avatar is already saved successfully
       }
     }
   }
@@ -74,7 +73,6 @@ export const deleteAvatarService = async (username: string): Promise<SafeDatabas
         fs.unlinkSync(avatarPath);
       } catch (error) {
         // Failed to delete avatar file - not critical
-        // Continue to clear the avatarUrl from database anyway
       }
     }
   }

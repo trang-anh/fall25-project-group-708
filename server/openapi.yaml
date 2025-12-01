@@ -1079,6 +1079,72 @@ paths:
                 $ref: '#/components/schemas/User'
         '500':
           $ref: '#/components/responses/ErrorResponse'
+    
+  /uploadAvatar:
+    post:
+      summary: Upload a user's avatar
+      description: Uploads a new avatar image for a given user using multipart/form-data.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - username
+                - avatar
+              properties:
+                username:
+                  type: string
+                  description: Username of the user uploading the avatar.
+                avatar:
+                  type: string
+                  format: binary
+                  description: Avatar image file (Multer field name is avatar).
+
+  /deleteAvatar:
+    delete:
+      summary: Delete a user's avatar
+      description: Deletes a user's avatar file and clears their avatarUrl in the database.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  description: Username whose avatar will be deleted.
+      responses:
+        '200':
+          description: Avatar deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Avatar deleted successfully
+        '401':
+          description: Missing username (not authenticated).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to delete avatar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # AUTH CONTROLLER
@@ -2109,6 +2175,36 @@ components:
         message:
           type: string
           description: Confirmation message when a session is cleared.
+    
+    SafeDatabaseUser:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "675f2138849b12452eacd901"
+        username:
+          type: string
+        dateJoined:
+          type: string
+          format: date-time
+        biography:
+          type: string
+          nullable: true
+        githubId:
+          type: string
+          nullable: true
+        totalPoints:
+          type: number
+        avatarUrl:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "User not authenticated"
 
     # --------------------
     # NOT DUPLICATE QUESTION SCHEMAS

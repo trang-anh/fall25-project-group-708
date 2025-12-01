@@ -9,7 +9,9 @@ import { uploadAvatarService, deleteAvatarService } from '../services/avatar.ser
 
 /**
  * Controller for handling avatar upload
- * POST /api/user/avatar
+ * @param req the avatar upload request
+ * @param res the avatar upload response
+ * @returns the avatar upload result
  */
 export const uploadAvatar = async (
   req: AvatarUploadRequest,
@@ -40,7 +42,9 @@ export const uploadAvatar = async (
 
 /**
  * Controller for handling avatar deletion
- * DELETE /api/user/avatar
+ * @param req the avatar delete request
+ * @param res the avatar delete response
+ * @returns the avatar delete result
  */
 export const deleteAvatar = async (
   req: AvatarDeleteRequest,
