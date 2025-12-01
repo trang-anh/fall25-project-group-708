@@ -1146,6 +1146,105 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /user/2fa/generate/{username}:
+    post:
+      tags:
+        - Users
+      summary: Generate a 2FA code for a user and email it.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username to generate the 2FA code for.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFAGenerateBody'
+      responses:
+        '200':
+          description: 2FA code generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFACodeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/enable:
+    post:
+      tags:
+        - Users
+      summary: Verify a 2FA code and enable 2FA for the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFAEnableBody'
+      responses:
+        '200':
+          description: 2FA enabled for the user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/disable:
+    post:
+      tags:
+        - Users
+      summary: Disable 2FA for a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFADisableBody'
+      responses:
+        '200':
+          description: 2FA disabled for the user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /user/2fa/status/{username}:
+    get:
+      tags:
+        - Users
+      summary: Check whether 2FA is enabled for a user.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username to check 2FA status for.
+      responses:
+        '200':
+          description: Returns whether 2FA is enabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFAStatusResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+
+
   # --------------------
   # AUTH CONTROLLER
   # --------------------
@@ -1191,26 +1290,20 @@ paths:
     get:
       tags:
         - Auth
-      summary: Retrieve the currently authenticated user from the active session.
+      summary: Retrieve authentication status for the current request.
       responses:
         '200':
-          description: Authenticated user information.
+          description: Authentication status plus user/token when available.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          description: No authenticated session exists.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SimpleErrorBody'
+                $ref: '#/components/schemas/AuthStatusResponse'
 
   /auth/logout:
     post:
       tags:
         - Auth
-      summary: Terminate the active remembered session for the current device.
+      summary: Terminate the active session and clear cookies for the current device.
       responses:
         '200':
           description: Session terminated successfully.
@@ -1220,6 +1313,57 @@ paths:
                 $ref: '#/components/schemas/LogoutResponse'
         '401':
           description: No remembered session exists for this device.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+
+  /auth/sessions:
+    get:
+      tags:
+        - Auth
+      summary: List active sessions for the authenticated user.
+      responses:
+        '200':
+          description: Sessions for the current user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionsResponse'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+
+  /auth/sessions/{sessionId}:
+    delete:
+      tags:
+        - Auth
+      summary: Revoke a specific session for the authenticated user.
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Session ID to revoke.
+      responses:
+        '200':
+          description: Session revoked; may include whether current session was revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeSessionResponse'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorBody'
+        '404':
+          description: Session not found.
           content:
             application/json:
               schema:
@@ -2153,6 +2297,120 @@ components:
           type: string
           minLength: 1
         biography:
+          type: string
+
+    TwoFAGenerateBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email to send the 2FA code to.
+
+    TwoFACodeResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Generated verification code.
+        twoFactorEnabled:
+          type: boolean
+          description: Indicates if the user already had 2FA enabled.
+
+    TwoFAEnableBody:
+      type: object
+      required:
+        - username
+        - code
+      properties:
+        username:
+          type: string
+        code:
+          type: string
+          description: Verification code sent to the user.
+
+    TwoFADisableBody:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+
+    TwoFAStatusResponse:
+      type: object
+      properties:
+        twoFactorEnabled:
+          type: boolean
+
+    AuthStatusResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/SafeDatabaseUser'
+        token:
+          type: string
+          description: JWT issued for API access.
+
+    SessionSummary:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        createdAt:
+          type: integer
+          format: int64
+        lastActiveAt:
+          type: integer
+          format: int64
+        expiresAt:
+          type: integer
+          format: int64
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        current:
+          type: boolean
+
+    SessionsResponse:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionSummary'
+        recentLogins:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionSummary'
+
+    RevokeSessionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        currentSessionRevoked:
+          type: boolean
+
+    AvatarUploadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        avatarUrl:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    AvatarDeleteResponse:
+      type: object
+      properties:
+        message:
           type: string
 
     User:
