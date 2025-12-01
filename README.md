@@ -153,6 +153,50 @@ The specification itself is coupled with an OpenAPI validator (present as a midd
 
 ### Setup Instructions
 
+Server setup
+
+1. Navigate to the `server` directory and install dependencies:
+   ```sh
+   cd server
+   npm install
+   ```
+2. Create a `.env` file in the `server/` directory with the following content:
+   ```
+   MONGODB_URI=mongodb://127.0.0.1:27017   (refer to report doc for cluster specific secret)
+   CLIENT_URL=http://localhost:4530
+   PORT=8000
+   GITHUB_CLIENT_ID=(refer to report doc to retrieve secret)
+   GITHUB_CLIENT_SECRET=(refer to report doc to retreive secret)
+   OAUTH_REDIRECT_URI=http://localhost:8000/api/auth/github/callback
+   SENDGRID_API_KEY=(refer to report doc to retreive secret)
+   JWT_SECRET=(refer to report doc to retreive secret)
+   ```
+
+   3. Start the server:
+   ```sh
+   npm run dev
+   ```
+
+Client setup
+
+1. Navigate to the `client` directory and install dependencies:
+   ```sh
+   cd ../client
+   npm install
+   ```
+
+2. Create a `.env` file in the `client/` directory with the following content:
+   ```
+   REACT_APP_SERVER_URL=http://localhost:8000
+   ```
+
+3. Start the client:
+   ```sh
+   npm run dev
+   ```
+
+Testing Setup
+
 1. Navigate to the `testing` directory:
    ```sh
    cd testing
