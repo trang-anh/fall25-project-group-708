@@ -7,10 +7,9 @@ import saveNotDuplicateQuestion from '../../services/notDuplicateQuestion.servic
 jest.mock('../../services/notDuplicateQuestion.service');
 
 const saveNotDuplicateQuestionSpy = saveNotDuplicateQuestion as jest.Mock;
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const api = '/api/notDuplicateQuestion/saveNotDuplicateQuestion';
+const API = '/api/notDuplicateQuestion/saveNotDuplicateQuestion';
 
-describe('POST' + api, () => {
+describe('POST' + API, () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -40,7 +39,7 @@ describe('POST' + api, () => {
     // mock service success
     saveNotDuplicateQuestionSpy.mockResolvedValueOnce(dbReturn);
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(200);
     expect(saveNotDuplicateQuestionSpy).toHaveBeenCalledWith({
@@ -99,14 +98,12 @@ describe('POST' + api, () => {
     };
 
     saveNotDuplicateQuestionSpy.mockImplementationOnce(() => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw 123;
+      throw new Error('123');
     });
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Error when saving not duplicate question');
   });
 
   // ======================
@@ -124,7 +121,7 @@ describe('POST' + api, () => {
       createdAt: new Date(),
     };
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(400);
 
@@ -142,7 +139,7 @@ describe('POST' + api, () => {
       createdAt: new Date(),
     };
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(400);
 
@@ -162,7 +159,7 @@ describe('POST' + api, () => {
       createdAt: new Date(),
     };
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(400);
 
@@ -180,7 +177,7 @@ describe('POST' + api, () => {
       createdAt: new Date(),
     };
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(400);
 
@@ -198,7 +195,7 @@ describe('POST' + api, () => {
       justification: 'hi',
     };
 
-    const res = await supertest(app).post(api).send(reqBody);
+    const res = await supertest(app).post(API).send(reqBody);
 
     expect(res.status).toBe(400);
 

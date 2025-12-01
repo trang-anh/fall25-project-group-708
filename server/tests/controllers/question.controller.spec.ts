@@ -299,12 +299,6 @@ describe('Test questionController', () => {
 
       const response = await supertest(app).post('/api/question/addQuestion').send(dirty);
 
-      // If 400, let's see what the error is
-      if (response.status === 400) {
-        // eslint-disable-next-line no-console
-        console.log('Validation error:', response.body);
-      }
-
       expect(response.status).toBe(200);
 
       // Only check the spy if the request succeeded
