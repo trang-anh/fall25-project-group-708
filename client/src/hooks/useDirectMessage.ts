@@ -279,11 +279,8 @@ const useDirectMessage = () => {
 
   // Auto-open or create chat when ?user=username is present in the URL
   useEffect(() => {
-    // Not navigating from matches → nothing to do
+    // Not navigating from matches -> nothing to do
     if (!targetUser) return;
-
-    // Wait for chats from the server to load
-    if (chats.length === 0) return;
 
     // If a chat with this user already exists -> open it
     const existingChat = chats.find(chat => chat.participants.includes(targetUser));
