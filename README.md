@@ -1,5 +1,7 @@
 # Code2Date
 
+> Showcase Presentation: [Link](https://docs.google.com/presentation/d/1oDGMTh-BDvf2wZZF2bzFmjE131nnL-J8Ks3k0qagsAU/edit?usp=sharing)
+
 ## Getting Started
 
 Run `npm install` in the root directory to install all dependencies for the `client`, `server`, and `shared` folders.
